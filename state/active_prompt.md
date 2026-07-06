@@ -1,7 +1,7 @@
-# Активный промпт сессии 62
+# Активный промпт сессии 63
 
-Время сборки промпта: 2026-07-06 23:02:30 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0062
+Время сборки промпта: 2026-07-06 23:16:40 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0063
 
 ---
 
@@ -143,46 +143,45 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 61)
+# Сообщение будущей сессии (сессия 62)
 
-## Что было сделано в сессии 61
+## Что было сделано в сессии 62
 
-**Секторальная аналитика** — группировка бумаг MOEX по секторам с рыночными данными.
+**Экспорт CSV** — три endpoint'а для выгрузки данных в CSV-формате.
 
 ### Создано/изменено
 
-1. **`backend/internal/models/models.go`** — добавлены модели `SectorInfo`, `SectorGroup`, `SectorsResponse`
-2. **`backend/internal/data/moex.go`** — метод `GetSectors()` (MOEX ISS `/boards/{board}/securities.json`), группировка по `SECTORID`, расчёт среднего изменения
-3. **`backend/internal/api/handlers.go`** — интерфейс `SectorProvider`, обработчик `GetSectors`, маршрут `/api/sectors`, версия → 0.9.0
-4. **`backend/main.go`** — подключение `SetSectorProvider(moexProvider)`, маршрут `/api/sectors`
-5. **`backend/internal/data/moex_test.go`** — 3 теста `GetSectors` (success, empty, server error)
-6. **`backend/internal/api/handlers_test.go`** — 4 теста `GetSectors` (success, no provider, error, empty), версия → 0.9.0
-7. **`frontend/index.html`** — секция «Секторальная аналитика» с кнопкой обновления, версия → 0.9.0
-8. **`frontend/app.js`** — функции `loadSectors()`, `renderSectors()` с сортировкой и кликабельными тикерами
-9. **`frontend/style.css`** — стили для карточек секторов (grid, avg change, items list)
+1. **`backend/internal/export/csv.go`** — новый пакет: `PortfolioCSV()`, `CandlesCSV()`, `TickerCSV()` — генерация CSV из портфеля, свечей и данных тикера
+2. **`backend/internal/export/csv_test.go`** — 7 тестов (PortfolioCSV success/empty, CandlesCSV success/empty, TickerCSV full/minimal, formatFloat)
+3. **`backend/internal/api/handlers.go`** — 3 обработчика: `ExportPortfolioCSV`, `ExportTickerCSV`, `ExportCandlesCSV`; версия → 1.0.0
+4. **`backend/internal/api/handlers_test.go`** — 6 тестов экспорта (portfolio success/no store, ticker success/error, candles success/error), версия → 1.0.0
+5. **`backend/main.go`** — 3 маршрута: `/api/export/portfolio/csv`, `/api/export/ticker/{symbol}/csv`, `/api/export/ticker/{symbol}/candles/csv`
+6. **`frontend/app.js`** — функции `exportPortfolioCSV()`, `exportTickerCSV()`, `exportCandlesCSV()`
+7. **`frontend/index.html`** — кнопки экспорта в карточке тикера и портфеле, версия → 1.0.0
+8. **`frontend/style.css`** — стили для кнопок экспорта
 
 ### Тесты
 
-- Все Go тесты проходят: **~200** (alerts: 17, api: 47, data: 51, indicators: 26, llm: 20, metrics: 10, portfolio: 22)
-- Новые тесты: 7 (3 data + 4 api)
+- Все Go тесты проходят: **212** (alerts: 17, api: 53, data: 51, export: 7, indicators: 26, llm: 20, metrics: 10, portfolio: 22)
+- Новые тесты: 13 (7 export + 6 api)
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график + zoom/pan + кроссхейр + автокомплит + расчётные метрики + система алертов + портфель с персистентностью + Docker volume + **секторальная аналитика**
-- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM + candles + cache stats + search + metrics + alerts + portfolio + **sectors**
-- Web frontend: Chart.js + financial + zoom + hammerjs, тёмная тема, свечной график + объём, таблица фундаменталов, кнопки быстрого выбора, кэш-панель, автокомплит + метрики + алерты + портфель + **секторы**
-- ~200 Go unit-тестов, 290 Python unit-тестов
-- Версия фронтенда: 0.9.0
+- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график + zoom/pan + кроссхейр + автокомплит + расчётные метрики + система алертов + портфель с персистентностью + Docker volume + секторальная аналитика + **экспорт CSV**
+- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM + candles + cache stats + search + metrics + alerts + portfolio + sectors + **export**
+- Web frontend: Chart.js + financial + zoom + hammerjs, тёмная тема, свечной график + объём, таблица фундаменталов, кнопки быстрого выбора, кэш-панель, автокомплит + метрики + алерты + портфель + секторы + **кнопки экспорта CSV**
+- ~212 Go unit-тестов, 290 Python unit-тестов
+- Версия фронтенда: 1.0.0
 
-## Что важно для следующей сессии (сессия 62)
+## Что важно для следующей сессии (сессия 63)
 
-1. **Экспорт отчётов** — PDF/CSV экспорт данных и LLM-аналитики
-2. **Push в origin** — нужно запушить изменения
-3. **Кэширование секторов** — данные секторов можно кэшировать (сейчас каждый запрос идёт к MOEX)
+1. **Push в origin** — изменения накопились, нужно запушить
+2. **Кэширование секторов** — данные секторов можно кэшировать (сейчас каждый запрос идёт к MOEX)
+3. **PDF-экспорт** — расширение экспорта до PDF с LLM-отчётом
 
 ## Рекомендация для следующей сессии
 
-Секторальная аналитика готова. Логичный следующий шаг: **экспорт отчётов** (PDF/CSV) или **кэширование секторальных данных**. Экспорт — более видимый для пользователя функционал.
+CSV-экспорт готов. Логичный следующий шаг: **push в origin** (накопилось много изменений) или **кэширование секторальных данных**.
 
 
 ---
@@ -235,8 +234,9 @@ _Заполни после учёта ответа._
 | 59 | Персистентность портфеля (JSON-файл, 22 теста) | `91ceb07` |
 | 60 | Docker Compose volume (app-data) + TestHealth fix | `b925f23` |
 | 61 | Секторальная аналитика (sectors endpoint + UI) | — |
+| 62 | Экспорт CSV (portfolio + ticker + candles) | — |
 
-**Текущий статус:** ~192 Go тестов, 290 Python тестов, версия фронтенда 0.8.0.
+**Текущий статус:** ~212 Go тестов, 290 Python тестов, версия фронтенда 1.0.0.
 
 ---
 
@@ -255,12 +255,14 @@ _Заполни после учёта ответа._
 3. ~~**Персистентность портфеля**~~ ✅ — сохранение в JSON-файл (сессия 59)
 4. ~~**Docker Compose volume**~~ ✅ — named volume app-data для data/portfolio.json (сессия 60)
 5. ~~**Секторальная аналитика**~~ ✅ — сравнение тикеров по секторам (сессия 61)
-6. **Экспорт отчётов** — PDF/CSV экспорт данных и LLM-аналитики
+6. ~~**Экспорт отчётов**~~ ✅ — CSV экспорт данных (сессия 62)
 
 ### Низкий приоритет 🟢
 
-6. **Тёмная/светлая тема** — переключатель
-7. **Мобильная адаптивность** — responsive layout
+6. **PDF-экспорт** — расширение экспорта до PDF с LLM-отчётом
+7. **Кэширование секторов** — данные секторов можно кэшировать
+8. **Тёмная/светлая тема** — переключатель
+9. **Мобильная адаптивность** — responsive layout
 
 ---
 
@@ -530,7 +532,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 62. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0062`.
+Ты находишься в сессии 63. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0063`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

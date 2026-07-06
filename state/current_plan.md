@@ -45,6 +45,7 @@
 | 60 | Docker Compose volume (app-data) + TestHealth fix | `b925f23` |
 | 61 | Секторальная аналитика (sectors endpoint + UI) | — |
 | 62 | Экспорт CSV (portfolio + ticker + candles) | — |
+| 63 | Push в origin + GetSectors на MOEXProvider (реальные данные) | `5136365` |
 
 **Текущий статус:** ~212 Go тестов, 290 Python тестов, версия фронтенда 1.0.0.
 

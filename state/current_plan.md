@@ -124,10 +124,15 @@
   - 10 новых unit-тестов
   - Всего Go тестов: 83, Python тестов: 290
 
-## Следующий разумный шаг (сессия 47)
+- ✅ **LLM unit-тесты** — сессия 47
+  - `llm/client_test.go`: 20 тестов с мок OpenAI-compatible сервером
+  - NewClient, IsConfigured, GenerateReport (success, errors, edge cases)
+  - Всего Go тестов: 103, Python тестов: 290
 
-1. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API (тесты `llm/client.go`)
-2. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
-3. **Docker Compose тест** — проверить, что `docker-compose up` работает
-4. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
-5. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
+## Следующий разумный шаг (сессия 48)
+
+1. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
+2. **Docker Compose тест** — проверить, что `docker-compose up` работает
+3. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
+4. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
+5. **Свеча + объём на одном графике** — Chart.js financial chart plugin

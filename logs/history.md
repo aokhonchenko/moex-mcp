@@ -312,3 +312,19 @@
 - 10 новых тестов (4 MOEX + 2 API + 4 CachedProvider)
 - Все Go тесты: 83 PASS. Python тесты: 290 PASS.
 - Коммиты `681c4de`, `2a62524` запушены в `origin/main`.
+
+## Сессия 47 - prompt prepared
+
+- Время: 2026-07-06 21:27:31 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 47 — 2026-07-06
+
+**Добавлены unit-тесты для LLM-клиента** — 20 тестов с мок OpenAI-compatible сервером.
+
+- `backend/internal/llm/client_test.go`: 20 тестов
+  - NewClient (default/custom model), IsConfigured (4 сценария)
+  - GenerateReport: success, with indicators, empty indicators, server error, LLM error, empty choices, invalid JSON, unreachable server, bearer token, URL path, multiple choices, empty indicator values
+- Все Go тесты: 103 PASS. Python тесты: 290 PASS.
+- Коммит `d4b4207` запушен в `origin/main`.

@@ -1,0 +1,13 @@
+[mini_swe_agent]
+# LiteLLM model name. For OpenAI-compatible endpoints, keep the provider prefix unless your provider documents otherwise.
+model = "openai/your-model-name"
+custom_llm_provider = "openai"
+
+# OpenAI-compatible endpoints often do not have public cost metadata in LiteLLM.
+cost_tracking = "ignore_errors"
+
+# 0 means disabled for mini-swe-agent cost limit.
+cost_limit = 0.0
+step_limit = 50
+command_timeout_seconds = 60
+output_path = "logs/mini-swe-agent-last-run.json"

@@ -32,7 +32,8 @@ class TransactionError(RuntimeError):
 CommandRunner = Callable[[Sequence[str], Path], CommandResult]
 
 
-SENSITIVE_DIRS = {".git", ".pytest_cache", "__pycache__"}
+SENSITIVE_DIRS = {".git", ".pytest_cache", "__pycache__", ".venv"}
+GENERATED_LONG_FILES = {"uv.lock", "poetry.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 HUMAN_INPUT_FILES = {"GLOBAL_TARGET.md", "state/external_messages.md"}
 
 
@@ -79,6 +80,38 @@ def ensure_clean_worktree(root: Path, runner: CommandRunner = default_runner) ->
 
 
 
+
+
+
+def parse_env_line(line: str) -> tuple[str, str] | None:
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#"):
+        return None
+    if stripped.startswith("export "):
+        stripped = stripped.removeprefix("export ").strip()
+    if "=" not in stripped:
+        return None
+    key, value = stripped.split("=", 1)
+    key = key.strip()
+    value = value.strip().strip('"').strip("'")
+    if not key:
+        return None
+    return key, value
+
+
+def load_dotenv(path: Path) -> dict[str, str]:
+    if not path.exists():
+        return {}
+
+    loaded: dict[str, str] = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        parsed = parse_env_line(line)
+        if parsed is None:
+            continue
+        key, value = parsed
+        os.environ.setdefault(key, value)
+        loaded[key] = os.environ[key]
+    return loaded
 
 def parse_porcelain_paths(status: str) -> list[tuple[str, str]]:
     changes: list[tuple[str, str]] = []
@@ -228,6 +261,8 @@ def find_oversized_files(root: Path, max_lines: int = 500) -> list[Path]:
             continue
         if any(part in SENSITIVE_DIRS for part in path.parts):
             continue
+        if path.name in GENERATED_LONG_FILES:
+            continue
         try:
             line_count = sum(1 for _ in path.open("r", encoding="utf-8"))
         except UnicodeDecodeError:
@@ -272,6 +307,11 @@ def apply_session_commit(
     git(runner, root, "merge", "--ff-only", branch)
 
 
+
+
+def default_agent_command() -> str:
+    return 'uv run python scripts/run_mini_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"'
+
 def run_transaction(
     root: Path,
     agent_command: str,
@@ -280,7 +320,7 @@ def run_transaction(
     runner: CommandRunner = default_runner,
 ) -> str:
     if not agent_command.strip():
-        raise TransactionError("agent command is required for transactional sessions")
+        agent_command = default_agent_command()
 
     root = root.resolve()
     runs_dir = (runs_dir or default_runs_dir(root)).resolve()
@@ -288,6 +328,7 @@ def run_transaction(
 
     with lock_file(root):
         ensure_git_repo(root, runner)
+        load_dotenv(root / ".env")
         checkpoint_human_input(root, runner)
         ensure_clean_worktree(root, runner)
         current_branch(root, runner)
@@ -331,7 +372,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--agent-command",
         default=os.environ.get("AI_AGENT_COMMAND", ""),
-        help="Agent command passed to scripts/run_session.py inside the worktree.",
+        help="Agent command passed to scripts/run_session.py inside the worktree. Defaults to uv-run mini-swe-agent wrapper.",
     )
     parser.add_argument(
         "--runs-dir",

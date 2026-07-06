@@ -163,11 +163,22 @@ def test_run_transaction_rolls_back_failed_agent(tmp_path):
     assert not runs_dir.exists()
 
 
-def test_run_transaction_requires_agent_command(tmp_path):
+def test_run_transaction_uses_default_agent_command(tmp_path):
     root = make_root(tmp_path)
+    runs_dir = tmp_path / "runs"
+    runner = FakeRunner(root)
 
-    with pytest.raises(session_transaction.TransactionError, match="agent command is required"):
-        session_transaction.run_transaction(root=root, agent_command="")
+    commit = session_transaction.run_transaction(
+        root=root,
+        agent_command="",
+        runs_dir=runs_dir,
+        runner=runner,
+    )
+
+    assert commit == "abc123"
+    commands = [command for command, _ in runner.commands]
+    agent_commands = [command for command in commands if "run_mini_agent.py" in " ".join(command)]
+    assert agent_commands
 
 
 def test_main_returns_one_on_transaction_error(monkeypatch, capsys, tmp_path):
@@ -399,3 +410,42 @@ def test_checkpoint_human_input_rejects_other_changes(tmp_path):
 
     with pytest.raises(session_transaction.TransactionError, match="non-human changes"):
         session_transaction.checkpoint_human_input(tmp_path, runner)
+
+
+def test_parse_env_line_handles_comments_exports_and_quotes():
+    assert session_transaction.parse_env_line("# comment") is None
+    assert session_transaction.parse_env_line("") is None
+    assert session_transaction.parse_env_line("export AI_API_KEY='secret'") == ("AI_API_KEY", "secret")
+    assert session_transaction.parse_env_line('AI_BASE_URL="https://example/v1"') == (
+        "AI_BASE_URL",
+        "https://example/v1",
+    )
+
+
+def test_load_dotenv_sets_missing_values_without_overriding(tmp_path, monkeypatch):
+    env_path = tmp_path / ".env"
+    env_path.write_text("AI_API_KEY=file-secret\nAI_BASE_URL=https://example/v1\n", encoding="utf-8")
+    monkeypatch.setenv("AI_API_KEY", "existing-secret")
+    monkeypatch.delenv("AI_BASE_URL", raising=False)
+
+    loaded = session_transaction.load_dotenv(env_path)
+
+    assert loaded == {
+        "AI_API_KEY": "existing-secret",
+        "AI_BASE_URL": "https://example/v1",
+    }
+    assert session_transaction.os.environ["AI_API_KEY"] == "existing-secret"
+    assert session_transaction.os.environ["AI_BASE_URL"] == "https://example/v1"
+
+
+def test_default_agent_command_uses_uv_mini_wrapper():
+    command = session_transaction.default_agent_command()
+
+    assert "uv run python scripts/run_mini_agent.py" in command
+    assert "{ROOT}" in command
+    assert "{PROMPT_FILE}" in command
+
+def test_find_oversized_files_skips_generated_lockfiles(tmp_path):
+    (tmp_path / "uv.lock").write_text("x\n" * 1000, encoding="utf-8")
+
+    assert session_transaction.find_oversized_files(tmp_path, max_lines=500) == []

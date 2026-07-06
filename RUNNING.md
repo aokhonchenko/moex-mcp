@@ -1,35 +1,39 @@
-# Переносимый запуск
+# Переносимый ручной запуск
 
-Основной ручной запуск для автономного режима: `scripts/session_transaction.py`. `scripts/run_session.py` оставлен для отладки сборки промпта.
+Проект использует `uv` и `mini-swe-agent`.
 
-Проверить сборку промпта без запуска агента:
-
-```bash
-python scripts/run_session.py --dry-run
-```
-
-Отладочно запустить одну сессию без транзакционной оболочки:
+## Сборка окружения
 
 ```bash
-export AI_AGENT_COMMAND='your-agent --cwd "{ROOT}" --prompt-file "{PROMPT_FILE}"'
-python scripts/run_session.py
+uv sync
 ```
 
-Плейсхолдеры в `AI_AGENT_COMMAND`:
+`mini-swe-agent` установлен как обычная зависимость проекта и зафиксирован в `uv.lock`.
 
-- `{ROOT}` - корень эксперимента;
-- `{PROMPT_FILE}` - собранный файл `state/active_prompt.md`;
-- `{SESSION}` - номер текущей сессии.
+## Настройка модели
 
-Если агент читает промпт из stdin:
+Скопируйте пример окружения:
 
 ```bash
-export AI_AGENT_COMMAND='cat "{PROMPT_FILE}" | your-agent --cwd "{ROOT}"'
-python scripts/run_session.py
+cp .env.example .env
 ```
 
-Сессии предполагается запускать вручную. Для автономного режима используйте `scripts/session_transaction.py`, для отладки сборки промпта - `scripts/run_session.py`.
+Заполните `.env`:
 
+```bash
+AI_API_KEY=replace-with-your-api-key
+AI_BASE_URL=https://your-openai-compatible-endpoint.example/v1
+```
+
+Выберите модель в `config/project.toml`:
+
+```toml
+[mini_swe_agent]
+model = "openai/your-model-name"
+custom_llm_provider = "openai"
+```
+
+`AI_API_KEY` и `AI_BASE_URL` не коммитятся. `config/project.toml` коммитится, потому что это проектная настройка.
 
 ## Ручной цикл
 
@@ -37,7 +41,7 @@ python scripts/run_session.py
 2. Запустите транзакционную сессию вручную:
 
 ```bash
-python scripts/session_transaction.py --agent-command 'your-agent --cwd "{ROOT}" --prompt-file "{PROMPT_FILE}"'
+uv run python scripts/session_transaction.py
 ```
 
 3. Просмотрите результат сессии и новые вопросы агента.
@@ -45,41 +49,36 @@ python scripts/session_transaction.py --agent-command 'your-agent --cwd "{ROOT}"
 
 Если перед запуском изменены только `GLOBAL_TARGET.md`, `state/external_messages.md` или `state/questions/*.md`, runner сам сделает checkpoint-коммит этих человеческих входов. Если изменены другие файлы, запуск будет остановлен.
 
-## Тесты
+## Что запускается внутри
 
-Проверка тестов и покрытия:
+По умолчанию `scripts/session_transaction.py` вызывает:
 
 ```bash
-python -m pytest
+uv run python scripts/run_mini_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"
+```
+
+`run_mini_agent.py` использует Python API `mini-swe-agent`, а не интерактивный CLI `mini`, потому что транзакционный runner выполняет агента non-interactively.
+
+Если нужно заменить агента, передайте команду явно:
+
+```bash
+uv run python scripts/session_transaction.py --agent-command 'your-agent --cwd "{ROOT}" --prompt-file "{PROMPT_FILE}"'
+```
+
+## Отладка
+
+Проверить сборку prompt без запуска модели:
+
+```bash
+uv run python scripts/run_session.py --dry-run
+```
+
+Проверить wrapper без реального запуска модели нельзя без валидных `AI_API_KEY`, `AI_BASE_URL` и рабочей модели. Ошибки подключения будут откатываться транзакционным runner'ом.
+
+## Тесты
+
+```bash
+uv run python -m pytest
 ```
 
 Порог покрытия задан в `pyproject.toml`: 90%.
-
-## Атомарный запуск
-
-Для реального автономного режима используйте транзакционную оболочку:
-
-```bash
-python scripts/session_transaction.py --agent-command 'your-agent --cwd "{ROOT}" --prompt-file "{PROMPT_FILE}"'
-```
-
-Что делает `session_transaction.py`:
-
-1. Проверяет, что основной проект является Git-репозиторием.
-2. Проверяет, что основной worktree чистый.
-3. Берёт `.session.lock`, чтобы две сессии не шли одновременно.
-4. Создаёт временный `git worktree` в соседней директории `<project>-runs/session-NNNN`.
-5. Запускает `scripts/run_session.py` внутри временного worktree.
-6. Запускает проверки, по умолчанию `python -m pytest`.
-7. Если всё успешно, коммитит изменения сессии и применяет их в основной проект через `git merge --ff-only`.
-8. Если агент или проверки падают, удаляет временный worktree и ветку сессии. Основная директория остаётся в состоянии до сессии.
-
-Обычный `scripts/run_session.py` полезен для отладки и ручных запусков, но он пишет прямо в текущую директорию. Для свойства "или сессия завершилась целиком, или её будто не было" используйте только `scripts/session_transaction.py`.
-
-Перед первым транзакционным запуском проект должен быть Git-репозиторием с базовым коммитом:
-
-```bash
-git init
-git add -A
-git commit -m "initial autonomous experiment scaffold"
-```

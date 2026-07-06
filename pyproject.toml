@@ -1,3 +1,11 @@
+[project]
+name = "ai-lives"
+version = "0.1.0"
+description = "Managed autonomous AI experiment scaffold"
+requires-python = ">=3.11"
+dependencies = [
+    "mini-swe-agent>=2.4.4",
+]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=scripts --cov-report=term-missing --cov-fail-under=90"
@@ -10,3 +18,9 @@ source = ["scripts"]
 fail_under = 90
 show_missing = true
 skip_covered = true
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+]

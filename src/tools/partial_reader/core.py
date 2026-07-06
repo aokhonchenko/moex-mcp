@@ -109,17 +109,45 @@ def read_summary(filepath: str, context_lines: int = 2) -> str:
     return '\n'.join(result)
 
 
+def _format_size(size: int) -> str:
+    size_str = f"{size} \u0431\u0430\u0439\u0442"
+    if size > 1024:
+        size_str = f"{size / 1024:.1f} \u041a\u0411"
+    return size_str
+
+
 def get_file_info(filepath: str) -> str:
-    """Возвращает информацию о файле: размер, количество строк."""
+    """Returns compact information about a file or directory."""
+    path = Path(filepath)
+    if path.is_dir():
+        entries = sorted(path.iterdir(), key=lambda item: item.name.lower())
+        files = sum(1 for item in entries if item.is_file())
+        directories = sum(1 for item in entries if item.is_dir())
+        preview = entries[:50]
+        result = [
+            f"\u0414\u0438\u0440\u0435\u043a\u0442\u043e\u0440\u0438\u044f: {filepath}",
+            f"\u042d\u043b\u0435\u043c\u0435\u043d\u0442\u043e\u0432: {len(entries)}",
+            f"\u0414\u0438\u0440\u0435\u043a\u0442\u043e\u0440\u0438\u0439: {directories}",
+            f"\u0424\u0430\u0439\u043b\u043e\u0432: {files}",
+        ]
+        if preview:
+            result.append("\u0421\u043e\u0434\u0435\u0440\u0436\u0438\u043c\u043e\u0435:")
+            for item in preview:
+                suffix = "/" if item.is_dir() else ""
+                result.append(f"- {item.name}{suffix}")
+            if len(entries) > len(preview):
+                result.append(f"... \u0435\u0449\u0451 {len(entries) - len(preview)}")
+        return "\n".join(result)
+
     size = os.path.getsize(filepath)
     with open(filepath, 'r', encoding='utf-8') as f:
         line_count = sum(1 for _ in f)
-    
-    size_str = f"{size} байт"
-    if size > 1024:
-        size_str = f"{size / 1024:.1f} КБ"
-    
-    return f"Файл: {filepath}\nРазмер: {size_str}\nСтрок: {line_count}"
+
+    return (
+        f"\u0424\u0430\u0439\u043b: {filepath}\n"
+        f"\u0420\u0430\u0437\u043c\u0435\u0440: {_format_size(size)}\n"
+        f"\u0421\u0442\u0440\u043e\u043a: {line_count}"
+    )
 
 
 def print_usage():

@@ -132,3 +132,31 @@ def test_prompt_builder_tool_is_callable(tmp_path):
 
     assert result["format"] == "stats"
     assert result["content"]["sections"] == 5
+
+
+def test_partial_reader_info_handles_directory(tmp_path):
+    project = tmp_path / "projects" / "foundation-finance"
+    project.mkdir(parents=True)
+    (project / "README.md").write_text("# demo\n", encoding="utf-8")
+
+    result = file_tools.call_tool(
+        tmp_path,
+        "partial_reader",
+        {"mode": "info", "path": "projects/foundation-finance"},
+    )
+
+    assert result["mode"] == "info"
+    assert "\u0414\u0438\u0440\u0435\u043a\u0442\u043e\u0440\u0438\u044f:" in result["content"]
+    assert "README.md" in result["content"]
+
+
+def test_partial_reader_file_modes_reject_directory(tmp_path):
+    project = tmp_path / "projects" / "foundation-finance"
+    project.mkdir(parents=True)
+
+    with pytest.raises(file_tools.ToolError, match="path is a directory"):
+        file_tools.call_tool(
+            tmp_path,
+            "partial_reader",
+            {"mode": "head", "path": "projects/foundation-finance"},
+        )

@@ -18,8 +18,18 @@ def test_streaming_runner_streams_output_and_sanitizes_env(monkeypatch, capsys, 
         def wait(self):
             return 0
 
-    def fake_popen(args, cwd, env, text, stdout, stderr, bufsize):
-        calls.append((args, cwd, env, text, stdout, stderr, bufsize))
+    def fake_popen(
+        args,
+        cwd,
+        env,
+        text,
+        encoding,
+        errors,
+        stdout,
+        stderr,
+        bufsize,
+    ):
+        calls.append((args, cwd, env, text, encoding, errors, stdout, stderr, bufsize))
         return FakeProcess()
 
     monkeypatch.setenv("VIRTUAL_ENV", "C:/old/project/.venv")
@@ -31,21 +41,59 @@ def test_streaming_runner_streams_output_and_sanitizes_env(monkeypatch, capsys, 
     assert result == command_runners.CommandResult(0, "first line\nsecond line\n", "")
     assert "[cmd]" in captured.out
     assert "first line" in captured.out
-    args, cwd, env, text, stdout, stderr, bufsize = calls[0]
+    args, cwd, env, text, encoding, errors, stdout, stderr, bufsize = calls[0]
     assert args == ["cmd", "arg"]
     assert cwd == tmp_path
     assert "VIRTUAL_ENV" not in env
     assert text is True
+    assert encoding == "utf-8"
+    assert errors == "replace"
     assert stdout is command_runners.subprocess.PIPE
     assert stderr is command_runners.subprocess.STDOUT
     assert bufsize == 1
+
+
+def test_default_runner_uses_utf8_with_replacement(monkeypatch, tmp_path):
+    calls = []
+
+    class FakeCompleted:
+        returncode = 0
+        stdout = "готово\n"
+        stderr = ""
+
+    def fake_run(args, cwd, env, text, encoding, errors, capture_output):
+        calls.append((args, cwd, env, text, encoding, errors, capture_output))
+        return FakeCompleted()
+
+    monkeypatch.setattr(command_runners.subprocess, "run", fake_run)
+
+    result = command_runners.default_runner(["cmd"], tmp_path)
+
+    assert result == command_runners.CommandResult(0, "готово\n", "")
+    args, cwd, env, text, encoding, errors, capture_output = calls[0]
+    assert args == ["cmd"]
+    assert cwd == tmp_path
+    assert text is True
+    assert encoding == "utf-8"
+    assert errors == "replace"
+    assert capture_output is True
 
 
 def test_streaming_runner_reports_missing_stdout(monkeypatch, tmp_path):
     class FakeProcess:
         stdout = None
 
-    def fake_popen(args, cwd, env, text, stdout, stderr, bufsize):
+    def fake_popen(
+        args,
+        cwd,
+        env,
+        text,
+        encoding,
+        errors,
+        stdout,
+        stderr,
+        bufsize,
+    ):
         return FakeProcess()
 
     monkeypatch.setattr(command_runners.subprocess, "Popen", fake_popen)
@@ -69,7 +117,17 @@ def test_streaming_runner_prints_heartbeat_for_silent_process(monkeypatch, capsy
         def wait(self):
             return 0
 
-    def fake_popen(args, cwd, env, text, stdout, stderr, bufsize):
+    def fake_popen(
+        args,
+        cwd,
+        env,
+        text,
+        encoding,
+        errors,
+        stdout,
+        stderr,
+        bufsize,
+    ):
         return FakeProcess()
 
     times = iter([0.0, 31.0])

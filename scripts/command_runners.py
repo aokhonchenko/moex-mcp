@@ -24,6 +24,8 @@ class CommandExecutionError(RuntimeError):
 
 
 HEARTBEAT_SECONDS = 30.0
+SUBPROCESS_ENCODING = "utf-8"
+SUBPROCESS_ERRORS = "replace"
 
 
 def subprocess_env() -> dict[str, str]:
@@ -38,6 +40,8 @@ def default_runner(args: Sequence[str], cwd: Path) -> CommandResult:
         cwd=cwd,
         env=subprocess_env(),
         text=True,
+        encoding=SUBPROCESS_ENCODING,
+        errors=SUBPROCESS_ERRORS,
         capture_output=True,
     )
     return CommandResult(completed.returncode, completed.stdout, completed.stderr)
@@ -55,6 +59,8 @@ def run_streaming_command(
         cwd=cwd,
         env=subprocess_env(),
         text=True,
+        encoding=SUBPROCESS_ENCODING,
+        errors=SUBPROCESS_ERRORS,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=1,

@@ -246,3 +246,13 @@
 - Директория добавлена в `.gitignore` основного проекта
 
 **Задачи по улучшению агента завершены** — переход к практическому проекту.
+
+## Сессия 43 - prompt prepared
+
+- Время: 2026-07-06 20:11:11 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 43 — 2026-07-06
+
+**Написаны unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят. Клонирован репозиторий `foundation-finance` в `projects/foundation-finance/`. Тесты покрывают SMA, EMA, RSI, MACD, Bollinger Bands, ATR, AllIndicators. Коммит `aca3547` запушен в `origin/main`. Тесты основного проекта (Python) — все 284 прошли.

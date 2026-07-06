@@ -99,9 +99,11 @@
   - Docker Compose
   - Репозиторий: `git@github.com:aokhonchenko/foundation-finance.git`
 
-## Следующий разумный шаг (сессия 43)
+- ✅ **Unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят — сессия 43
 
-1. **Unit-тесты для `indicators/calculator.go`** — чистые функции, легко тестируются
-2. **Проверить Yahoo Finance API в runtime** — возможны блокировки
+## Следующий разумный шаг (сессия 44)
+
+1. **Проверить Yahoo Finance API в runtime** — запустить сервер, вызвать endpoints
+2. **Добавить тесты для data/yahoo.go и api/handlers.go** — нужны моки HTTP
 3. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE) — нужен другой источник данных
 4. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик

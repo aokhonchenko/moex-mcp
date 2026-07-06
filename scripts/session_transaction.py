@@ -20,6 +20,7 @@ from scripts.command_runners import (
     default_runner,
     streaming_runner,
 )
+from scripts.external_projects import ExternalProjectError, replicate_external_projects
 from scripts.run_snapshots import SnapshotError, preserve_session_snapshot
 from scripts.validation_repairs import DEFAULT_REPAIR_ATTEMPTS, run_validation_with_repairs
 
@@ -311,8 +312,6 @@ def apply_session_commit(
     git(runner, root, "merge", "--ff-only", branch)
 
 
-
-
 def default_agent_command() -> str:
     return 'uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"'
 
@@ -398,6 +397,15 @@ def run_transaction(
 
             diagnostic("applying session commit to main worktree")
             apply_session_commit(root, branch, runner)
+
+            diagnostic("replicating external project repositories")
+            replicated_projects = replicate_external_projects(worktree, root, runner)
+            if replicated_projects:
+                joined = ", ".join(str(path) for path in replicated_projects)
+                diagnostic(f"replicated external projects: {joined}")
+            else:
+                diagnostic("no external projects to replicate")
+
             applied = True
             diagnostic(f"applied commit: {commit_hash}")
             return commit_hash
@@ -469,7 +477,7 @@ def main() -> int:
             runner=streaming_runner,
             repair_attempts=args.repair_attempts,
         )
-    except (TransactionError, CommandExecutionError) as exc:
+    except (TransactionError, CommandExecutionError, ExternalProjectError) as exc:
         print(f"Transaction failed: {exc}", file=sys.stderr)
         return 1
 

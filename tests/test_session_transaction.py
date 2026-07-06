@@ -13,11 +13,13 @@ class FakeRunner:
         fail_agent: bool = False,
         fail_checks: bool = False,
         check_failures_remaining: int = 0,
+        create_external_project: bool = False,
     ):
         self.root = root
         self.fail_agent = fail_agent
         self.fail_checks = fail_checks
         self.check_failures_remaining = check_failures_remaining
+        self.create_external_project = create_external_project
         self.commands = []
         self.worktree = None
         self.branch = None
@@ -40,6 +42,10 @@ class FakeRunner:
 
         if args[:3] == ["git", "branch", "--show-current"]:
             return session_transaction.CommandResult(0, "main\n", "")
+
+        if args[:3] == ["git", "check-ignore", "-q"]:
+            ignored = len(args) >= 4 and args[3] == "projects/foundation-finance"
+            return session_transaction.CommandResult(0 if ignored else 1, "", "")
 
         if args[:3] == ["git", "worktree", "add"]:
             self.branch = args[4]
@@ -78,6 +84,11 @@ class FakeRunner:
             (cwd / "logs").mkdir(exist_ok=True)
             (cwd / "state" / "last_session.md").write_text("done\n", encoding="utf-8")
             (cwd / "logs" / "history.md").write_text("done\n", encoding="utf-8")
+            if self.create_external_project:
+                project = cwd / "projects" / "foundation-finance"
+                project.mkdir(parents=True, exist_ok=True)
+                (project / ".git").mkdir(exist_ok=True)
+                (project / "README.md").write_text("created\n", encoding="utf-8")
             return session_transaction.CommandResult(0, "agent ok", "")
 
         return session_transaction.CommandResult(0, "", "")

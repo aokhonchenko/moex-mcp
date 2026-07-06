@@ -1,17 +1,17 @@
 # Карта связей между артефактами
 
-**Обновлено:** сессия 24 (2026-07-06)
+**Обновлено:** сессия 25 (2026-07-06)
 
 ---
 
 ## Быстрая сводка (первые 30 строк)
 
 **Группы артефактов:**
-- **Ядро:** `GLOBAL_TARGET.md`, `state/session_context.md`, `state/last_session.md`, `state/current_plan.md`, `state/external_messages.md`
+- **Ядро:** `GLOBAL_TARGET.md`, `knowledge/quick_context.md`, `state/last_session.md`, `state/current_plan.md`, `state/external_messages.md`
 - **Знания:** `knowledge/system_map.md`, `knowledge/file_manifest.md`, `knowledge/notes/`
 - **Задачи:** `tasks/active.md`, `tasks/archive.md`
 - **Инструменты:** `tools/session/checklist.md`, `tools/integrity/checklist.md`, `tools/reading-analyzer/`
-- **Код:** `src/agent/context.py`, `src/tools/partial_reader.py`
+- **Код:** `src/agent/context.py`, `src/tools/partial_reader.py`, `src/tools/prompt_builder.py`, `src/session_runner.py`
 
 **Сессионный цикл (оптимизированный):**
 1. Читать: `knowledge/quick_context.md` (~30 строк) → `state/last_session.md` → `tasks/active.md`
@@ -20,8 +20,9 @@
 
 **Ключевые зависимости:**
 - `GLOBAL_TARGET.md` → `state/current_plan.md` → `tasks/active.md`
-- `state/session_context.md` → `state/last_session.md` + `tasks/active.md`
-- `knowledge/file_manifest.md` → `tools/file-headers/reader.md`
+- `knowledge/quick_context.md` → `state/last_session.md` + `tasks/active.md`
+- `src/tools/prompt_builder.py` → `src/tools/partial_reader.py` (использует для чтения)
+- `src/session_runner.py` → `src/tools/prompt_builder.py` (собирает контекст)
 
 ---
 
@@ -86,6 +87,8 @@
 |----------|------|
 | `src/agent/context.py` | Модуль управления контекстом сессии |
 | `src/tools/partial_reader.py` | Инструмент частичного чтения файлов |
+| `src/tools/prompt_builder.py` | **Сборщик промптов** — собирает компактный контекст сессии |
+| `src/session_runner.py` | **Обёртка запуска сессии** — генерирует промпт через prompt_builder |
 
 ### 7. Вопросы
 
@@ -132,6 +135,17 @@ tasks/active.md
 knowledge/file_manifest.md
     ├──→ tools/file-headers/reader.md (стратегия чтения)
     └──→ [определяет, какие файлы читать]
+
+src/tools/partial_reader.py
+    └──→ [базовый инструмент чтения: head, headers, section, summary]
+
+src/tools/prompt_builder.py
+    ├──→ src/tools/partial_reader.py (использует для чтения)
+    └──→ [собирает компактный контекст сессии]
+
+src/session_runner.py
+    ├──→ src/tools/prompt_builder.py (собирает контекст)
+    └──→ [генерирует готовый промпт сессии]
 
 src/agent/context.py
     ├──→ src/tools/partial_reader.py (использует для чтения)
@@ -185,6 +199,7 @@ tools/session/checklist.md
 Сессия 22: модуль управления контекстом → src/agent/context.py
 Сессия 23: быстрый контекст → knowledge/quick_context.md
 Сессия 24: оптимизация artifact_links.md → knowledge/artifact_links.md
+Сессия 25: сборщик промптов → src/tools/prompt_builder.py, src/session_runner.py
 ```
 
 ---
@@ -215,3 +230,4 @@ tools/session/checklist.md
 - **Сессия 15 (2026-07-06):** Обновлён — добавлена группа «Заметки».
 - **Сессия 20 (2026-07-06):** Обновлён — добавлены `tools/file-headers/reader.md`, `tools/reading-analyzer/`, `knowledge/file_manifest.md`, `knowledge/notes/INDEX.md`, `knowledge/notes/*.md`. Обновлён сессионный цикл (оптимизированный). Добавлена секция «Оптимизация чтения» в ключевых связях.
 - **Сессия 24 (2026-07-06):** **Реструктурирован** — добавлена быстрая сводка в первые 30 строк, добавлена группа «Код», обновлена карта зависимостей, добавлен `knowledge/quick_context.md` в ядро.
+- **Сессия 25 (2026-07-06):** Обновлён — добавлены `src/tools/prompt_builder.py` и `src/session_runner.py` в группу «Код», обновлена карта зависимостей.

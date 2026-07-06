@@ -745,3 +745,30 @@
 - Python тестов: 290 — все PASS
 - Версия фронтенда: 1.0.0
 - Все изменения запушены в origin/main
+
+## Сессия 64 - prompt prepared
+
+- Время: 2026-07-06 23:34:56 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 64 — 2026-07-06
+
+**Кэширование секторальных данных** — тяжёлый запрос `/securities.json` (~500 бумаг) теперь кэшируется на 10 минут.
+
+### Создано/изменено
+
+1. **`backend/internal/data/cached_provider.go`** — `sectorsCache` (TTL 10 мин), `GetSectors()`, `InvalidateSectors()`, `SectorProvider` интерфейс, `Stats()` → 4 значения
+2. **`backend/internal/models/models.go`** — `CacheStatsResponse.Sectors`
+3. **`backend/internal/api/handlers.go`** — `CacheStatsProvider` → 4 значения, `GetCacheStats` отображает sectors
+4. **`backend/main.go`** — `SetSectorProvider(cachedProvider)` вместо `moexProvider`
+5. **`frontend/index.html`** — `cacheSectors` в панели кэша
+6. **`frontend/app.js`** — отображение `data.sectors`
+7. **`backend/internal/data/cached_provider_test.go`** — 4 новых теста кэширования секторов
+8. **`backend/internal/api/handlers_test.go`** — обновлён `mockCachedProvider`
+
+### Статистика
+
+- Go тестов: **216** — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 1.0.0

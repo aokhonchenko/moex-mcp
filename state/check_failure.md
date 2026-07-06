@@ -8,26 +8,22 @@
 ## Вывод проверок
 
 ```text
-... 23 earlier output lines omitted; tail follows ...
-self = <test_code_analyzer.TestSelfAnalysis object at 0x0000019A68F02350>
+... 98 earlier output lines omitted; tail follows ...
+    def test_method_in_class(self):
+        content = textwrap.dedent('''\
+            class MyClass:
+                def method(self, x):
+                    """�����."""
+                    return x
+        ''')
+        path = _make_temp_file(content)
+        try:
+            result = read_func(path, 'method')
+>           assert 'def method' in result.content
+E           assert 'def method' in '        """�����."""\n        return x\n'
+E            +  where '        """�����."""\n        return x\n' = ReadResult(path='C:\\Users\\ohotNik\\AppData\\Local\\Temp\\tmpvf9vavin.py', content='        """�����."""\n        return x\n', lines_read=2, method='func[method]', truncated=False).content
 
-    def test_analyze_self(self):
-        analyzer_path = os.path.join(
-            os.path.dirname(__file__), '..', 'src', 'tools', 'code_analyzer.py'
-        )
-        if not os.path.exists(analyzer_path):
-            return  # ����������, ���� ���� �� ������
-    
-        result = analyze_file(analyzer_path)
-        assert result.error is None
-        assert len(result.functions) > 0
->       assert len(result.classes) == 0  # � code_analyzer ��� �������
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       AssertionError: assert 4 == 0
-E        +  where 4 = len([ClassInfo(name='FuncInfo', line=29, methods=[], has_docstring=True, bases=[], decorators=['dataclass']), ClassInfo(na...aclass']), ClassInfo(name='FileAnalysis', line=60, methods=[], has_docstring=True, bases=[], decorators=['dataclass'])])
-E        +    where [ClassInfo(name='FuncInfo', line=29, methods=[], has_docstring=True, bases=[], decorators=['dataclass']), ClassInfo(na...aclass']), ClassInfo(name='FileAnalysis', line=60, methods=[], has_docstring=True, bases=[], decorators=['dataclass'])] = FileAnalysis(path='C:\\_dev\\own\\pet\\runs\\session-0029\\tests\\..\\src\\tools\\code_analyzer.py', lines=453, functi...'Dict', 'Optional'], line=25, is_from=True)], has_docstring=True, top_level_assigns=0, try_except_blocks=0, error=None).classes
-
-tests\test_code_analyzer.py:478: AssertionError
+tests\test_reader.py:244: AssertionError
 =============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.11.15-final-0 _______________
 
@@ -47,6 +43,10 @@ TOTAL                              842     50    190     25    93%
 2 files skipped due to complete coverage.
 Required test coverage of 90% reached. Total coverage: 92.73%
 =========================== short test summary info ===========================
-FAILED tests/test_code_analyzer.py::TestSelfAnalysis::test_analyze_self - Ass...
-======================== 1 failed, 112 passed in 2.61s ========================
+FAILED tests/test_reader.py::TestReadLines::test_basic_range - AttributeError...
+FAILED tests/test_reader.py::TestReadFunc::test_simple_function - assert 'def...
+FAILED tests/test_reader.py::TestReadFunc::test_function_with_decorator - ass...
+FAILED tests/test_reader.py::TestReadFunc::test_async_function - assert 'asyn...
+FAILED tests/test_reader.py::TestReadFunc::test_method_in_class - assert 'def...
+======================== 5 failed, 175 passed in 2.53s ========================
 ```

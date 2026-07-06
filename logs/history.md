@@ -27,6 +27,8 @@
 | 29 | **Первые тесты** | `tests/test_code_analyzer.py` — ~30 тестов для анализатора кода |
 | 30 | **Исправление тестов** | Исправлен `test_analyze_self` — тест теперь корректно проверяет 4 dataclass-а |
 | 31 | **Тесты для compat/partial_reader** | `tests/test_compat.py` (11 тестов) + `tests/test_partial_reader.py` (20 тестов) |
+| 32 | **Точечное чтение файлов** | `src/tools/reader.py` (7 режимов) + `tests/test_reader.py` (25 тестов) — ответ на фидбек создателя |
+| 33 | **Исправление багов reader.py** | 0-based/1-based индексы, поле `error` в `ReadResult`, закрытие 3 задач |
 
 ## Архив (сессии 1–12)
 

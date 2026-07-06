@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 
 import pytest
 
@@ -20,9 +20,19 @@ def test_registry_discovers_tool_schemas_and_passport():
         "run_command",
         "run_pytest",
         "run_python_script",
+        "apply_patch",
+        "reader",
+        "partial_reader",
+        "code_analyzer",
+        "prompt_builder",
+        "self_review",
+        "command_runner",
+        "compat_reader",
     } <= names
     assert "`run_command" in file_tools.TOOL_PASSPORT
     assert "`run_pytest" in file_tools.TOOL_PASSPORT
+    assert "`apply_patch" in file_tools.TOOL_PASSPORT
+    assert "`reader" in file_tools.TOOL_PASSPORT
 
 
 def test_discovered_command_tool_executes_inside_root(tmp_path):
@@ -71,3 +81,54 @@ def test_discovered_run_pytest_tool(tmp_path):
 
     assert result["returncode"] == 0
     assert "1 passed" in result["stdout"]
+
+
+def test_legacy_reader_tools_are_callable(tmp_path):
+    note = tmp_path / "note.md"
+    note.write_text("# Title\nbody\n", encoding="utf-8")
+
+    partial = file_tools.call_tool(tmp_path, "partial_reader", {"mode": "headers", "path": "note.md"})
+    focused = file_tools.call_tool(tmp_path, "reader", {"mode": "head", "path": "note.md", "n": 1})
+    compat = file_tools.call_tool(tmp_path, "compat_reader", {"mode": "head", "path": "note.md", "n": 1})
+
+    assert "Title" in partial["content"]
+    assert "Title" in focused["content"]
+    assert "Title" in compat["content"]
+
+
+def test_legacy_apply_patch_tool_is_callable(tmp_path):
+    note = tmp_path / "note.md"
+    note.write_text("old\n", encoding="utf-8")
+
+    result = file_tools.call_tool(
+        tmp_path,
+        "apply_patch",
+        {"operation": "replace", "path": "note.md", "old": "old", "new": "new"},
+    )
+
+    assert result["applied"] is True
+    assert note.read_text(encoding="utf-8") == "new\n"
+
+
+def test_legacy_code_analyzer_tool_is_callable(tmp_path):
+    module = tmp_path / "sample.py"
+    module.write_text("def ok():\n    return True\n", encoding="utf-8")
+
+    result = file_tools.call_tool(tmp_path, "code_analyzer", {"path": "sample.py", "mode": "file"})
+
+    assert "ok" in result["content"]
+
+
+def test_prompt_builder_tool_is_callable(tmp_path):
+    (tmp_path / "state").mkdir()
+    (tmp_path / "tasks").mkdir()
+    (tmp_path / "GLOBAL_TARGET.md").write_text("цель\n", encoding="utf-8")
+    (tmp_path / "state" / "last_session.md").write_text("прошлая\n", encoding="utf-8")
+    (tmp_path / "state" / "current_plan.md").write_text("план\n", encoding="utf-8")
+    (tmp_path / "state" / "external_messages.md").write_text("сообщение\n", encoding="utf-8")
+    (tmp_path / "tasks" / "active.md").write_text("задача\n", encoding="utf-8")
+
+    result = file_tools.call_tool(tmp_path, "prompt_builder", {"format": "stats"})
+
+    assert result["format"] == "stats"
+    assert result["content"]["sections"] == 5

@@ -1,4 +1,4 @@
-﻿"""Registry for directory-based tools available to the local autonomous agent."""
+"""Registry for directory-based tools available to the local autonomous agent."""
 
 from __future__ import annotations
 
@@ -8,14 +8,14 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from scripts.agent_tools._shared import ToolError, safe_path
-from scripts.agent_tools.read_file.tool import read_file
-from scripts.agent_tools.read_lines.tool import read_lines
-from scripts.agent_tools.replace_text.tool import replace_text
-from scripts.agent_tools.write_file.tool import write_file
+from src.tools._runtime import ToolError, safe_path
+from src.tools.read_file.tool import read_file
+from src.tools.read_lines.tool import read_lines
+from src.tools.replace_text.tool import replace_text
+from src.tools.write_file.tool import write_file
 
-TOOLS_PACKAGE = "scripts.agent_tools"
-TOOLS_ROOT = Path(__file__).resolve().parent / "agent_tools"
+TOOLS_PACKAGE = "src.tools"
+TOOLS_ROOT = Path(__file__).resolve().parents[1] / "src" / "tools"
 REQUIRED_TOOL_FUNCTIONS = ("schema", "passport", "handle")
 
 

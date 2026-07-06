@@ -309,5 +309,5 @@ def test_system_message_uses_generated_tool_passport():
     message = run_agent.system_message("- `custom_tool()` - generated passport line.")
 
     assert "custom_tool" in message
-    assert "scripts/agent_tools/*/tool.py" in message
+    assert "src/tools/*/tool.py" in message
     assert "read_file: read a whole UTF-8 file" not in message

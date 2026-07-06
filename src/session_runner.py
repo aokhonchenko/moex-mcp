@@ -19,7 +19,7 @@ from datetime import datetime
 # Добавляем путь к tools
 sys.path.insert(0, str(Path(__file__).parent / 'tools'))
 
-from prompt_builder import PromptBuilder
+from src.tools.prompt_builder import PromptBuilder
 
 
 def build_session_prompt(root, session_num=None):

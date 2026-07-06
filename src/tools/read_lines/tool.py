@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from scripts.agent_tools._shared import ToolError, safe_path
+from src.tools._runtime import ToolError, safe_path
 
 
 def schema() -> dict[str, Any]:

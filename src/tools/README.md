@@ -1,9 +1,9 @@
-﻿# Инструменты локального агента
+# Инструменты локального агента
 
 Каждый инструмент живёт в отдельной директории:
 
 ```text
-scripts/agent_tools/<tool_name>/
+src/tools/<tool_name>/
 ├── __init__.py
 └── tool.py
 ```
@@ -21,13 +21,13 @@ def handle(root: Path, arguments: dict[str, Any]) -> dict[str, Any]: ...
 - `schema()` возвращает OpenAI-compatible function tool schema. Значение `schema()["function"]["name"]` является именем инструмента и должно быть уникальным.
 - `passport()` возвращает одну или несколько строк на русском языке для runtime-паспорта агента: что делает инструмент и какие аргументы важны.
 - `handle(root, arguments)` выполняет действие внутри корня сессии и возвращает JSON-совместимый словарь.
-- При ошибке входных данных или нарушении границ нужно выбрасывать `ToolError` из `scripts.agent_tools._shared`, а не завершать процесс.
+- При ошибке входных данных или нарушении границ нужно выбрасывать `ToolError` из `src.tools._runtime`, а не завершать процесс.
 - Для файловых путей используй `safe_path(root, path)`, для рабочих директорий команд - `safe_cwd(root, cwd)`. Это не даёт инструменту выйти за пределы временного worktree.
 - Не добавляй разрушительные действия без отдельного явного решения человека и тестов.
 
 ## Как инструмент попадает агенту
 
-`scripts/file_tools.py` при старте сканирует `scripts/agent_tools/*/tool.py`, импортирует каждый модуль и собирает:
+`scripts/file_tools.py` при старте сканирует `src/tools/*/tool.py`, импортирует каждый модуль и собирает:
 
 - `TOOL_SCHEMAS` для OpenAI tool calling;
 - `TOOL_PASSPORT` для runtime system prompt;
@@ -41,7 +41,7 @@ def handle(root: Path, arguments: dict[str, Any]) -> dict[str, Any]: ...
 from pathlib import Path
 from typing import Any
 
-from scripts.agent_tools._shared import ToolError
+from src.tools._runtime import ToolError
 
 
 def schema() -> dict[str, Any]:

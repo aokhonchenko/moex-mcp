@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from scripts.agent_tools._shared import command_result, safe_cwd, timeout_seconds
+from src.tools._runtime import command_result, safe_cwd, timeout_seconds
 
 
 def schema() -> dict[str, Any]:
@@ -35,7 +35,7 @@ def passport() -> str:
 def handle(root: Path, arguments: dict[str, Any]) -> dict[str, Any]:
     command = str(arguments.get("command", "")).strip()
     if not command:
-        from scripts.agent_tools._shared import ToolError
+        from src.tools._runtime import ToolError
 
         raise ToolError("command must be non-empty")
     cwd = safe_cwd(root, arguments.get("cwd"))

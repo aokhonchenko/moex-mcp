@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from scripts.agent_tools._shared import command_result, normalize_args, python_executable, safe_cwd, safe_path, timeout_seconds
+from src.tools._runtime import command_result, normalize_args, python_executable, safe_cwd, safe_path, timeout_seconds
 
 
 def schema() -> dict[str, Any]:
@@ -37,11 +37,11 @@ def handle(root: Path, arguments: dict[str, Any]) -> dict[str, Any]:
     script_path = str(arguments.get("script_path", ""))
     script = safe_path(root, script_path)
     if not script.exists():
-        from scripts.agent_tools._shared import ToolError
+        from src.tools._runtime import ToolError
 
         raise ToolError(f"script does not exist: {script_path}")
     if not script.is_file():
-        from scripts.agent_tools._shared import ToolError
+        from src.tools._runtime import ToolError
 
         raise ToolError(f"script path is not a file: {script_path}")
     cwd = safe_cwd(root, arguments.get("cwd"))

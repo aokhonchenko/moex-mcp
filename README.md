@@ -10,7 +10,7 @@
 - сессии запускаются атомарно через временный `git worktree` в `runs/session-NNNN`;
 - последние два отладочных снимка сессий сохраняются в `runs/snapshots/`;
 - модель подключается напрямую к OpenAI-compatible `/chat/completions`, без внешнего agent framework;
-- инструменты агента находятся в `scripts/agent_tools/`: каждый инструмент сам отдаёт schema, обработчик и строку runtime-паспорта.
+- инструменты агента находятся в `src/tools/`: каждый инструмент сам отдаёт schema, обработчик и строку runtime-паспорта.
 
 ## Структура
 
@@ -25,8 +25,7 @@
 │   ├── run_session.py            # Сборка промпта и запуск одной сессии
 │   ├── run_agent.py              # Локальный минимальный агент
 │   ├── llm_client.py             # OpenAI-compatible HTTP-клиент
-│   ├── file_tools.py             # Реестр инструментов из scripts/agent_tools/
-│   ├── agent_tools/              # Директории инструментов: schema/passport/handler
+│   ├── file_tools.py             # Адаптер реестра инструментов из src/tools/
 │   ├── sleep_memory.py           # Инструмент сна внутри обычной сессии
 │   └── session_transaction.py    # Атомарный запуск через временный git worktree
 ├── state/
@@ -111,7 +110,7 @@ uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"
 
 1. Загружает активный промпт сессии.
 2. Отправляет сообщения в OpenAI-compatible `/chat/completions`.
-3. Сканирует `scripts/agent_tools/*/tool.py` и выдаёт модели найденные tools.
+3. Сканирует `src/tools/*/tool.py` и выдаёт модели найденные tools.
 4. Выполняет tool calls внутри корня временного worktree.
 5. Печатает каждый шаг в консоль.
 6. Если инструмент вернул ошибку, передаёт её модели как `ok:false`, чтобы модель могла скорректировать действие.
@@ -124,7 +123,7 @@ uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"
 {"final":"краткий итог"}
 ```
 
-Инструмент добавляется отдельной директорией `scripts/agent_tools/<tool_name>/tool.py`. Модуль обязан экспортировать `schema()`, `passport()` и `handle(root, arguments)`. Подробный контракт описан в `scripts/agent_tools/README.md`. После добавления инструмента нужно добавить тесты и запустить `uv run python -m pytest`.
+Инструмент добавляется отдельной директорией `src/tools/<tool_name>/tool.py`. Модуль обязан экспортировать `schema()`, `passport()` и `handle(root, arguments)`. Подробный контракт описан в `src/tools/README.md`. После добавления инструмента нужно добавить тесты и запустить `uv run python -m pytest`.
 
 ## Атомарность
 

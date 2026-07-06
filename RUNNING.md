@@ -84,7 +84,7 @@ uv run python scripts/run_agent.py --root . --prompt-file state/active_prompt.md
 
 ## Инструменты агента
 
-Локальный агент получает инструменты из реестра `scripts/file_tools.py`. Реестр при старте сканирует директории `scripts/agent_tools/*/tool.py` и собирает из каждого инструмента:
+Локальный агент получает инструменты из реестра `scripts/file_tools.py`. Реестр при старте сканирует директории `src/tools/*/tool.py` и собирает из каждого инструмента:
 
 - `schema()` - OpenAI-compatible function schema для tool calling;
 - `passport()` - строку для runtime-паспорта агента;
@@ -96,15 +96,15 @@ uv run python scripts/run_agent.py --root . --prompt-file state/active_prompt.md
 
 ### Как добавить инструмент
 
-1. Создать директорию `scripts/agent_tools/<tool_name>/`.
+1. Создать директорию `src/tools/<tool_name>/`.
 2. Добавить `__init__.py` и `tool.py`.
 3. В `tool.py` реализовать `schema()`, `passport()` и `handle(root, arguments)`.
-4. Для путей использовать `safe_path()` или `safe_cwd()` из `scripts.agent_tools._shared`.
+4. Для путей использовать `safe_path()` или `safe_cwd()` из `src.tools._runtime`.
 5. Ошибки валидации отдавать через `ToolError`.
 6. Добавить тесты: успешный вызов через `scripts.file_tools.call_tool()` и ошибки аргументов.
 7. Запустить `uv run python -m pytest`.
 
-Подробный контракт и минимальный пример лежат в `scripts/agent_tools/README.md`.
+Подробный контракт и минимальный пример лежат в `src/tools/README.md`.
 
 ## Repair-попытки проверок
 

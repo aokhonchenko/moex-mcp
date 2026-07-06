@@ -24,9 +24,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / 'tools'))
 
 try:
-    from partial_reader import read_head, read_headers, read_section, read_summary
+    from src.tools.partial_reader import read_head, read_headers, read_section, read_summary
 except ImportError:
-    from compat import read_head, read_headers, read_section, read_summary
+    from src.tools.compat import read_head, read_headers, read_section, read_summary
 
 
 class SessionContext:

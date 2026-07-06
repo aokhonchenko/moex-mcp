@@ -337,3 +337,65 @@ def test_main_returns_zero_on_success(monkeypatch, capsys, tmp_path):
     captured = capsys.readouterr()
     assert result == 0
     assert "Transaction applied: cafebabe" in captured.out
+
+
+def test_parse_porcelain_paths_normalizes_paths():
+    changes = session_transaction.parse_porcelain_paths(
+        " M GLOBAL_TARGET.md\n?? state\\questions\\0001-topic.md\n"
+    )
+
+    assert changes == [
+        (" M", "GLOBAL_TARGET.md"),
+        ("??", "state/questions/0001-topic.md"),
+    ]
+
+
+def test_parse_porcelain_paths_rejects_renames():
+    with pytest.raises(session_transaction.TransactionError, match="renamed files"):
+        session_transaction.parse_porcelain_paths("R  old.md -> new.md\n")
+
+
+def test_is_human_input_change_allows_only_creator_inputs():
+    assert session_transaction.is_human_input_change(" M", "GLOBAL_TARGET.md")
+    assert session_transaction.is_human_input_change("??", "state/external_messages.md")
+    assert session_transaction.is_human_input_change(" M", "state/questions/0001-topic.md")
+    assert not session_transaction.is_human_input_change(" D", "state/questions/0001-topic.md")
+    assert not session_transaction.is_human_input_change(" M", "scripts/run_session.py")
+
+
+def test_checkpoint_human_input_commits_allowed_changes(tmp_path):
+    commands = []
+
+    def runner(args, cwd):
+        args = list(args)
+        commands.append(args)
+        if args[:3] == ["git", "status", "--porcelain"]:
+            return session_transaction.CommandResult(
+                0,
+                " M GLOBAL_TARGET.md\n?? state/questions/0001-topic.md\n",
+                "",
+            )
+        return session_transaction.CommandResult(0, "", "")
+
+    changed = session_transaction.checkpoint_human_input(tmp_path, runner)
+
+    assert changed is True
+    assert ["git", "add", "--", "GLOBAL_TARGET.md", "state/questions/0001-topic.md"] in commands
+    assert ["git", "commit", "-m", "record human input before session"] in commands
+
+
+def test_checkpoint_human_input_returns_false_for_clean_tree(tmp_path):
+    def runner(args, cwd):
+        return session_transaction.CommandResult(0, "", "")
+
+    assert session_transaction.checkpoint_human_input(tmp_path, runner) is False
+
+
+def test_checkpoint_human_input_rejects_other_changes(tmp_path):
+    def runner(args, cwd):
+        if list(args)[:3] == ["git", "status", "--porcelain"]:
+            return session_transaction.CommandResult(0, " M scripts/run_session.py\n", "")
+        return session_transaction.CommandResult(0, "", "")
+
+    with pytest.raises(session_transaction.TransactionError, match="non-human changes"):
+        session_transaction.checkpoint_human_input(tmp_path, runner)

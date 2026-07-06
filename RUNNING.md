@@ -1,6 +1,6 @@
 # Переносимый запуск
 
-Основной runner эксперимента: `scripts/run_session.py`.
+Основной ручной запуск для автономного режима: `scripts/session_transaction.py`. `scripts/run_session.py` оставлен для отладки сборки промпта.
 
 Проверить сборку промпта без запуска агента:
 
@@ -8,7 +8,7 @@
 python scripts/run_session.py --dry-run
 ```
 
-Запустить одну сессию через внешний CLI-агент:
+Отладочно запустить одну сессию без транзакционной оболочки:
 
 ```bash
 export AI_AGENT_COMMAND='your-agent --cwd "{ROOT}" --prompt-file "{PROMPT_FILE}"'
@@ -28,9 +28,22 @@ export AI_AGENT_COMMAND='cat "{PROMPT_FILE}" | your-agent --cwd "{ROOT}"'
 python scripts/run_session.py
 ```
 
-Для автоматизации используйте любой планировщик: `cron`, `systemd timer`, Task Scheduler, launchd, CI-расписание или внешний оркестратор. Скрипт запуска остаётся Python-скриптом и не требует привязки к конкретной операционной системе.
+Сессии предполагается запускать вручную. Для автономного режима используйте `scripts/session_transaction.py`, для отладки сборки промпта - `scripts/run_session.py`.
 
-Новые изменения должны ориентироваться на scripts/session_transaction.py для автономного режима и на scripts/run_session.py для отладки.
+
+## Ручной цикл
+
+1. При необходимости обновите `GLOBAL_TARGET.md`, `state/external_messages.md` или ответьте на вопросы в `state/questions/*.md`.
+2. Запустите транзакционную сессию вручную:
+
+```bash
+python scripts/session_transaction.py --agent-command 'your-agent --cwd "{ROOT}" --prompt-file "{PROMPT_FILE}"'
+```
+
+3. Просмотрите результат сессии и новые вопросы агента.
+4. Повторите цикл, когда хотите дать агенту следующий ход.
+
+Если перед запуском изменены только `GLOBAL_TARGET.md`, `state/external_messages.md` или `state/questions/*.md`, runner сам сделает checkpoint-коммит этих человеческих входов. Если изменены другие файлы, запуск будет остановлен.
 
 ## Тесты
 

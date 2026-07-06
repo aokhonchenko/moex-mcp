@@ -147,3 +147,50 @@ def test_main_runs_expanded_agent_command(tmp_path, monkeypatch):
     assert cwd == tmp_path
     assert shell is True
 
+
+
+def test_read_questions_includes_question_files_and_skips_readme(tmp_path):
+    questions_dir = tmp_path / "state" / "questions"
+    questions_dir.mkdir(parents=True)
+    (questions_dir / "README.md").write_text("служебное описание", encoding="utf-8")
+    (questions_dir / "0007-format.md").write_text(
+        "# Вопрос\n\n## Ответ создателя\n\nОтвет есть.\n",
+        encoding="utf-8",
+    )
+
+    questions = run_session.read_questions(tmp_path)
+
+    assert "0007-format.md" in questions
+    assert "Ответ есть" in questions
+    assert "служебное описание" not in questions
+
+
+def test_read_questions_reports_empty_state_when_no_questions_exist(tmp_path):
+    assert "Вопросов создателю пока нет" in run_session.read_questions(tmp_path)
+
+    (tmp_path / "state" / "questions").mkdir(parents=True)
+    assert "Вопросов создателю пока нет" in run_session.read_questions(tmp_path)
+
+
+def test_build_prompt_includes_questions_section(tmp_path):
+    write_minimal_experiment(tmp_path)
+    questions_dir = tmp_path / "state" / "questions"
+    questions_dir.mkdir()
+    (questions_dir / "0007-topic.md").write_text("## Ответ создателя\n\nДвигаться дальше.\n", encoding="utf-8")
+
+    prompt = run_session.build_prompt(tmp_path, 7)
+
+    assert "# state/questions/" in prompt
+    assert "0007-topic.md" in prompt
+    assert "Двигаться дальше" in prompt
+
+
+def test_main_dry_run_creates_questions_directory(tmp_path, monkeypatch):
+    write_minimal_experiment(tmp_path)
+    monkeypatch.setattr(run_session, "ROOT_OVERRIDE", tmp_path, raising=False)
+    monkeypatch.setattr(run_session.sys, "argv", ["run_session.py", "--dry-run"])
+
+    result = run_session.main()
+
+    assert result == 0
+    assert (tmp_path / "state" / "questions").is_dir()

@@ -33,6 +33,7 @@ CommandRunner = Callable[[Sequence[str], Path], CommandResult]
 
 
 SENSITIVE_DIRS = {".git", ".pytest_cache", "__pycache__"}
+HUMAN_INPUT_FILES = {"GLOBAL_TARGET.md", "state/external_messages.md"}
 
 
 def default_runner(args: Sequence[str], cwd: Path) -> CommandResult:
@@ -75,6 +76,46 @@ def ensure_clean_worktree(root: Path, runner: CommandRunner = default_runner) ->
     result = git(runner, root, "status", "--porcelain")
     if result.stdout.strip():
         raise TransactionError("main worktree must be clean before transactional session")
+
+
+
+
+def parse_porcelain_paths(status: str) -> list[tuple[str, str]]:
+    changes: list[tuple[str, str]] = []
+    for line in status.splitlines():
+        if not line:
+            continue
+        code = line[:2]
+        path = line[3:].strip().strip('"')
+        if " -> " in path:
+            raise TransactionError("renamed files are not allowed as human input")
+        changes.append((code, path.replace("\\", "/")))
+    return changes
+
+
+def is_human_input_change(code: str, path: str) -> bool:
+    if "D" in code:
+        return False
+    if path in HUMAN_INPUT_FILES:
+        return True
+    return path.startswith("state/questions/") and path.endswith(".md")
+
+
+def checkpoint_human_input(root: Path, runner: CommandRunner = default_runner) -> bool:
+    result = git(runner, root, "status", "--porcelain")
+    changes = parse_porcelain_paths(result.stdout)
+    if not changes:
+        return False
+
+    rejected = [path for code, path in changes if not is_human_input_change(code, path)]
+    if rejected:
+        joined = ", ".join(rejected)
+        raise TransactionError(f"main worktree has non-human changes: {joined}")
+
+    paths = [path for _, path in changes]
+    git(runner, root, "add", "--", *paths)
+    git(runner, root, "commit", "-m", "record human input before session")
+    return True
 
 
 def current_branch(root: Path, runner: CommandRunner = default_runner) -> str:
@@ -247,6 +288,7 @@ def run_transaction(
 
     with lock_file(root):
         ensure_git_repo(root, runner)
+        checkpoint_human_input(root, runner)
         ensure_clean_worktree(root, runner)
         current_branch(root, runner)
 

@@ -28,6 +28,27 @@ def read_counter(path: Path) -> int:
     return 1
 
 
+
+
+def read_questions(root: Path) -> str:
+    questions_dir = root / "state" / "questions"
+    if not questions_dir.exists():
+        return "_Вопросов создателю пока нет._\n"
+
+    question_files = sorted(
+        path
+        for path in questions_dir.glob("*.md")
+        if path.is_file() and path.name != "README.md"
+    )
+    if not question_files:
+        return "_Вопросов создателю пока нет._\n"
+
+    parts = []
+    for path in question_files:
+        content = path.read_text(encoding="utf-8")
+        parts.append(f"## {path.name}\n\n{content}")
+    return "\n\n".join(parts)
+
 def build_prompt(root: Path, session: int) -> str:
     state_dir = root / "state"
     now = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S %z")
@@ -52,6 +73,7 @@ def build_prompt(root: Path, session: int) -> str:
         state_dir / "external_messages.md",
         "_Внешних сообщений нет._\n",
     )
+    questions = read_questions(root)
 
     return f"""# Активный промпт сессии {session}
 
@@ -85,6 +107,12 @@ def build_prompt(root: Path, session: int) -> str:
 # state/external_messages.md
 
 {external_messages}
+
+---
+
+# state/questions/
+
+{questions}
 
 ---
 
@@ -145,6 +173,7 @@ def main() -> int:
         root / "knowledge",
         root / "projects",
         root / "tools",
+        state_dir / "questions",
     ):
         directory.mkdir(parents=True, exist_ok=True)
 

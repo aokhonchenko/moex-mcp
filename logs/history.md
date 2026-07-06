@@ -274,3 +274,20 @@
 - Фронтенд обновлён: тикеры MOEX (SBER, GAZP, LKOH)
 - Все Go тесты: 51 PASS. Python тесты: 286 PASS.
 - Коммит `341b59f` запушен в `origin/main`.
+
+## Сессия 45 - prompt prepared
+
+- Время: 2026-07-06 21:00:57 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 45 — 2026-07-06
+
+**Добавлен in-memory кэшированный слой для MOEX данных** — запросы к MOEX ISS API теперь кэшируются.
+
+- Создан `backend/internal/data/cache.go` — потокобезопасный кэш с TTL, max size, auto-cleanup
+- Создан `backend/internal/data/cached_provider.go` — декоратор Provider с кэшированием
+- 11 unit-тестов для Cache, 12 unit-тестов для CachedProvider
+- main.go: интегрирован CachedProvider (ticker TTL 2 мин, candles TTL 15 мин)
+- Все Go тесты: 73 PASS. Python тесты: 290 PASS.
+- Коммит `b92b97f` запушен в `origin/main`.

@@ -1,7 +1,7 @@
-# Активный промпт сессии 44
+# Активный промпт сессии 45
 
-Время сборки промпта: 2026-07-06 20:25:31 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0044
+Время сборки промпта: 2026-07-06 21:00:57 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0045
 
 ---
 
@@ -143,47 +143,64 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 44)
+# Сообщение будущей сессии (сессия 45)
 
-## Что было сделано в сессии 43
+## Что было сделано в сессии 44
 
-**Написаны unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят.
+**Заменён Yahoo Finance на MOEX ISS API** — проект теперь работает с российскими тикерами (Мосбиржа).
 
-### Содержимое тестов (`backend/internal/indicators/calculator_test.go`)
+### Создано/изменено
 
-- **SMA** (4 теста): базовый расчёт, короткие данные, период = длина, период = 1
-- **EMA** (3 теста): базовый расчёт, короткие данные, проверка формулы
-- **RSI** (5 тестов): монотонный рост (→100), монотонное падение (→0), короткие данные, чередование (→50), проверка диапазона [0,100]
-- **MACD** (3 теста): короткие данные, постоянная цена (→0), наличие компонентов (macd/signal/histogram)
-- **Bollinger Bands** (3 теста): базовый расчёт, короткие данные, постоянная цена (→0 std dev)
-- **ATR** (3 теста): базовый расчёт, короткие данные, постоянные свечи (→0)
-- **AllIndicators** (4 теста): пустой ввод, короткие данные, полный набор индикаторов, проверка длин массивов
-- **NewCalculator** (1 тест): не nil
+1. **`backend/internal/data/moex.go`** — новый провайдер MOEX ISS API
+   - `GetTicker(symbol)` — текущая котировка (securities + marketdata)
+   - `GetOHLCV(symbol, period)` — исторические свечи (daily candles)
+   - Парсинг ISS JSON через columns/data массивы
+   - Поддержка площадок: TQBR (акции), TQTF (фонды)
+   - `baseURL` вынесен для тестирования
 
-### Технические детали
-- Клонирован репозиторий `git@github.com:aokhonchenko/foundation-finance.git` в `projects/foundation-finance/`
-- Тесты запущены через `go test ./internal/indicators/ -v` — все 26 PASS
-- Коммит `aca3547` запушен в `origin/main`
-- Тесты основного проекта (Python) — все 284 прошли
+2. **`backend/internal/data/moex_test.go`** — 15 unit-тестов
+   - GetTicker: success, no marketdata, empty, server error
+   - GetOHLCV: success, empty, default period, server error
+   - Вспомогательные функции: columnsToMap, getString, getFloat, getInt64
+   - Конструктор: default board, custom board
+
+3. **`backend/internal/api/handlers_test.go`** — 10 unit-тестов
+   - Health, writeJSON, writeError
+   - GetTicker: success, provider error
+   - GetIndicators: success, provider error
+   - GetReport: no LLM, ticker error, candles error
+   - Мок-провайдер + chi-роутер
+
+4. **`backend/main.go`** — переключён на `NewMOEXProvider("")`
+5. **`frontend/index.html`** — тикеры MOEX (SBER, GAZP, LKOH), обновлён footer
+
+### Статистика тестов
+- Go: 51 тест (10 api + 15 data + 26 indicators) — все PASS
+- Python: 286 тестов — все PASS, покрытие 91.24%
+- Коммит: `341b59f`, запушен в `origin/main`
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — рабочий каркас с Go backend + web frontend + unit-тесты индикаторов
-- 17 файлов, ~2050 строк кода
-- 26 Go unit-тестов для indicators/calculator.go
-- Yahoo Finance API не тестирован в runtime
+- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API
+- Go backend: chi + MOEX + 6 индикаторов + LLM-клиент
+- Web frontend: Chart.js, тёмная тема, российские тикеры
+- 51 Go unit-тест, 286 Python unit-тестов
+- YahooProvider оставлен в коде как fallback (не используется в main.go)
 
-## Что важно для следующей сессии (сессия 44)
+## Что важно для следующей сессии (сессия 45)
 
-1. **Проверить Yahoo Finance API в runtime** — запустить сервер, вызвать `/api/ticker/AAPL`, проверить ответ
-2. **Добавить тесты для data/yahoo.go** — нужны моки HTTP или integration-тесты
-3. **Добавить тесты для api/handlers.go** — нужны моки зависимостей
-4. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE) — нужен другой источник данных
-5. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик
+1. **Добавить фундаментальные индикаторы** — P/E, P/B, ROE, дивидендная доходность (MOEX ISS не отдаёт фундаментал — нужен парсинг iss.moex.com/iss/securities или другой источник)
+2. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API
+3. **Улучшить фронтенд** — свечной график (Chart.js candlestick), таблица фундаментальных метрик
+4. **Добавить кэширование** — чтобы не дёргать MOEX на каждый запрос
+5. **Docker Compose тест** — проверить, что `docker-compose up` работает
 
 ## Рекомендация для следующей сессии
 
-Проверить Yahoo Finance API в runtime — запустить `go run main.go` и вызвать endpoints. Если API заблокирован, добавить User-Agent header или fallback-источник. Затем добавить тесты для HTTP-слоя (handlers + data provider).
+Фундаментальные метрики (P/E, P/B, ROE) — ключевой следующий шаг для финансового дашборда. MOEX ISS отдаёт `ISSUESIZE` (объём выпуска), но не мультипликаторы. Варианты:
+- Парсить страницу `https://iss.moex.com/iss/securities/{symbol}.json` (разные engine)
+- Использовать API типа smart-lab.ru или investing.com
+- Добавить ручной ввод фундаментальных данных
 
 
 ---
@@ -293,12 +310,20 @@ _Заполни после учёта ответа._
 
 - ✅ **Unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят — сессия 43
 
-## Следующий разумный шаг (сессия 44)
+- ✅ **Замена Yahoo Finance на MOEX ISS API** — сессия 44
+  - Создан `data/moex.go` (MOEX ISS провайдер)
+  - 15 unit-тестов для data/moex.go (мок-сервер)
+  - 10 unit-тестов для api/handlers.go (мок-провайдер + chi-роутер)
+  - main.go переключён на MOEXProvider
+  - Фронтенд обновлён: тикеры MOEX (SBER, GAZP, LKOH)
 
-1. **Проверить Yahoo Finance API в runtime** — запустить сервер, вызвать endpoints
-2. **Добавить тесты для data/yahoo.go и api/handlers.go** — нужны моки HTTP
-3. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE) — нужен другой источник данных
-4. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик
+## Следующий разумный шаг (сессия 45)
+
+1. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE, дивиденды) — MOEX ISS не отдаёт мультипликаторы, нужен другой источник
+2. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API
+3. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик
+4. **Добавить кэширование** — чтобы не дёргать MOEX на каждый запрос
+5. **Docker Compose тест** — проверить, что `docker-compose up` работает
 
 
 ---
@@ -561,7 +586,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 44. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0044`.
+Ты находишься в сессии 45. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0045`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

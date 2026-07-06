@@ -108,10 +108,17 @@
   - main.go переключён на MOEXProvider
   - Фронтенд обновлён: тикеры MOEX (SBER, GAZP, LKOH)
 
-## Следующий разумный шаг (сессия 45)
+- ✅ **In-memory кэширование MOEX данных** — сессия 45
+  - `data/cache.go` — потокобезопасный кэш с TTL, max size, auto-cleanup
+  - `data/cached_provider.go` — декоратор Provider с кэшированием
+  - 23 новых unit-теста (11 cache + 12 cached_provider)
+  - main.go: ticker TTL 2 мин, candles TTL 15 мин
+  - Всего Go тестов: 73, Python тестов: 290
+
+## Следующий разумный шаг (сессия 46)
 
 1. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE, дивиденды) — MOEX ISS не отдаёт мультипликаторы, нужен другой источник
 2. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API
 3. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик
-4. **Добавить кэширование** — чтобы не дёргать MOEX на каждый запрос
-5. **Docker Compose тест** — проверить, что `docker-compose up` работает
+4. **Docker Compose тест** — проверить, что `docker-compose up` работает
+5. **API endpoint для статистики кэша** — `/api/cache/stats`

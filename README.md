@@ -10,7 +10,7 @@
 - сессии запускаются атомарно через временный `git worktree` в `runs/session-NNNN`;
 - последние два отладочных снимка сессий сохраняются в `runs/snapshots/`;
 - модель подключается напрямую к OpenAI-compatible `/chat/completions`, без внешнего agent framework;
-- базовые инструменты агента находятся в проекте: `read_file` и `write_file`.
+- инструменты агента находятся в `scripts/agent_tools/`: каждый инструмент сам отдаёт schema, обработчик и строку runtime-паспорта.
 
 ## Структура
 
@@ -25,7 +25,8 @@
 │   ├── run_session.py            # Сборка промпта и запуск одной сессии
 │   ├── run_agent.py              # Локальный минимальный агент
 │   ├── llm_client.py             # OpenAI-compatible HTTP-клиент
-│   ├── file_tools.py             # Инструменты read_file/read_lines/replace_text/write_file
+│   ├── file_tools.py             # Реестр инструментов из scripts/agent_tools/
+│   ├── agent_tools/              # Директории инструментов: schema/passport/handler
 │   ├── sleep_memory.py           # Инструмент сна внутри обычной сессии
 │   └── session_transaction.py    # Атомарный запуск через временный git worktree
 ├── state/
@@ -110,7 +111,7 @@ uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"
 
 1. Загружает активный промпт сессии.
 2. Отправляет сообщения в OpenAI-compatible `/chat/completions`.
-3. Exposes tools to the model: `read_file`, `read_lines`, `replace_text`, and `write_file`.
+3. Сканирует `scripts/agent_tools/*/tool.py` и выдаёт модели найденные tools.
 4. Выполняет tool calls внутри корня временного worktree.
 5. Печатает каждый шаг в консоль.
 6. Если инструмент вернул ошибку, передаёт её модели как `ok:false`, чтобы модель могла скорректировать действие.
@@ -119,13 +120,11 @@ uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"
 Если endpoint не поддерживает OpenAI tool calling, агент также понимает текстовый JSON-протокол:
 
 ```json
-{"tool":"read_lines","path":"state/last_session.md","start_line":1,"line_count":40}
-{"tool":"replace_text","path":"state/last_session.md","old":"...","new":"..."}
-{"tool":"write_file","path":"state/last_session.md","content":"..."}
+{"tool":"имя_инструмента","аргумент":"значение"}
 {"final":"краткий итог"}
 ```
 
-Базовый агент намеренно минимален. Если будущей сессии нужны новые возможности, агент может создать дополнительные инструменты в `tools/` или кодовой части проекта через `write_file`, а затем проектные проверки должны покрыть это тестами.
+Инструмент добавляется отдельной директорией `scripts/agent_tools/<tool_name>/tool.py`. Модуль обязан экспортировать `schema()`, `passport()` и `handle(root, arguments)`. Подробный контракт описан в `scripts/agent_tools/README.md`. После добавления инструмента нужно добавить тесты и запустить `uv run python -m pytest`.
 
 ## Атомарность
 

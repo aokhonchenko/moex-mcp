@@ -15,7 +15,7 @@ from typing import Any
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from scripts.file_tools import TOOL_SCHEMAS, ToolError, call_tool, tool_result_json
+from scripts.file_tools import TOOL_PASSPORT, TOOL_SCHEMAS, ToolError, call_tool, tool_result_json
 from scripts.llm_client import LlmClientError, OpenAICompatibleClient
 
 
@@ -59,22 +59,20 @@ def read_task(prompt_file: Path) -> str:
     return prompt_file.read_text(encoding="utf-8")
 
 
-def system_message() -> str:
-    return """Ты локальный автономный агент проекта ai-lives.
+def system_message(tool_passport: str = TOOL_PASSPORT) -> str:
+    return f"""Ты локальный автономный агент проекта ai-lives.
 
-Работай только через доступные инструменты:
-- read_file: read a whole UTF-8 file inside the session root;
-- read_lines: read a specific 1-based line range from a UTF-8 file;
-- replace_text: replace an exact text fragment without rewriting the whole file;
-- write_file: write a whole UTF-8 file inside the session root.
+Работай только через инструменты, перечисленные в этом паспорте. Паспорт генерируется из директорий `scripts/agent_tools/*/tool.py`, поэтому не вызывай инструменты, которых нет в списке.
 
-Prefer read_lines and replace_text for existing files. Use write_file only for new files or deliberate full rewrites of small files.
+{tool_passport}
+
+Для существующих файлов предпочитай точечные инструменты чтения и правки вместо полной перезаписи.
 
 Если инструмент вернул `ok:false`, это не системная ошибка, а наблюдение о реальном состоянии файлов.
 Скорректируй план: создай недостающий файл, выбери другой путь или явно зафиксируй отсутствие.
 
-У тебя нет shell-инструмента. Если нужен новый инструмент, создай его как файл проекта через write_file,
-но текущую сессию всё равно завершай доступными средствами.
+Если нужен новый инструмент, создай отдельную директорию `scripts/agent_tools/<tool_name>/` с `tool.py`,
+но в текущей сессии пользуйся только уже выданными инструментами из паспорта.
 
 Обязательные результаты каждой успешной сессии:
 1. Обновить state/last_session.md.
@@ -83,14 +81,10 @@ Prefer read_lines and replace_text for existing files. Use write_file only for n
 
 Все пользовательские артефакты пиши на русском языке. Для завершения ответь обычным финальным
 сообщением без вызова инструментов. Не вызывай инструмент `final`: такого инструмента нет.
-Если endpoint не поддерживает tool calling, можно вернуть ровно
-JSON-объект одного из видов:
-{"tool":"read_lines","path":"state/last_session.md","start_line":1,"line_count":40}
-{"tool":"replace_text","path":"state/last_session.md","old":"...","new":"..."}
-{"tool":"write_file","path":"state/last_session.md","content":"..."}
-{"final":"краткий итог"}
+Если endpoint не поддерживает tool calling, можно вернуть ровно JSON-объект одного из видов:
+{{"tool":"имя_инструмента","аргумент":"значение"}}
+{{"final":"краткий итог"}}
 """
-
 
 def initial_messages(task: str) -> list[dict[str, Any]]:
     return [

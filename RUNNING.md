@@ -84,17 +84,28 @@ uv run python scripts/run_agent.py --root . --prompt-file state/active_prompt.md
 
 ## Инструменты агента
 
+Локальный агент получает инструменты из реестра `scripts/file_tools.py`. Реестр при старте сканирует директории `scripts/agent_tools/*/tool.py` и собирает из каждого инструмента:
 
-The minimal agent has four built-in tools:
+- `schema()` - OpenAI-compatible function schema для tool calling;
+- `passport()` - строку для runtime-паспорта агента;
+- `handle(root, arguments)` - обработчик вызова.
 
-- `read_file` - read a whole UTF-8 file inside the session root;
-- `read_lines` - read a specific line range from a UTF-8 file;
-- `replace_text` - replace an exact fragment without rewriting the whole file;
-- `write_file` - write a whole UTF-8 file inside the session root.
+Сейчас через этот механизм доступны файловые инструменты, а также `run_command`, `run_pytest` и `run_python_script`. Актуальный список не нужно поддерживать вручную в `SYSTEM_PROMPT.md`: он генерируется из директорий инструментов.
 
 Если инструмент не может выполнить действие, ошибка возвращается модели как `ok:false`. Например, отсутствие файла не роняет процесс агента: модель получает наблюдение и должна выбрать следующий шаг.
 
-Если будущей сессии нужны дополнительные возможности, агент может создать новый инструмент в `tools/` или кодовой части проекта через `write_file`, а затем покрыть его тестами.
+### Как добавить инструмент
+
+1. Создать директорию `scripts/agent_tools/<tool_name>/`.
+2. Добавить `__init__.py` и `tool.py`.
+3. В `tool.py` реализовать `schema()`, `passport()` и `handle(root, arguments)`.
+4. Для путей использовать `safe_path()` или `safe_cwd()` из `scripts.agent_tools._shared`.
+5. Ошибки валидации отдавать через `ToolError`.
+6. Добавить тесты: успешный вызов через `scripts.file_tools.call_tool()` и ошибки аргументов.
+7. Запустить `uv run python -m pytest`.
+
+Подробный контракт и минимальный пример лежат в `scripts/agent_tools/README.md`.
+
 ## Repair-попытки проверок
 
 Если проверочная команда падает, `scripts/session_transaction.py` сохраняет вывод проверки в `state/check_failure.md` внутри временного worktree и запускает агента ещё раз. Агент видит диагностику через `state/external_messages.md` и может исправить код или тесты в рамках той же атомарной сессии.

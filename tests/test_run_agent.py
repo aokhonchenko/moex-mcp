@@ -233,8 +233,8 @@ def test_run_agent_stops_repeated_unknown_native_tool_calls(tmp_path, monkeypatc
                 "id": "call-1",
                 "type": "function",
                 "function": {
-                    "name": "run_command",
-                    "arguments": '{"command":"pytest"}',
+                    "name": "missing_tool",
+                    "arguments": '{"value":"pytest"}',
                 },
             }
         ],
@@ -242,11 +242,11 @@ def test_run_agent_stops_repeated_unknown_native_tool_calls(tmp_path, monkeypatc
     client = FakeClient([unknown_tool_reply, unknown_tool_reply, unknown_tool_reply])
     install_fake_client(monkeypatch, client)
 
-    with pytest.raises(run_agent.AgentError, match="repeated tool error 3 times: run_command: unknown tool"):
+    with pytest.raises(run_agent.AgentError, match="repeated tool error 3 times: missing_tool: unknown tool"):
         run_agent.run_agent(tmp_path, prompt, settings)
 
     captured = capsys.readouterr()
-    assert captured.out.count("tool error: run_command unknown tool: run_command") == 3
+    assert captured.out.count("tool error: missing_tool unknown tool: missing_tool") == 3
     assert len(client.calls) == 3
 
 
@@ -304,3 +304,10 @@ def test_main_returns_one_on_agent_error(tmp_path, monkeypatch, capsys):
     captured = capsys.readouterr()
     assert result == 1
     assert "agent session failed: bad config" in captured.err
+
+def test_system_message_uses_generated_tool_passport():
+    message = run_agent.system_message("- `custom_tool()` - generated passport line.")
+
+    assert "custom_tool" in message
+    assert "scripts/agent_tools/*/tool.py" in message
+    assert "read_file: read a whole UTF-8 file" not in message

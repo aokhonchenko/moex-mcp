@@ -1,193 +1,79 @@
-"""File tools available to the local autonomous agent."""
+﻿"""Registry for directory-based tools available to the local autonomous agent."""
 
 from __future__ import annotations
 
+import importlib
 import json
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
+from scripts.agent_tools._shared import ToolError, safe_path
+from scripts.agent_tools.read_file.tool import read_file
+from scripts.agent_tools.read_lines.tool import read_lines
+from scripts.agent_tools.replace_text.tool import replace_text
+from scripts.agent_tools.write_file.tool import write_file
 
-class ToolError(RuntimeError):
-    """Raised when a local tool call is invalid or unsafe."""
-
-
-FORBIDDEN_PARTS = {".git", ".venv", "__pycache__", ".pytest_cache", "runs"}
-
-
-TOOL_SCHEMAS: list[dict[str, Any]] = [
-    {
-        "type": "function",
-        "function": {
-            "name": "read_file",
-            "description": "Read a UTF-8 text file inside the session root.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Relative path inside the session root."},
-                },
-                "required": ["path"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "write_file",
-            "description": "Write a UTF-8 text file inside the session root, creating parent directories.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Relative path inside the session root."},
-                    "content": {"type": "string", "description": "Full file content to write."},
-                },
-                "required": ["path", "content"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "read_lines",
-            "description": "Read a 1-based line range from a UTF-8 text file inside the session root.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Relative path inside the session root."},
-                    "start_line": {"type": "integer", "description": "First line to read, 1-based."},
-                    "line_count": {"type": "integer", "description": "Number of lines to read."},
-                },
-                "required": ["path", "start_line", "line_count"],
-                "additionalProperties": False,
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "replace_text",
-            "description": "Replace an exact text fragment in a UTF-8 file without rewriting the whole file.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Relative path inside the session root."},
-                    "old": {"type": "string", "description": "Exact text fragment to replace."},
-                    "new": {"type": "string", "description": "Replacement text."},
-                    "expected_replacements": {
-                        "type": "integer",
-                        "description": "Required number of replacements; defaults to 1.",
-                    },
-                },
-                "required": ["path", "old", "new"],
-                "additionalProperties": False,
-            },
-        },
-    },
-]
+TOOLS_PACKAGE = "scripts.agent_tools"
+TOOLS_ROOT = Path(__file__).resolve().parent / "agent_tools"
+REQUIRED_TOOL_FUNCTIONS = ("schema", "passport", "handle")
 
 
-def safe_path(root: Path, path: str) -> Path:
-    if not path or path.strip() != path:
-        raise ToolError("path must be a non-empty relative path without surrounding whitespace")
-    requested = Path(path)
-    if requested.is_absolute():
-        raise ToolError("absolute paths are not allowed")
-    if any(part in FORBIDDEN_PARTS for part in requested.parts):
-        raise ToolError(f"path contains a forbidden part: {path}")
-    resolved_root = root.resolve()
-    resolved = (resolved_root / requested).resolve()
+def discover_tool_modules() -> list[ModuleType]:
+    modules: list[ModuleType] = []
+    for child in sorted(TOOLS_ROOT.iterdir(), key=lambda path: path.name):
+        if not child.is_dir() or child.name.startswith("_"):
+            continue
+        if not (child / "tool.py").is_file():
+            continue
+        module = importlib.import_module(f"{TOOLS_PACKAGE}.{child.name}.tool")
+        for function_name in REQUIRED_TOOL_FUNCTIONS:
+            if not callable(getattr(module, function_name, None)):
+                raise ToolError(f"tool {child.name} does not define callable {function_name}()")
+        modules.append(module)
+    return modules
+
+
+def schema_tool_name(schema: dict[str, Any]) -> str:
     try:
-        resolved.relative_to(resolved_root)
-    except ValueError as exc:
-        raise ToolError(f"path escapes the session root: {path}") from exc
-    return resolved
+        name = schema["function"]["name"]
+    except KeyError as exc:
+        raise ToolError(f"tool schema is missing function.name: {schema}") from exc
+    if not isinstance(name, str) or not name:
+        raise ToolError(f"tool schema has invalid function.name: {schema}")
+    return name
 
 
-def read_file(root: Path, path: str) -> dict[str, Any]:
-    target = safe_path(root, path)
-    if not target.exists():
-        raise ToolError(f"file does not exist: {path}")
-    if not target.is_file():
-        raise ToolError(f"path is not a file: {path}")
-    return {"path": path, "content": target.read_text(encoding="utf-8")}
+def load_tools() -> dict[str, ModuleType]:
+    tools: dict[str, ModuleType] = {}
+    for module in discover_tool_modules():
+        schema = module.schema()
+        name = schema_tool_name(schema)
+        if name in tools:
+            raise ToolError(f"duplicate tool name: {name}")
+        tools[name] = module
+    return tools
 
 
-def write_file(root: Path, path: str, content: str) -> dict[str, Any]:
-    target = safe_path(root, path)
-    target.parent.mkdir(parents=True, exist_ok=True)
-    target.write_text(content, encoding="utf-8")
-    return {"path": path, "bytes": len(content.encode("utf-8"))}
+def tool_schemas() -> list[dict[str, Any]]:
+    return [module.schema() for module in load_tools().values()]
 
 
-def read_lines(root: Path, path: str, start_line: int, line_count: int) -> dict[str, Any]:
-    if start_line < 1:
-        raise ToolError("start_line must be at least 1")
-    if line_count < 1:
-        raise ToolError("line_count must be at least 1")
-    target = safe_path(root, path)
-    if not target.exists():
-        raise ToolError(f"file does not exist: {path}")
-    if not target.is_file():
-        raise ToolError(f"path is not a file: {path}")
-
-    lines = target.read_text(encoding="utf-8").splitlines()
-    start_index = start_line - 1
-    selected = lines[start_index : start_index + line_count]
-    numbered = [f"{start_line + index}: {line}" for index, line in enumerate(selected)]
-    return {
-        "path": path,
-        "start_line": start_line,
-        "end_line": start_line + len(selected) - 1 if selected else start_line - 1,
-        "total_lines": len(lines),
-        "content": "\n".join(numbered),
-    }
-
-
-def replace_text(root: Path, path: str, old: str, new: str, expected_replacements: int = 1) -> dict[str, Any]:
-    if not old:
-        raise ToolError("old text must be non-empty")
-    if expected_replacements < 1:
-        raise ToolError("expected_replacements must be at least 1")
-    target = safe_path(root, path)
-    if not target.exists():
-        raise ToolError(f"file does not exist: {path}")
-    if not target.is_file():
-        raise ToolError(f"path is not a file: {path}")
-
-    content = target.read_text(encoding="utf-8")
-    replacements = content.count(old)
-    if replacements != expected_replacements:
-        raise ToolError(
-            f"expected {expected_replacements} replacement(s), found {replacements}: {path}"
-        )
-    updated = content.replace(old, new, expected_replacements)
-    target.write_text(updated, encoding="utf-8")
-    return {"path": path, "replacements": replacements, "bytes": len(updated.encode("utf-8"))}
+def tool_passport() -> str:
+    lines = [module.passport().strip() for module in load_tools().values()]
+    return "\n".join(line for line in lines if line)
 
 
 def call_tool(root: Path, name: str, arguments: dict[str, Any]) -> dict[str, Any]:
-    if name == "read_file":
-        return read_file(root, str(arguments.get("path", "")))
-    if name == "write_file":
-        return write_file(root, str(arguments.get("path", "")), str(arguments.get("content", "")))
-    if name == "read_lines":
-        return read_lines(
-            root,
-            str(arguments.get("path", "")),
-            int(arguments.get("start_line", 1)),
-            int(arguments.get("line_count", 1)),
-        )
-    if name == "replace_text":
-        return replace_text(
-            root,
-            str(arguments.get("path", "")),
-            str(arguments.get("old", "")),
-            str(arguments.get("new", "")),
-            int(arguments.get("expected_replacements", 1)),
-        )
-    raise ToolError(f"unknown tool: {name}")
+    module = load_tools().get(name)
+    if module is None:
+        raise ToolError(f"unknown tool: {name}")
+    return module.handle(root, arguments)
 
 
 def tool_result_json(payload: dict[str, Any]) -> str:
     return json.dumps(payload, ensure_ascii=False)
+
+
+TOOL_SCHEMAS: list[dict[str, Any]] = tool_schemas()
+TOOL_PASSPORT = tool_passport()

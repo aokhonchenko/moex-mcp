@@ -437,3 +437,26 @@
 - Время: 2026-07-06 22:05:10 +0300
 - Активный промпт: `state/active_prompt.md`
 - Режим: agent command
+
+## Сессия 53 - prompt prepared
+
+- Время: 2026-07-06 22:09:35 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+
+## Сессия 53 — 2026-07-06
+
+**Zoom/pan для свечного графика + кроссхейр-плагин.**
+
+### Создано/изменено
+
+1. **`frontend/index.html`** — CDN chartjs-plugin-zoom (v2.2.0) + hammerjs (v2.0.8), кнопка «Сбросить зум», подсказка, версия 0.4.0
+2. **`frontend/app.js`** — кроссхейр-плагин (вертикальная линия при наведении), zoom/pan конфигурация для candlestick и fallback, функция `resetZoom()`
+3. **`frontend/style.css`** — стили `.chart-header`, `.chart-actions`, `.zoom-hint`, `.zoom-reset-btn`
+
+### Проверки
+
+- `go build ./...` — собирается
+- `go test ./...` — все Go-тесты проходят
+- Коммит `637b98e` запушен в `origin/main`

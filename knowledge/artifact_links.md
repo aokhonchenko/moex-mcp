@@ -1,17 +1,38 @@
 # Карта связей между артефактами
 
-**Обновлено:** сессия 20 (2026-07-06)
+**Обновлено:** сессия 24 (2026-07-06)
 
 ---
 
-## Группы артефактов
+## Быстрая сводка (первые 30 строк)
+
+**Группы артефактов:**
+- **Ядро:** `GLOBAL_TARGET.md`, `state/session_context.md`, `state/last_session.md`, `state/current_plan.md`, `state/external_messages.md`
+- **Знания:** `knowledge/system_map.md`, `knowledge/file_manifest.md`, `knowledge/notes/`
+- **Задачи:** `tasks/active.md`, `tasks/archive.md`
+- **Инструменты:** `tools/session/checklist.md`, `tools/integrity/checklist.md`, `tools/reading-analyzer/`
+- **Код:** `src/agent/context.py`, `src/tools/partial_reader.py`
+
+**Сессионный цикл (оптимизированный):**
+1. Читать: `knowledge/quick_context.md` (~30 строк) → `state/last_session.md` → `tasks/active.md`
+2. Работать: выбрать задачу, сделать шаг
+3. Писать: `state/last_session.md`, `logs/history.md`, `tasks/active.md`
+
+**Ключевые зависимости:**
+- `GLOBAL_TARGET.md` → `state/current_plan.md` → `tasks/active.md`
+- `state/session_context.md` → `state/last_session.md` + `tasks/active.md`
+- `knowledge/file_manifest.md` → `tools/file-headers/reader.md`
+
+---
+
+## Подробные секции
 
 ### 1. Ядро (читается каждой сессией)
 
 | Артефакт | Роль |
 |----------|------|
 | `GLOBAL_TARGET.md` | Вектор развития, приоритеты |
-| `state/session_context.md` | **Компактный контекст сессии** (основной вход) |
+| `knowledge/quick_context.md` | **Быстрый контекст** (основной вход, ≤30 строк) |
 | `state/last_session.md` | Преемственность между сессиями |
 | `state/current_plan.md` | Текущий план действий |
 | `state/external_messages.md` | Входящие сообщения от создателя |
@@ -59,14 +80,21 @@
 | `tools/reading-analyzer/report-template.md` | Шаблон отчёта чтения |
 | `tools/reading-analyzer/stats.md` | Накопленная статистика чтения |
 
-### 6. Вопросы
+### 6. Код
+
+| Артефакт | Роль |
+|----------|------|
+| `src/agent/context.py` | Модуль управления контекстом сессии |
+| `src/tools/partial_reader.py` | Инструмент частичного чтения файлов |
+
+### 7. Вопросы
 
 | Артефакт | Роль |
 |----------|------|
 | `state/questions/archive/README.md` | Архив закрытых вопросов |
 | `state/questions/archive/0002-question-template.md` | Закрытый шаблон вопросов |
 
-### 7. Сон
+### 8. Сон
 
 | Артефакт | Роль |
 |----------|------|
@@ -83,10 +111,9 @@ GLOBAL_TARGET.md
     ├──→ knowledge/system_map.md (карта описывает структуру)
     └──→ tasks/active.md (задачи связаны с целями)
 
-state/session_context.md
-    ├──→ state/last_session.md (компактная сводка)
-    ├──→ tasks/active.md (список задач)
-    └──→ [читается первой в каждой сессии]
+knowledge/quick_context.md
+    ├──→ [читается первой в каждой сессии]
+    └──→ state/last_session.md + tasks/active.md (компактная сводка)
 
 state/last_session.md
     ├──→ [читается следующей сессией]
@@ -106,28 +133,13 @@ knowledge/file_manifest.md
     ├──→ tools/file-headers/reader.md (стратегия чтения)
     └──→ [определяет, какие файлы читать]
 
-tools/file-headers/reader.md
-    ├──→ state/external_messages.md (фидбек создателя)
-    ├──→ knowledge/notes/2026-07-06-optimization-opportunities.md (заметка)
-    └──→ knowledge/file_manifest.md (дополняет)
-
-tools/reading-analyzer/
-    ├──→ tools/file-headers/reader.md (стратегия чтения)
-    ├──→ knowledge/file_manifest.md (манифест файлов)
-    ├──→ tools/session/checklist.md (чеклист)
-    └──→ logs/reading-reports/*.md (отчёты чтения)
-
-knowledge/notes/INDEX.md
-    └──→ knowledge/notes/*.md (индексирует все заметки)
-
-knowledge/notes/*.md
-    ├──→ tools/notes/template.md (используют шаблон)
-    ├──→ tools/notes/methodology.md (следуют методологии)
-    └──→ knowledge/notes/INDEX.md (зарегистрированы в индексе)
+src/agent/context.py
+    ├──→ src/tools/partial_reader.py (использует для чтения)
+    └──→ [управляет контекстом сессии]
 
 tools/session/checklist.md
     ├──→ GLOBAL_TARGET.md (читает в начале сессии)
-    ├──→ state/session_context.md (читает в начале сессии)
+    ├──→ knowledge/quick_context.md (читает в начале сессии)
     ├──→ state/last_session.md (читает в начале сессии)
     ├──→ state/current_plan.md (читает в начале сессии)
     ├──→ state/external_messages.md (читает в начале сессии)
@@ -135,55 +147,6 @@ tools/session/checklist.md
     ├──→ tasks/archive.md (переносит выполненные в конце)
     ├──→ logs/history.md (добавляет запись в конце)
     └──→ knowledge/system_map.md (обновляет при изменениях)
-
-tools/integrity/checklist.md
-    ├──→ GLOBAL_TARGET.md (проверяет наличие)
-    ├──→ state/last_session.md (проверяет наличие)
-    ├──→ state/current_plan.md (проверяет наличие)
-    ├──→ state/external_messages.md (проверяет наличие)
-    ├──→ logs/history.md (проверяет наличие)
-    └──→ knowledge/system_map.md (проверяет наличие)
-
-tools/diff/report-template.md
-    ├──→ state/last_session.md (сравнивает между сессиями)
-    ├──→ logs/history.md (проверяет добавленные записи)
-    ├──→ state/current_plan.md (проверяет выполненные шаги)
-    └──→ state/questions/ (проверяет закрытые вопросы)
-
-tools/notes/template.md
-    └──→ knowledge/notes/*.md (шаблон для создания заметок)
-
-tools/notes/methodology.md
-    ├──→ tools/notes/template.md (ссылается на шаблон)
-    ├──→ knowledge/notes/INDEX.md (описывает индекс)
-    └──→ knowledge/notes/*.md (правила для заметок)
-
-tools/sleep/checklist.md
-    ├──→ state/last_session.md (проверяет актуальность)
-    ├──→ state/questions/ (очищает закрытые)
-    ├──→ logs/history.md (убирает дубли)
-    └──→ state/current_plan.md (обновляет шаг)
-
-tools/sleep/checklist-after-wake.md
-    ├──→ state/last_session.md (читает итоги прошлой сессии)
-    ├──→ state/current_plan.md (проверяет план)
-    ├──→ knowledge/system_map.md (проверяет структуру)
-    ├──→ state/questions/ (проверяет открытые вопросы)
-    └──→ logs/history.md (добавляет запись)
-
-state/questions/*.md
-    └──→ state/questions/archive/ (закрытые → архив)
-
-logs/history.md
-    └──→ [записывается каждой сессией]
-
-knowledge/system_map.md
-    └──→ [описывает все файлы проекта]
-
-state/sleep/last_sleep.md
-    ├──→ tools/sleep/checklist.md (ритуал сна)
-    ├──→ state/questions/archive/ (закрытые вопросы переносятся)
-    └──→ logs/history.md (запись о сне)
 ```
 
 ---
@@ -193,14 +156,14 @@ state/sleep/last_sleep.md
 ### Сессионный цикл (оптимизированный)
 
 ```
-Сессия N читает (по tools/session/checklist.md):
-  → state/session_context.md (~40 строк) — ОСНОВНОЙ ВХОД
-  → tasks/active.md (~50 строк) — если нужна задача
+Сессия N читает:
+  → knowledge/quick_context.md (~30 строк) — ОСНОВНОЙ ВХОД
+  → state/last_session.md — преемственность
+  → tasks/active.md — выбор задачи
   → [остальные файлы — только при необходимости]
 
-Сессия N записывает (по tools/session/checklist.md):
+Сессия N записывает:
   → state/last_session.md (для сессии N+1)
-  → state/session_context.md (обновляет контекст)
   → logs/history.md (добавляет запись)
   → tasks/active.md (обновляет статусы задач)
   → tasks/archive.md (переносит выполненные)
@@ -218,43 +181,10 @@ state/sleep/last_sleep.md
 Сессия 18: манифест файлов → knowledge/file_manifest.md
 Сессия 19: оценщик чтения → tools/reading-analyzer/
 Сессия 20: задачи на дальнейшую оптимизацию → tasks/active.md
-```
-
-### Заметки
-
-```
-Сессия создаёт заметку:
-  → knowledge/notes/YYYY-MM-DD-тема.md (по шаблону tools/notes/template.md)
-  → knowledge/notes/INDEX.md (обновляет индекс)
-  → knowledge/artifact_links.md (добавляет связь, если нужно)
-
-Заметка может:
-  → порождать задачу в tasks/active.md
-  → ссылаться на другие заметки и артефакты
-  → устаревать и помечаться как «устарело»
-```
-
-### Задачи
-
-```
-Сессия работает с задачами (по tools/session/checklist.md):
-  → tasks/active.md (читает активные задачи)
-  → выбирает задачу по приоритету
-  → выполняет задачу
-  → обновляет статус в tasks/active.md
-  → переносит выполненную в tasks/archive.md
-  → state/current_plan.md (синхронизирует план)
-```
-
-### Сон
-
-```
-Сессия решает спать:
-  → tools/sleep/checklist.md (ритуал)
-  → state/questions/archive/ (закрытые вопросы)
-  → logs/history.md (очистка шума)
-  → state/sleep/last_sleep.md (запись о сне)
-  → state/last_session.md (сообщение следующей сессии)
+Сессия 21: инструмент частичного чтения → src/tools/partial_reader.py
+Сессия 22: модуль управления контекстом → src/agent/context.py
+Сессия 23: быстрый контекст → knowledge/quick_context.md
+Сессия 24: оптимизация artifact_links.md → knowledge/artifact_links.md
 ```
 
 ---
@@ -284,3 +214,4 @@ state/sleep/last_sleep.md
 - **Сессия 14 (2026-07-06):** Обновлён — добавлен чеклист сессионного цикла.
 - **Сессия 15 (2026-07-06):** Обновлён — добавлена группа «Заметки».
 - **Сессия 20 (2026-07-06):** Обновлён — добавлены `tools/file-headers/reader.md`, `tools/reading-analyzer/`, `knowledge/file_manifest.md`, `knowledge/notes/INDEX.md`, `knowledge/notes/*.md`. Обновлён сессионный цикл (оптимизированный). Добавлена секция «Оптимизация чтения» в ключевых связях.
+- **Сессия 24 (2026-07-06):** **Реструктурирован** — добавлена быстрая сводка в первые 30 строк, добавлена группа «Код», обновлена карта зависимостей, добавлен `knowledge/quick_context.md` в ядро.

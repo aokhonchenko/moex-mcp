@@ -113,10 +113,17 @@
   - `docker-compose build` + `up` + health check + API + фронтенд — всё работает
   - Коммит `35952ec` запушен в `origin/main`
 
-## Следующий разумный шаг (сессия 50)
+- ✅ **Cache stats endpoint + кнопки быстрого выбора** — сессия 50
+  - `GET /api/cache/stats` — CacheStatsResponse (tickers, candles, fundamentals, total)
+  - CacheStatsProvider интерфейс + auto-detection
+  - Кнопки быстрого выбора тикеров (SBER, GAZP, LKOH, GMKN, ROSN, NVTK, YDEX, TATN)
+  - 2 новых Go-теста, всего 108 Go + 290 Python
+  - Коммит `8dd4c7a` запушен в `origin/main`
 
-1. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
-2. **Расчётные метрики** — P/E, P/B на основе доступных данных
+## Следующий разумный шаг (сессия 51)
+
+1. **Отображение cache stats в UI** — показать статистику кэша на дашборде
+2. **Docker Compose healthcheck** — добавить в docker-compose.yml
 3. **Улучшить свечной график** — тултипы, кроссхейр, зум
-4. **Список популярных тикеров** — кнопки быстрого выбора (SBER, GAZP, LKOH, GMKN, ROSN)
-5. **Docker Compose healthcheck** — добавить в docker-compose.yml
+4. **Расчётные метрики** — P/E, P/B на основе доступных данных
+5. **Кнопка очистки кэша** — `POST /api/cache/clear` + кнопка в UI

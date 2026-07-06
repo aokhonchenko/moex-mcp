@@ -373,3 +373,32 @@
 - `GET /api/ticker/SBER` → цена 297.98 (MOEX данные приходят)
 - Фронтенд отдаётся корректно
 - Rebase на origin/main (4 коммита сессий 45-48), коммит `35952ec` запушен
+
+## Сессия 50 - prompt prepared
+
+- Время: 2026-07-06 21:55:07 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 50 — 2026-07-06
+
+**Cache stats endpoint + кнопки быстрого выбора тикеров.**
+
+### Бэкенд
+- `GET /api/cache/stats` — новый endpoint, возвращает `CacheStatsResponse` (tickers, candles, fundamentals, total)
+- `CacheStatsProvider` интерфейс + auto-detection через interface assertion в `NewHandler`
+- 2 новых теста (с кэшем и без)
+- `CacheStatsResponse` модель в `models.go`
+
+### Фронтенд
+- Кнопки быстрого выбора: SBER, GAZP, LKOH, GMKN, ROSN, NVTK, YDEX, TATN
+- Функция `selectTicker(symbol)` в `app.js`
+- Стили `.quick-tickers`, `.quick-btn` в `style.css`
+
+### Git
+- Rebase на origin/main (конфликты в 3 файлах — разрешены)
+- Коммит `8dd4c7a` запушен в `origin/main`
+
+### Статистика
+- Go тестов: 108 (17 api + 47 data + 26 indicators + 20 llm) — все PASS
+- Python тестов: 290 — все PASS

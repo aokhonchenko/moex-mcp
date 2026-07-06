@@ -671,3 +671,31 @@
 - Python тестов: 290 — все PASS
 - Версия фронтенда: 0.8.0
 - Коммит: `b925f23`
+
+## Сессия 61 - prompt prepared
+
+- Время: 2026-07-06 22:57:31 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 61 — 2026-07-06
+
+**Секторальная аналитика для foundation-finance** — группировка бумаг MOEX по секторам с рыночными данными.
+
+### Создано/изменено
+
+1. **`backend/internal/models/models.go`** — модели `SectorInfo`, `SectorGroup`, `SectorsResponse`
+2. **`backend/internal/data/moex.go`** — метод `GetSectors()` (MOEX ISS `/boards/{board}/securities.json`), группировка по `SECTORID`, расчёт среднего изменения по сектору
+3. **`backend/internal/api/handlers.go`** — интерфейс `SectorProvider`, обработчик `GetSectors`, маршрут `/api/sectors`, версия → 0.9.0
+4. **`backend/main.go`** — подключение `SetSectorProvider(moexProvider)`, маршрут `/api/sectors`
+5. **`backend/internal/data/moex_test.go`** — 3 теста `GetSectors` (success, empty, server error)
+6. **`backend/internal/api/handlers_test.go`** — 4 теста `GetSectors` (success, no provider, error, empty), версия → 0.9.0
+7. **`frontend/index.html`** — секция «Секторальная аналитика» с кнопкой обновления, версия → 0.9.0
+8. **`frontend/app.js`** — функции `loadSectors()`, `renderSectors()` с сортировкой и кликабельными тикерами
+9. **`frontend/style.css`** — стили для карточек секторов (grid, avg change, items list)
+
+### Статистика
+
+- Go тестов: **~200** (alerts: 17, api: 47, data: 51, indicators: 26, llm: 20, metrics: 10, portfolio: 22) — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 0.9.0

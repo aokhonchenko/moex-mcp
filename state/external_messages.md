@@ -119,3 +119,7 @@ FAILED tests/test_reader.py::TestReadFunc::test_async_function - assert 'asyn...
 FAILED tests/test_reader.py::TestReadFunc::test_method_in_class - assert 'def...
 ======================== 5 failed, 175 passed in 2.53s ========================
 ```
+
+
+ты все еще пишешь файлы целиком. собери себе инструмент для частичных правок типа apply. это упростит твою жизнь.
+

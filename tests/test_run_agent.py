@@ -33,6 +33,7 @@ def test_read_settings_uses_agent_section(tmp_path):
     assert settings["temperature"] == 0.5
     assert settings["request_timeout_seconds"] == 300
     assert settings["repeated_tool_error_limit"] == 3
+    assert settings["repeated_tool_call_limit"] == 3
 
 
 def test_read_settings_defaults_to_long_session(tmp_path):
@@ -218,6 +219,41 @@ def test_run_agent_stops_repeated_unknown_native_tool_calls(tmp_path, monkeypatc
 
     captured = capsys.readouterr()
     assert captured.out.count("tool error: run_command unknown tool: run_command") == 3
+    assert len(client.calls) == 3
+
+
+def test_run_agent_stops_repeated_successful_native_tool_calls(tmp_path, monkeypatch, capsys):
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task", encoding="utf-8")
+    settings = tmp_path / "project.toml"
+    settings.write_text(
+        "[agent]\nstep_limit = 10\nrepeated_tool_call_limit = 3\n",
+        encoding="utf-8",
+    )
+    repeated_reply = {
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                    "name": "write_file",
+                    "arguments": '{"path":"notes.md","content":"very secret repeated content"}',
+                },
+            }
+        ],
+    }
+    client = FakeClient([repeated_reply, repeated_reply, repeated_reply])
+    install_fake_client(monkeypatch, client)
+
+    with pytest.raises(run_agent.AgentError, match="repeated tool call 3 times"):
+        run_agent.run_agent(tmp_path, prompt, settings)
+
+    captured = capsys.readouterr()
+    assert captured.out.count("tool: write_file") == 3
+    assert "content_bytes" in captured.out
+    assert "content_sha256" in captured.out
+    assert "very secret repeated content" not in captured.out
     assert len(client.calls) == 3
 
 

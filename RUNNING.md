@@ -33,6 +33,7 @@ AI_MODEL=your-model-name
 step_limit = 300
 request_timeout_seconds = 300
 repeated_tool_error_limit = 3
+repeated_tool_call_limit = 3
 temperature = 0.2
 ```
 
@@ -83,10 +84,13 @@ uv run python scripts/run_agent.py --root . --prompt-file state/active_prompt.md
 
 ## Инструменты агента
 
-Минимальный агент имеет только два встроенных инструмента:
 
-- `read_file` - чтение UTF-8 файла внутри корня сессии;
-- `write_file` - запись UTF-8 файла внутри корня сессии.
+The minimal agent has four built-in tools:
+
+- `read_file` - read a whole UTF-8 file inside the session root;
+- `read_lines` - read a specific line range from a UTF-8 file;
+- `replace_text` - replace an exact fragment without rewriting the whole file;
+- `write_file` - write a whole UTF-8 file inside the session root.
 
 Если инструмент не может выполнить действие, ошибка возвращается модели как `ok:false`. Например, отсутствие файла не роняет процесс агента: модель получает наблюдение и должна выбрать следующий шаг.
 

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 import tomllib
@@ -22,6 +23,7 @@ DEFAULT_SETTINGS = {
     "step_limit": 300,
     "request_timeout_seconds": 300,
     "repeated_tool_error_limit": 3,
+    "repeated_tool_call_limit": 3,
     "temperature": 0.2,
 }
 
@@ -34,6 +36,7 @@ class AgentError(RuntimeError):
 class ToolExecutionBatch:
     messages: list[dict[str, Any]]
     error_signatures: list[str]
+    call_signatures: list[str]
 
 
 def diagnostic(message: str) -> None:
@@ -59,8 +62,12 @@ def system_message() -> str:
     return """Ты локальный автономный агент проекта ai-lives.
 
 Работай только через доступные инструменты:
-- read_file: прочитать UTF-8 файл внутри корня сессии;
-- write_file: записать UTF-8 файл внутри корня сессии.
+- read_file: read a whole UTF-8 file inside the session root;
+- read_lines: read a specific 1-based line range from a UTF-8 file;
+- replace_text: replace an exact text fragment without rewriting the whole file;
+- write_file: write a whole UTF-8 file inside the session root.
+
+Prefer read_lines and replace_text for existing files. Use write_file only for new files or deliberate full rewrites of small files.
 
 Если инструмент вернул `ok:false`, это не системная ошибка, а наблюдение о реальном состоянии файлов.
 Скорректируй план: создай недостающий файл, выбери другой путь или явно зафиксируй отсутствие.
@@ -76,7 +83,8 @@ def system_message() -> str:
 Все пользовательские артефакты пиши на русском языке. Для завершения ответь обычным финальным
 сообщением без вызова инструментов. Если endpoint не поддерживает tool calling, можно вернуть ровно
 JSON-объект одного из видов:
-{"tool":"read_file","path":"state/last_session.md"}
+{"tool":"read_lines","path":"state/last_session.md","start_line":1,"line_count":40}
+{"tool":"replace_text","path":"state/last_session.md","old":"...","new":"..."}
 {"tool":"write_file","path":"state/last_session.md","content":"..."}
 {"final":"краткий итог"}
 """
@@ -106,6 +114,33 @@ def assistant_message_for_history(message: dict[str, Any]) -> dict[str, Any]:
     return stored
 
 
+def compact_string(value: str) -> str | dict[str, Any]:
+    if len(value) <= 200:
+        return value
+    encoded = value.encode("utf-8")
+    return {
+        "bytes": len(encoded),
+        "sha256": hashlib.sha256(encoded).hexdigest()[:12],
+        "preview": value[:80],
+    }
+
+
+def compact_tool_arguments(name: str, arguments: dict[str, Any]) -> dict[str, Any]:
+    if name == "write_file":
+        content = str(arguments.get("content", ""))
+        return {
+            "path": str(arguments.get("path", "")),
+            "content_bytes": len(content.encode("utf-8")),
+            "content_sha256": hashlib.sha256(content.encode("utf-8")).hexdigest()[:12],
+        }
+    return {key: compact_string(value) if isinstance(value, str) else value for key, value in arguments.items()}
+
+
+def tool_call_signature(name: str, arguments: dict[str, Any]) -> str:
+    payload = {"tool": name, "arguments": compact_tool_arguments(name, arguments)}
+    return json.dumps(payload, ensure_ascii=False, sort_keys=True)
+
+
 def tool_observation(name: str, ok: bool, payload: dict[str, Any] | str) -> str:
     if ok:
         return tool_result_json({"tool": name, "ok": True, "result": payload})
@@ -115,12 +150,15 @@ def tool_observation(name: str, ok: bool, payload: dict[str, Any] | str) -> str:
 def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> ToolExecutionBatch:
     results = []
     error_signatures = []
+    call_signatures = []
     for tool_call in message.get("tool_calls") or []:
         function = tool_call.get("function") or {}
         name = function.get("name", "")
         try:
             arguments = parse_tool_arguments(function.get("arguments", "{}"))
-            diagnostic(f"tool: {name} {arguments}")
+            compact_arguments = compact_tool_arguments(name, arguments)
+            call_signatures.append(tool_call_signature(name, arguments))
+            diagnostic(f"tool: {name} {compact_arguments}")
             result = call_tool(root, name, arguments)
             content = tool_observation(name, True, result)
         except (AgentError, ToolError) as exc:
@@ -134,7 +172,7 @@ def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> ToolExecut
                 "content": content,
             }
         )
-    return ToolExecutionBatch(messages=results, error_signatures=error_signatures)
+    return ToolExecutionBatch(messages=results, error_signatures=error_signatures, call_signatures=call_signatures)
 
 
 def parse_text_protocol(content: str) -> dict[str, Any] | None:
@@ -155,7 +193,9 @@ def execute_text_protocol(root: Path, parsed: dict[str, Any]) -> ToolExecutionBa
     if not name:
         return None
     arguments = {key: value for key, value in parsed.items() if key != "tool"}
-    diagnostic(f"text tool: {name} {arguments}")
+    compact_arguments = compact_tool_arguments(name, arguments)
+    diagnostic(f"text tool: {name} {compact_arguments}")
+    call_signatures = [tool_call_signature(name, arguments)]
     try:
         result = call_tool(root, name, arguments)
         content = tool_observation(name, True, result)
@@ -172,6 +212,7 @@ def execute_text_protocol(root: Path, parsed: dict[str, Any]) -> ToolExecutionBa
             }
         ],
         error_signatures=error_signatures,
+        call_signatures=call_signatures,
     )
 
 
@@ -193,6 +234,11 @@ def raise_on_repeated_tool_errors(signature: str | None, count: int, limit: int)
         raise AgentError(f"repeated tool error {count} times: {signature}")
 
 
+def raise_on_repeated_tool_calls(signature: str | None, count: int, limit: int) -> None:
+    if signature and count >= limit:
+        raise AgentError(f"repeated tool call {count} times: {signature}")
+
+
 def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
     settings = read_settings(settings_path)
     task = read_task(prompt_file)
@@ -210,6 +256,9 @@ def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
     last_tool_error_signature: str | None = None
     repeated_tool_error_count = 0
     repeated_tool_error_limit = int(settings["repeated_tool_error_limit"])
+    last_tool_call_signature: str | None = None
+    repeated_tool_call_count = 0
+    repeated_tool_call_limit = int(settings["repeated_tool_call_limit"])
     for step in range(1, int(settings["step_limit"]) + 1):
         diagnostic(f"step {step}: requesting model")
         message = client.complete(messages, TOOL_SCHEMAS)
@@ -224,10 +273,20 @@ def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
                 last_tool_error_signature,
                 repeated_tool_error_count,
             )
+            last_tool_call_signature, repeated_tool_call_count = repeated_error_state(
+                execution.call_signatures,
+                last_tool_call_signature,
+                repeated_tool_call_count,
+            )
             raise_on_repeated_tool_errors(
                 last_tool_error_signature,
                 repeated_tool_error_count,
                 repeated_tool_error_limit,
+            )
+            raise_on_repeated_tool_calls(
+                last_tool_call_signature,
+                repeated_tool_call_count,
+                repeated_tool_call_limit,
             )
             continue
 
@@ -242,10 +301,20 @@ def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
                     last_tool_error_signature,
                     repeated_tool_error_count,
                 )
+                last_tool_call_signature, repeated_tool_call_count = repeated_error_state(
+                    execution.call_signatures,
+                    last_tool_call_signature,
+                    repeated_tool_call_count,
+                )
                 raise_on_repeated_tool_errors(
                     last_tool_error_signature,
                     repeated_tool_error_count,
                     repeated_tool_error_limit,
+                )
+                raise_on_repeated_tool_calls(
+                    last_tool_call_signature,
+                    repeated_tool_call_count,
+                    repeated_tool_call_limit,
                 )
                 continue
             final = str(parsed.get("final", "")).strip()

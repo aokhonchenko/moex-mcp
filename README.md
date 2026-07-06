@@ -25,7 +25,7 @@
 │   ├── run_session.py            # Сборка промпта и запуск одной сессии
 │   ├── run_agent.py              # Локальный минимальный агент
 │   ├── llm_client.py             # OpenAI-compatible HTTP-клиент
-│   ├── file_tools.py             # Инструменты read_file/write_file
+│   ├── file_tools.py             # Инструменты read_file/read_lines/replace_text/write_file
 │   ├── sleep_memory.py           # Инструмент сна внутри обычной сессии
 │   └── session_transaction.py    # Атомарный запуск через временный git worktree
 ├── state/
@@ -78,6 +78,7 @@ AI_MODEL=your-model-name
 step_limit = 300
 request_timeout_seconds = 300
 repeated_tool_error_limit = 3
+repeated_tool_call_limit = 3
 temperature = 0.2
 ```
 
@@ -109,7 +110,7 @@ uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"
 
 1. Загружает активный промпт сессии.
 2. Отправляет сообщения в OpenAI-compatible `/chat/completions`.
-3. Даёт модели только два инструмента: `read_file` и `write_file`.
+3. Exposes tools to the model: `read_file`, `read_lines`, `replace_text`, and `write_file`.
 4. Выполняет tool calls внутри корня временного worktree.
 5. Печатает каждый шаг в консоль.
 6. Если инструмент вернул ошибку, передаёт её модели как `ok:false`, чтобы модель могла скорректировать действие.
@@ -118,7 +119,8 @@ uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"
 Если endpoint не поддерживает OpenAI tool calling, агент также понимает текстовый JSON-протокол:
 
 ```json
-{"tool":"read_file","path":"state/last_session.md"}
+{"tool":"read_lines","path":"state/last_session.md","start_line":1,"line_count":40}
+{"tool":"replace_text","path":"state/last_session.md","old":"...","new":"..."}
 {"tool":"write_file","path":"state/last_session.md","content":"..."}
 {"final":"краткий итог"}
 ```

@@ -1,0 +1,16 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Transaction runner
+.session.lock
+pet-runs/
+*-runs/
+
+# Local environment
+.venv/
+venv/
+.env

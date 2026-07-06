@@ -1,0 +1,339 @@
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+
+from scripts import session_transaction
+
+
+class FakeRunner:
+    def __init__(self, root: Path, fail_agent: bool = False, fail_checks: bool = False):
+        self.root = root
+        self.fail_agent = fail_agent
+        self.fail_checks = fail_checks
+        self.commands = []
+        self.worktree = None
+        self.branch = None
+
+    def __call__(self, args, cwd):
+        args = list(args)
+        cwd = Path(cwd)
+        self.commands.append((args, cwd))
+
+        if args[:3] == ["git", "rev-parse", "--show-toplevel"]:
+            return session_transaction.CommandResult(0, f"{self.root}\n", "")
+
+        if args[:3] == ["git", "rev-parse", "HEAD"]:
+            return session_transaction.CommandResult(0, "abc123\n", "")
+
+        if args[:3] == ["git", "status", "--porcelain"]:
+            if cwd == self.root:
+                return session_transaction.CommandResult(0, "", "")
+            return session_transaction.CommandResult(0, " M logs/history.md\n", "")
+
+        if args[:3] == ["git", "branch", "--show-current"]:
+            return session_transaction.CommandResult(0, "main\n", "")
+
+        if args[:3] == ["git", "worktree", "add"]:
+            self.branch = args[4]
+            self.worktree = Path(args[5])
+            shutil.copytree(self.root, self.worktree, ignore=shutil.ignore_patterns(".git", ".session.lock"))
+            return session_transaction.CommandResult(0, "", "")
+
+        if args[:3] == ["git", "worktree", "remove"]:
+            target = Path(args[-1])
+            if target.exists():
+                shutil.rmtree(target)
+            return session_transaction.CommandResult(0, "", "")
+
+        if args[:2] == ["git", "branch"]:
+            return session_transaction.CommandResult(0, "", "")
+
+        if args[:3] == ["git", "add", "-A"]:
+            return session_transaction.CommandResult(0, "", "")
+
+        if args[:3] == ["git", "commit", "-m"]:
+            return session_transaction.CommandResult(0, "committed\n", "")
+
+        if args[:3] == ["git", "merge", "--ff-only"]:
+            return session_transaction.CommandResult(0, "merged\n", "")
+
+        if args[0].endswith("python") or args[0].endswith("python.exe"):
+            if len(args) >= 3 and args[2] == "pytest":
+                if self.fail_checks:
+                    return session_transaction.CommandResult(1, "", "tests failed")
+                return session_transaction.CommandResult(0, "tests ok", "")
+            if self.fail_agent:
+                return session_transaction.CommandResult(7, "", "agent failed")
+            (cwd / "state").mkdir(exist_ok=True)
+            (cwd / "logs").mkdir(exist_ok=True)
+            (cwd / "state" / "last_session.md").write_text("done\n", encoding="utf-8")
+            (cwd / "logs" / "history.md").write_text("done\n", encoding="utf-8")
+            return session_transaction.CommandResult(0, "agent ok", "")
+
+        return session_transaction.CommandResult(0, "", "")
+
+
+def make_root(tmp_path: Path) -> Path:
+    root = tmp_path / "pet"
+    root.mkdir()
+    (root / "scripts").mkdir()
+    (root / "state").mkdir()
+    (root / "logs").mkdir()
+    (root / "scripts" / "run_session.py").write_text("", encoding="utf-8")
+    (root / "state" / "session_counter.txt").write_text("3\n", encoding="utf-8")
+    (root / "state" / "last_session.md").write_text("previous\n", encoding="utf-8")
+    (root / "logs" / "history.md").write_text("history\n", encoding="utf-8")
+    return root
+
+
+def test_lock_file_creates_and_removes_lock(tmp_path):
+    with session_transaction.lock_file(tmp_path) as lock_path:
+        assert lock_path.exists()
+        assert "pid=" in lock_path.read_text(encoding="utf-8")
+
+    assert not (tmp_path / ".session.lock").exists()
+
+
+def test_lock_file_rejects_existing_lock(tmp_path):
+    (tmp_path / ".session.lock").write_text("pid=1\n", encoding="utf-8")
+
+    with pytest.raises(session_transaction.TransactionError, match="session lock already exists"):
+        with session_transaction.lock_file(tmp_path):
+            pass
+
+
+def test_ensure_git_repo_rejects_nested_repository(tmp_path):
+    root = tmp_path / "root"
+    root.mkdir()
+
+    def runner(args, cwd):
+        return session_transaction.CommandResult(0, f"{tmp_path}\n", "")
+
+    with pytest.raises(session_transaction.TransactionError, match="expected git root"):
+        session_transaction.ensure_git_repo(root, runner)
+
+
+def test_file_size_policy_fails_for_large_text_file(tmp_path):
+    path = tmp_path / "large.md"
+    path.write_text("x\n" * 501, encoding="utf-8")
+
+    with pytest.raises(session_transaction.TransactionError, match="must be decomposed"):
+        session_transaction.ensure_file_size_policy(tmp_path, max_lines=500)
+
+
+def test_run_transaction_applies_successful_session(tmp_path):
+    root = make_root(tmp_path)
+    runs_dir = tmp_path / "runs"
+    runner = FakeRunner(root)
+
+    commit = session_transaction.run_transaction(
+        root=root,
+        agent_command="agent --ok",
+        runs_dir=runs_dir,
+        runner=runner,
+    )
+
+    assert commit == "abc123"
+    commands = [command for command, _ in runner.commands]
+    assert ["git", "merge", "--ff-only", "session/0003"] in commands
+    assert ["git", "branch", "-d", "session/0003"] in commands
+    assert not (runs_dir / "session-0003").exists()
+    assert not runs_dir.exists()
+
+
+def test_run_transaction_rolls_back_failed_agent(tmp_path):
+    root = make_root(tmp_path)
+    runs_dir = tmp_path / "runs"
+    runner = FakeRunner(root, fail_agent=True)
+
+    with pytest.raises(session_transaction.TransactionError, match="agent session failed"):
+        session_transaction.run_transaction(
+            root=root,
+            agent_command="agent --fail",
+            runs_dir=runs_dir,
+            runner=runner,
+        )
+
+    commands = [command for command, _ in runner.commands]
+    assert ["git", "merge", "--ff-only", "session/0003"] not in commands
+    assert ["git", "branch", "-D", "session/0003"] in commands
+    assert not (runs_dir / "session-0003").exists()
+    assert not runs_dir.exists()
+
+
+def test_run_transaction_requires_agent_command(tmp_path):
+    root = make_root(tmp_path)
+
+    with pytest.raises(session_transaction.TransactionError, match="agent command is required"):
+        session_transaction.run_transaction(root=root, agent_command="")
+
+
+def test_main_returns_one_on_transaction_error(monkeypatch, capsys, tmp_path):
+    monkeypatch.setattr(
+        session_transaction.sys,
+        "argv",
+        ["session_transaction.py", "--root", str(tmp_path)],
+    )
+
+    result = session_transaction.main()
+
+    captured = capsys.readouterr()
+    assert result == 1
+    assert "Transaction failed" in captured.err
+
+
+def test_default_runner_wraps_subprocess_result(monkeypatch, tmp_path):
+    class Completed:
+        returncode = 2
+        stdout = "out"
+        stderr = "err"
+
+    calls = []
+
+    def fake_run(args, cwd, text, capture_output):
+        calls.append((args, cwd, text, capture_output))
+        return Completed()
+
+    monkeypatch.setattr(session_transaction.subprocess, "run", fake_run)
+
+    result = session_transaction.default_runner(["cmd"], tmp_path)
+
+    assert result == session_transaction.CommandResult(2, "out", "err")
+    assert calls == [(["cmd"], tmp_path, True, True)]
+
+
+def test_run_checked_reports_failure_details(tmp_path):
+    def runner(args, cwd):
+        return session_transaction.CommandResult(9, "", "bad things")
+
+    with pytest.raises(session_transaction.TransactionError, match="bad things"):
+        session_transaction.run_checked(runner, ["cmd"], tmp_path, "doing work")
+
+
+def test_run_checked_reports_exit_code_without_details(tmp_path):
+    def runner(args, cwd):
+        return session_transaction.CommandResult(9, "", "")
+
+    with pytest.raises(session_transaction.TransactionError, match="exit code 9"):
+        session_transaction.run_checked(runner, ["cmd"], tmp_path, "doing work")
+
+
+def test_ensure_clean_worktree_rejects_dirty_status(tmp_path):
+    def runner(args, cwd):
+        if args[:3] == ["git", "status", "--porcelain"]:
+            return session_transaction.CommandResult(0, " M file.txt\n", "")
+        return session_transaction.CommandResult(0, "", "")
+
+    with pytest.raises(session_transaction.TransactionError, match="must be clean"):
+        session_transaction.ensure_clean_worktree(tmp_path, runner)
+
+
+def test_current_branch_rejects_detached_head(tmp_path):
+    def runner(args, cwd):
+        return session_transaction.CommandResult(0, "\n", "")
+
+    with pytest.raises(session_transaction.TransactionError, match="not detached HEAD"):
+        session_transaction.current_branch(tmp_path, runner)
+
+
+def test_lock_file_tolerates_missing_lock_during_cleanup(tmp_path):
+    with session_transaction.lock_file(tmp_path) as lock_path:
+        lock_path.unlink()
+
+    assert not (tmp_path / ".session.lock").exists()
+
+
+def test_default_runs_dir_is_next_to_root(tmp_path):
+    root = tmp_path / "pet"
+
+    assert session_transaction.default_runs_dir(root) == tmp_path / "pet-runs"
+
+
+def test_create_worktree_rejects_existing_directory(tmp_path):
+    root = tmp_path / "pet"
+    runs_dir = tmp_path / "runs"
+    (runs_dir / "session-0004").mkdir(parents=True)
+
+    with pytest.raises(session_transaction.TransactionError, match="already exists"):
+        session_transaction.create_worktree(root, runs_dir, 4)
+
+
+def test_run_checks_reports_failure(tmp_path):
+    def runner(args, cwd):
+        return session_transaction.CommandResult(1, "", "check failed")
+
+    with pytest.raises(session_transaction.TransactionError, match="check failed"):
+        session_transaction.run_checks(tmp_path, ["check"], runner)
+
+
+def test_required_session_files_reports_missing_files(tmp_path):
+    with pytest.raises(session_transaction.TransactionError, match="required session files"):
+        session_transaction.ensure_required_session_files(tmp_path)
+
+
+def test_find_oversized_files_skips_binary_and_sensitive_dirs(tmp_path):
+    (tmp_path / ".git").mkdir()
+    (tmp_path / ".git" / "huge.txt").write_text("x\n" * 600, encoding="utf-8")
+    (tmp_path / "bad.bin").write_bytes(b"\xff\xfe\xfd")
+
+    assert session_transaction.find_oversized_files(tmp_path, max_lines=1) == []
+
+
+def test_ensure_session_changed_worktree_rejects_empty_status(tmp_path):
+    def runner(args, cwd):
+        return session_transaction.CommandResult(0, "", "")
+
+    with pytest.raises(session_transaction.TransactionError, match="produced no"):
+        session_transaction.ensure_session_changed_worktree(tmp_path, runner)
+
+
+def test_commit_and_apply_session_issue_git_commands(tmp_path):
+    commands = []
+
+    def runner(args, cwd):
+        commands.append(list(args))
+        if args[:3] == ["git", "rev-parse", "HEAD"]:
+            return session_transaction.CommandResult(0, "deadbeef\n", "")
+        return session_transaction.CommandResult(0, "", "")
+
+    commit = session_transaction.commit_session(tmp_path, 12, runner)
+    session_transaction.apply_session_commit(tmp_path, "session/0012", runner)
+
+    assert commit == "deadbeef"
+    assert ["git", "add", "-A"] in commands
+    assert ["git", "commit", "-m", "session 0012"] in commands
+    assert ["git", "merge", "--ff-only", "session/0012"] in commands
+
+
+def test_main_returns_zero_on_success(monkeypatch, capsys, tmp_path):
+    def fake_transaction(root, agent_command, runs_dir, check_command):
+        assert root == tmp_path
+        assert agent_command == "agent"
+        assert runs_dir == tmp_path / "runs"
+        assert check_command == ["check"]
+        return "cafebabe"
+
+    monkeypatch.setattr(session_transaction, "run_transaction", fake_transaction)
+    monkeypatch.setattr(
+        session_transaction.sys,
+        "argv",
+        [
+            "session_transaction.py",
+            "--root",
+            str(tmp_path),
+            "--agent-command",
+            "agent",
+            "--runs-dir",
+            str(tmp_path / "runs"),
+            "--check-command",
+            "check",
+        ],
+    )
+
+    result = session_transaction.main()
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "Transaction applied: cafebabe" in captured.out

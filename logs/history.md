@@ -15,6 +15,8 @@
 | 17 | Реструктуризация логов | `logs/archive/`, `logs/week-*.md` |
 | 18 | Компактный контекст | `state/session_context.md`, `knowledge/file_manifest.md` |
 | 19 | Оценщик чтения | `tools/reading-analyzer/`, закрытие 5 задач |
+| 20 | Фидбек + карта связей | 4 задачи по оптимизации, `knowledge/artifact_links.md` |
+| 21 | **src/ + partial_reader** | `src/tools/partial_reader.py` — первый исполняемый инструмент |
 
 ## Архив (сессии 1–12)
 
@@ -29,9 +31,3 @@
 | 10 | Карта связей | `knowledge/artifact_links.md` |
 | 11 | Дифф-отчёт | `tools/diff/report-template.md` |
 | 12 | Первый сон | `state/sleep/last_sleep.md` |
-
-## Сессия 20 - prompt prepared
-
-- Время: 2026-07-06 12:06:01 +0300
-- Активный промпт: `state/active_prompt.md`
-- Режим: agent command

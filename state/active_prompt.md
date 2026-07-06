@@ -1,7 +1,7 @@
-# Активный промпт сессии 34
+# Активный промпт сессии 36
 
-Время сборки промпта: 2026-07-06 15:42:28 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0034
+Время сборки промпта: 2026-07-06 16:04:13 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0035
 
 ---
 
@@ -146,51 +146,45 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 34)
+# Сообщение будущей сессии (сессия 36)
 
-## Что было сделано в сессии 33
+## Что было сделано в сессии 35
 
-**Исправлены баги `reader.py`** — критические ошибки в 0-based/1-based индексации.
+**Закрыт вопрос о приоритетах** (`state/questions/0034-priorities.md`).
+Создатель ответил: приоритет — улучшение агента. Когда задачи в этой области кончатся — финансовый дашборд. Также предложено ввести модуль self-review.
 
-**Контекст:** тесты `test_reader.py` падали с 5 ошибками:
-- `test_basic_range` — `AttributeError: 'ReadResult' has no attribute 'error'`
-- `test_simple_function` — `assert 'def hello' in result.content` не проходил
-- `test_function_with_decorator` — аналогично
-- `test_async_function` — аналогично
-- `test_method_in_class` — аналогично
+**Создан инструмент частичных правок** (`src/tools/apply_patch.py`).
+Это ответ на просьбу создателя: "ты все еще пишешь файлы целиком. собери себе инструмент для частичных правок типа apply."
 
-**Причина:** в `read_func()` и `read_class()` использовалась смешанная индексация:
-- `lines = source.splitlines(True)` — 0-based список
-- `span = (node.lineno, node.end_lineno)` — 1-based из AST
-- `lines[deco_start:end]` — `deco_start` был 1-based, `end` тоже 1-based, но индексация списка 0-based → пропуск первой строки
+Инструмент поддерживает:
+- `--replace` / `--replace-all` — замена текста
+- `--regex` — замена по регулярному выражению
+- `--insert-after` / `--insert-before` — вставка строк
+- `--delete` / `--delete-range` — удаление строк
+- `--section` — замена секции markdown
+- `--dry-run` — предпросмотр без записи
 
-**Исправления:**
-1. **`read_func()`:** добавлена явная конвертация `func_start_0based = func_start_1based - 1`, поиск декораторов идёт по 0-based индексам, срез `lines[deco_start_0based:func_end_0based]`.
-2. **`read_class()`:** аналогично — `class_start_0based = node.lineno - 1`, `class_end_0based = node.end_lineno`.
-3. **`ReadResult`:** добавлено поле `error: Optional[str] = None` для консистентности с `FileAnalysis`.
-4. **Все функции чтения:** ошибки теперь заполняют `error` поле.
+**Созданы тесты для apply_patch.py** (`tests/test_apply_patch.py`, ~30 тестов).
 
-**Дополнительно:**
-- Закрыты 3 низкоприоритетные задачи (`tasks/active.md`): интеграция контекста, обязательные чтения, тренд оценщика.
-- Обновлён `state/current_plan.md` — добавлена запись о фиксе багов.
+**Очищен `external_messages.md`** — добавлена запись о сессии 35, старые диагностики упавших проверок оставлены как история.
 
 ## Текущее состояние
 
-- **Обязательное чтение на сессию:** 1 файл, ~30 строк (`quick_context.md`).
-- 1 открытый вопрос (`state/questions/0032-project-structure.md`).
-- 2 активные задачи (1 средний, 1 низкий).
-- `src/` содержит 7 модулей, `tests/` содержит 4 тестовых модуля.
-- Все тесты должны проходить (исправлены 5 упавших из сессии 32).
+- **Обязательное чтение на сессию:** 1 файл, ~30 строк (`knowledge/quick_context.md`).
+- 0 открытых вопросов (0034 закрыт).
+- `src/tools/` содержит 6 модулей: `partial_reader.py`, `prompt_builder.py`, `code_analyzer.py`, `reader.py`, `compat.py`, `apply_patch.py`.
+- `tests/` содержит 5 тестовых модулей: `test_code_analyzer.py`, `test_compat.py`, `test_partial_reader.py`, `test_reader.py`, `test_apply_patch.py`.
 
-## Что важно для следующей сессии (сессия 34)
+## Что важно для следующей сессии (сессия 36)
 
-1. **Главный вопрос:** структура проекта — куда деть `scripts/`? Создатель просил выделить агента и инструменты в `src/`, разбросать остальные скрипты. Вопрос уже создан в `state/questions/0032-project-structure.md`.
-2. **Интеграция reader.py** — использовать точечное чтение в сессионном цикле.
-3. **Развитие дашборда** — автообновление, интеграция с анализатором кода.
+1. **Модуль self-review** — создать инструмент для анализа сессий и выявления улучшений (как предложил создатель).
+2. **Интеграция reader.py в сессионный цикл** — использовать точечное чтение при загрузке файлов.
+3. **Интеграция apply_patch.py в сессионный цикл** — использовать частичные правки вместо полной перезаписи.
+4. **Проверить и исправить упавшие тесты** — если тесты reader.py или code_analyzer.py падают, диагностика в `external_messages.md` может быть устаревшей.
 
 ## Рекомендация для следующей сессии
 
-Начать с ответа на вопрос о структуре проекта — это определит дальнейшую организацию кодовой базы.
+Начать с модуля self-review — это прямой запрос создателя. Создать `src/tools/self_review.py`, который анализирует `logs/history.md` и `state/last_session.md` и выдаёт рекомендации по улучшению процесса.
 
 
 ---
@@ -199,7 +193,7 @@ _Заполни после учёта ответа._
 
 # Текущий план
 
-## Статус: практическая фаза (сессия 33)
+## Статус: практическая фаза (сессия 35)
 
 - ✅ Создана карта системы (`knowledge/system_map.md`) — сессия 1
 - ✅ Обновлены файлы состояния и истории — сессия 1
@@ -239,6 +233,10 @@ _Заполни после учёта ответа._
 - ✅ **Тесты для `compat.py` и `partial_reader.py`** — сессия 31
 - ✅ **Точечное чтение файлов** (`src/tools/reader.py` + `tests/test_reader.py`) — сессия 32
 - ✅ **Исправлены баги `reader.py`** — 0-based/1-based индексы, добавлено поле `error` в `ReadResult` — сессия 33
+- ✅ **Закрыт вопрос о структуре проекта** — создатель подтвердил текущую структуру — сессия 34
+- ✅ **Закрыт вопрос о приоритетах** — приоритет: улучшение агента — сессия 35
+- ✅ **Создан инструмент частичных правок** (`src/tools/apply_patch.py`) — сессия 35
+- ✅ **Созданы тесты для apply_patch.py** (`tests/test_apply_patch.py`) — сессия 35
 
 ## Завершённые мини-проекты
 
@@ -256,25 +254,24 @@ _Заполни после учёта ответа._
 12. **Тесты для compat/partial_reader** ✅ — `tests/test_compat.py`, `tests/test_partial_reader.py`
 13. **Точечное чтение файлов** ✅ — `src/tools/reader.py`, `tests/test_reader.py`
 14. **Исправление багов reader.py** ✅ — 0-based/1-based индексы, поле `error` — сессия 33
+15. **Закрытие вопроса о структуре** ✅ — структура подтверждена — сессия 34
+16. **Закрытие вопроса о приоритетах** ✅ — приоритет: улучшение агента — сессия 35
+17. **Инструмент частичных правок** ✅ — `src/tools/apply_patch.py`, `tests/test_apply_patch.py` — сессия 35
 
-## Текущий фокус: практическая фаза
+## Текущий фокус: улучшение агента
 
-Переход к практической фазе совершён:
-- ✅ Первый практический инструмент создан (`code_analyzer.py`)
-- ✅ Первый анализ кодовой базы проведён
-- ✅ UI-дашборд создан (по запросу создателя)
-- ✅ Дублирование fallback-функций устранено
-- ✅ Первые тесты созданы (`test_code_analyzer.py`)
-- ✅ Тесты для compat/partial_reader созданы
-- ✅ Точечное чтение файлов создано (`reader.py`) — ответ на фидбек создателя
-- ✅ Баги reader.py исправлены (0-based/1-based индексы, поле error)
-- ⏳ Обсудить структуру проекта с создателем
+Приоритет определён создателем: улучшение агента. Финансовый дашборд — когда задачи в этой области кончатся.
 
-## Следующий разумный шаг (сессия 34)
+- ✅ Точечное чтение файлов (`reader.py`)
+- ✅ Инструмент частичных правок (`apply_patch.py`)
+- ⏳ Модуль self-review (анализ сессий и выявление улучшений)
+- ⏳ Интеграция reader.py в сессионный цикл
+- ⏳ Интеграция apply_patch.py в сессионный цикл
 
-1. **Обсудить структуру проекта** — задать вопрос создателю о том, куда деть `scripts/`.
-2. **Интегрировать `reader.py` в сессионный цикл** — читать только нужные строки/секции вместо целых файлов.
-3. **Развить дашборд** — автообновление, интеграция с анализатором кода.
+## Следующий разумный шаг (сессия 36)
+
+1. **Модуль self-review** — создать `src/tools/self_review.py`, который анализирует `logs/history.md` и `state/last_session.md` и выдаёт рекомендации по улучшению процесса.
+2. **Интеграция инструментов** — подключить `reader.py` и `apply_patch.py` к сессионному циклу.
 
 
 ---
@@ -294,118 +291,67 @@ _Заполни после учёта ответа._
 
 ты давно не спал. я хочу UI дашборд для тебя. чтобы каждый раз не дергать сессию в консоли.
 
-
-
-# Диагностика упавших проверок
-
-- Попытка исправления: 1/2
-- Команда проверки: `c:\_dev\own\pet\.venv\Scripts\python.exe -m pytest`
-
-Проверки упали. Это не финальный результат сессии: исправь ошибки в текущем временном worktree и снова обнови обязательные файлы сессии.
-
-## Вывод проверок
-
-```text
-... 23 earlier output lines omitted; tail follows ...
-self = <test_code_analyzer.TestSelfAnalysis object at 0x0000019A68F02350>
-
-    def test_analyze_self(self):
-        analyzer_path = os.path.join(
-            os.path.dirname(__file__), '..', 'src', 'tools', 'code_analyzer.py'
-        )
-        if not os.path.exists(analyzer_path):
-            return  # ����������, ���� ���� �� ������
-    
-        result = analyze_file(analyzer_path)
-        assert result.error is None
-        assert len(result.functions) > 0
->       assert len(result.classes) == 0  # � code_analyzer ��� �������
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       AssertionError: assert 4 == 0
-E        +  where 4 = len([ClassInfo(name='FuncInfo', line=29, methods=[], has_docstring=True, bases=[], decorators=['dataclass']), ClassInfo(na...aclass']), ClassInfo(name='FileAnalysis', line=60, methods=[], has_docstring=True, bases=[], decorators=['dataclass'])])
-E        +    where [ClassInfo(name='FuncInfo', line=29, methods=[], has_docstring=True, bases=[], decorators=['dataclass']), ClassInfo(na...aclass']), ClassInfo(name='FileAnalysis', line=60, methods=[], has_docstring=True, bases=[], decorators=['dataclass'])] = FileAnalysis(path='C:\\_dev\\own\\pet\\runs\\session-0029\\tests\\..\\src\\tools\\code_analyzer.py', lines=453, functi...'Dict', 'Optional'], line=25, is_from=True)], has_docstring=True, top_level_assigns=0, try_except_blocks=0, error=None).classes
-
-tests\test_code_analyzer.py:478: AssertionError
-=============================== tests coverage ================================
-______________ coverage: platform win32, python 3.11.15-final-0 _______________
-
-Name                             Stmts   Miss Branch BrPart  Cover   Missing
-----------------------------------------------------------------------------
-scripts\command_runners.py          68      2      8      1    96%   92-93, 104->107
-scripts\file_tools.py               42      2     14      2    93%   54, 74
-scripts\llm_client.py               62      5     10      1    92%   26, 74-75, 79-80
-scripts\run_agent.py               139      6     34      5    94%   14, 136-137, 146, 219, 221->224, 232
-scripts\run_session.py              91      2     22      2    96%   214, 253
-scripts\run_snapshots.py            35      3      6      1    90%   60, 69-70
-scripts\session_transaction.py     281     12     74     10    94%   14, 97, 102, 114, 124, 246->exit, 274->263, 344, 350, 390-391, 411-412, 481
-scripts\sleep_memory.py             84     18     18      3    79%   22, 51-53, 133-136, 140-149, 153
-----------------------------------------------------------------------------
-TOTAL                              842     50    190     25    93%
-
-2 files skipped due to complete coverage.
-Required test coverage of 90% reached. Total coverage: 92.73%
-=========================== short test summary info ===========================
-FAILED tests/test_code_analyzer.py::TestSelfAnalysis::test_analyze_self - Ass...
-======================== 1 failed, 112 passed in 2.61s ========================
-```
-
-
-# Диагностика упавших проверок
-
-- Попытка исправления: 1/2
-- Команда проверки: `c:\_dev\own\pet\.venv\Scripts\python.exe -m pytest`
-
-Проверки упали. Это не финальный результат сессии: исправь ошибки в текущем временном worktree и снова обнови обязательные файлы сессии.
-
-## Вывод проверок
-
-```text
-... 98 earlier output lines omitted; tail follows ...
-    def test_method_in_class(self):
-        content = textwrap.dedent('''\
-            class MyClass:
-                def method(self, x):
-                    """�����."""
-                    return x
-        ''')
-        path = _make_temp_file(content)
-        try:
-            result = read_func(path, 'method')
->           assert 'def method' in result.content
-E           assert 'def method' in '        """�����."""\n        return x\n'
-E            +  where '        """�����."""\n        return x\n' = ReadResult(path='C:\\Users\\ohotNik\\AppData\\Local\\Temp\\tmpvf9vavin.py', content='        """�����."""\n        return x\n', lines_read=2, method='func[method]', truncated=False).content
-
-tests\test_reader.py:244: AssertionError
-=============================== tests coverage ================================
-______________ coverage: platform win32, python 3.11.15-final-0 _______________
-
-Name                             Stmts   Miss Branch BrPart  Cover   Missing
-----------------------------------------------------------------------------
-scripts\command_runners.py          68      2      8      1    96%   92-93, 104->107
-scripts\file_tools.py               42      2     14      2    93%   54, 74
-scripts\llm_client.py               62      5     10      1    92%   26, 74-75, 79-80
-scripts\run_agent.py               139      6     34      5    94%   14, 136-137, 146, 219, 221->224, 232
-scripts\run_session.py              91      2     22      2    96%   214, 253
-scripts\run_snapshots.py            35      3      6      1    90%   60, 69-70
-scripts\session_transaction.py     281     12     74     10    94%   14, 97, 102, 114, 124, 246->exit, 274->263, 344, 350, 390-391, 411-412, 481
-scripts\sleep_memory.py             84     18     18      3    79%   22, 51-53, 133-136, 140-149, 153
-----------------------------------------------------------------------------
-TOTAL                              842     50    190     25    93%
-
-2 files skipped due to complete coverage.
-Required test coverage of 90% reached. Total coverage: 92.73%
-=========================== short test summary info ===========================
-FAILED tests/test_reader.py::TestReadLines::test_basic_range - AttributeError...
-FAILED tests/test_reader.py::TestReadFunc::test_simple_function - assert 'def...
-FAILED tests/test_reader.py::TestReadFunc::test_function_with_decorator - ass...
-FAILED tests/test_reader.py::TestReadFunc::test_async_function - assert 'asyn...
-FAILED tests/test_reader.py::TestReadFunc::test_method_in_class - assert 'def...
-======================== 5 failed, 175 passed in 2.53s ========================
-```
-
-
 ты все еще пишешь файлы целиком. собери себе инструмент для частичных правок типа apply. это упростит твою жизнь.
 
+
+# Сессия 35 — 2026-07-06
+
+Создан инструмент частичных правок `src/tools/apply_patch.py` (в ответ на просьбу создателя).
+Закрыт вопрос о приоритетах (0034): приоритет — улучшение агента.
+
+
+# Диагностика упавших проверок
+
+- Попытка исправления: 1/2
+- Команда проверки: `c:\_dev\own\pet\.venv\Scripts\python.exe -m pytest`
+
+Проверки упали. Это не финальный результат сессии: исправь ошибки в текущем временном worktree и снова обнови обязательные файлы сессии.
+
+## Вывод проверок
+
+```text
+... 21 earlier output lines omitted; tail follows ...
+tests\test_sleep_memory.py ...                                           [ 99%]
+tests\test_validation_repairs.py ..                                      [100%]
+
+================================== FAILURES ===================================
+____________________ TestReplaceRegex.test_regex_multiline ____________________
+
+self = <test_apply_patch.TestReplaceRegex object at 0x000002277C4BB550>
+
+    def test_regex_multiline(self):
+        content = 'a=1\nb=2\na=3\n'
+        path = _make_temp_file(content)
+        try:
+            result = replace_regex(path, r'^a=\d+', 'a=0')
+            assert result.applied is True
+>           assert result.changes == 2
+E           AssertionError: assert 1 == 2
+E            +  where 1 = PatchResult(path='C:\\Users\\ohotNik\\AppData\\Local\\Temp\\tmpqtifxpk8.py', applied=True, operation='regex', changes=1, preview='�������� 1 ��������� �� ������� ^a=\\d+', error=None).changes
+
+tests\test_apply_patch.py:148: AssertionError
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.11.15-final-0 _______________
+
+Name                             Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------
+scripts\command_runners.py          68      2      8      1    96%   92-93, 104->107
+scripts\file_tools.py               42      2     14      2    93%   54, 74
+scripts\llm_client.py               62      5     10      1    92%   26, 74-75, 79-80
+scripts\run_agent.py               139      6     34      5    94%   14, 136-137, 146, 219, 221->224, 232
+scripts\run_session.py              91      2     22      2    96%   214, 253
+scripts\run_snapshots.py            35      3      6      1    90%   60, 69-70
+scripts\session_transaction.py     281     12     74     10    94%   14, 97, 102, 114, 124, 246->exit, 274->263, 344, 350, 390-391, 411-412, 481
+scripts\sleep_memory.py             84     18     18      3    79%   22, 51-53, 133-136, 140-149, 153
+----------------------------------------------------------------------------
+TOTAL                              842     50    190     25    93%
+
+2 files skipped due to complete coverage.
+Required test coverage of 90% reached. Total coverage: 92.73%
+=========================== short test summary info ===========================
+FAILED tests/test_apply_patch.py::TestReplaceRegex::test_regex_multiline - As...
+======================== 1 failed, 204 passed in 2.46s ========================
+```
 
 
 ---
@@ -464,7 +410,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Вопрос: структура проекта — куда деть скрипты?
 
-Статус: open
+Статус: closed
 Сессия: 32
 Дата: 2026-07-06
 
@@ -490,11 +436,58 @@ _Что учтено из ответа создателя. Если вопрос
 
 ## Решение агента после ответа
 
-_Заполни после учёта ответа._
+**Статус:** closed
+**Дата обновления:** 2026-07-06
+**Решение:** Создатель подтверждает текущую структуру: `src/` для агента и инструментов, `scripts/` оставить как есть. Вопрос закрыт без изменений.
 
 ## Примечание
 
-Вопрос актуален для сессии 34. До получения ответа — не перемещать файлы.
+Вопрос закрыт в сессии 34. Структура проекта подтверждена.
+
+
+## 0034-priorities.md
+
+# Вопрос: приоритеты — финансовый дашборд или улучшение агента?
+
+Статус: closed
+Сессия: 34
+Дата: 2026-07-06
+
+## Контекст
+
+В `GLOBAL_TARGET.md` создатель просит:
+1. Завести директорию для `foundation-finance` (дашборд с финансовой аналитикой)
+2. Docker-compose для развёртывания
+3. Web дашборд (Rust или Go предпочтительно)
+4. Подключение к openai-compatible моделям для аналитических отчётов
+
+Одновременно в `state/external_messages.md` создатель просил:
+- Оптимизировать работу с моделью (точечное чтение)
+- Выделить код в `src/`
+- Создать UI дашборд для агента
+
+Я уже создал UI-дашборд для агента в сессии 27 (`tools/dashboard/`), но это не финансовый дашборд.
+
+## Вопрос
+
+С чего начать в первую очередь?
+1. **Финансовый дашборд** — создать `projects/foundation-finance/`, подключить репозиторий, начать разработку
+2. **Улучшение агента** — продолжить оптимизацию чтения, интеграцию reader.py, улучшение инструментов
+3. **Другой приоритет** — укажите свой
+
+## Ответ создателя
+
+в приоритете улучшение агента. когда задачи в этой области кончаются - финансовый дашборд. можешь ввести необязательный модуль self-review чтобы понимать что в сессиях и в работе агента можно делать лучше.
+
+## Решение агента после ответа
+
+**Статус:** closed
+**Дата обновления:** 2026-07-06
+**Решение:** Приоритет определён: улучшение агента. Создан инструмент частичных правок (`src/tools/apply_patch.py`) — ответ на просьбу создателя не писать файлы целиком. Модуль self-review запланирован как следующая задача.
+
+## Примечание для следующей сессии
+
+Вопрос закрыт в сессии 35. Приоритет — улучшение агента. Создан `apply_patch.py`. Следующий шаг: модуль self-review или интеграция reader.py в сессионный цикл.
 
 
 ---
@@ -530,7 +523,7 @@ _Заполни после учёта ответа._
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 34. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0034`.
+Ты находишься в сессии 36. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0035`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

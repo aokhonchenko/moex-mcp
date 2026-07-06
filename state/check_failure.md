@@ -8,22 +8,26 @@
 ## Вывод проверок
 
 ```text
-... 98 earlier output lines omitted; tail follows ...
-    def test_method_in_class(self):
-        content = textwrap.dedent('''\
-            class MyClass:
-                def method(self, x):
-                    """�����."""
-                    return x
-        ''')
+... 21 earlier output lines omitted; tail follows ...
+tests\test_sleep_memory.py ...                                           [ 99%]
+tests\test_validation_repairs.py ..                                      [100%]
+
+================================== FAILURES ===================================
+____________________ TestReplaceRegex.test_regex_multiline ____________________
+
+self = <test_apply_patch.TestReplaceRegex object at 0x000002277C4BB550>
+
+    def test_regex_multiline(self):
+        content = 'a=1\nb=2\na=3\n'
         path = _make_temp_file(content)
         try:
-            result = read_func(path, 'method')
->           assert 'def method' in result.content
-E           assert 'def method' in '        """�����."""\n        return x\n'
-E            +  where '        """�����."""\n        return x\n' = ReadResult(path='C:\\Users\\ohotNik\\AppData\\Local\\Temp\\tmpvf9vavin.py', content='        """�����."""\n        return x\n', lines_read=2, method='func[method]', truncated=False).content
+            result = replace_regex(path, r'^a=\d+', 'a=0')
+            assert result.applied is True
+>           assert result.changes == 2
+E           AssertionError: assert 1 == 2
+E            +  where 1 = PatchResult(path='C:\\Users\\ohotNik\\AppData\\Local\\Temp\\tmpqtifxpk8.py', applied=True, operation='regex', changes=1, preview='�������� 1 ��������� �� ������� ^a=\\d+', error=None).changes
 
-tests\test_reader.py:244: AssertionError
+tests\test_apply_patch.py:148: AssertionError
 =============================== tests coverage ================================
 ______________ coverage: platform win32, python 3.11.15-final-0 _______________
 
@@ -43,10 +47,6 @@ TOTAL                              842     50    190     25    93%
 2 files skipped due to complete coverage.
 Required test coverage of 90% reached. Total coverage: 92.73%
 =========================== short test summary info ===========================
-FAILED tests/test_reader.py::TestReadLines::test_basic_range - AttributeError...
-FAILED tests/test_reader.py::TestReadFunc::test_simple_function - assert 'def...
-FAILED tests/test_reader.py::TestReadFunc::test_function_with_decorator - ass...
-FAILED tests/test_reader.py::TestReadFunc::test_async_function - assert 'asyn...
-FAILED tests/test_reader.py::TestReadFunc::test_method_in_class - assert 'def...
-======================== 5 failed, 175 passed in 2.53s ========================
+FAILED tests/test_apply_patch.py::TestReplaceRegex::test_regex_multiline - As...
+======================== 1 failed, 204 passed in 2.46s ========================
 ```

@@ -7,10 +7,17 @@ from scripts import session_transaction
 
 
 class FakeRunner:
-    def __init__(self, root: Path, fail_agent: bool = False, fail_checks: bool = False):
+    def __init__(
+        self,
+        root: Path,
+        fail_agent: bool = False,
+        fail_checks: bool = False,
+        check_failures_remaining: int = 0,
+    ):
         self.root = root
         self.fail_agent = fail_agent
         self.fail_checks = fail_checks
+        self.check_failures_remaining = check_failures_remaining
         self.commands = []
         self.worktree = None
         self.branch = None
@@ -60,7 +67,9 @@ class FakeRunner:
 
         if args[0].endswith("python") or args[0].endswith("python.exe"):
             if len(args) >= 3 and args[2] == "pytest":
-                if self.fail_checks:
+                if self.fail_checks or self.check_failures_remaining > 0:
+                    if self.check_failures_remaining > 0:
+                        self.check_failures_remaining -= 1
                     return session_transaction.CommandResult(1, "", "tests failed")
                 return session_transaction.CommandResult(0, "tests ok", "")
             if self.fail_agent:
@@ -342,12 +351,13 @@ def test_commit_and_apply_session_issue_git_commands(tmp_path):
 
 
 def test_main_returns_zero_on_success(monkeypatch, capsys, tmp_path):
-    def fake_transaction(root, agent_command, runs_dir, check_command, runner):
+    def fake_transaction(root, agent_command, runs_dir, check_command, runner, repair_attempts):
         assert root == tmp_path
         assert agent_command == "agent"
         assert runs_dir == tmp_path / "runs"
         assert check_command == ["check"]
         assert runner is session_transaction.streaming_runner
+        assert repair_attempts == session_transaction.DEFAULT_REPAIR_ATTEMPTS
         return "cafebabe"
 
     monkeypatch.setattr(session_transaction, "run_transaction", fake_transaction)

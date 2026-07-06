@@ -96,7 +96,7 @@ def analyze_file(filepath: str) -> FileAnalysis:
             error=str(e)
         )
     
-    lines = source.count('\n') + 1
+    lines = len(source.splitlines())
     
     # Парсим AST
     try:

@@ -21,6 +21,7 @@ from scripts.command_runners import (
     streaming_runner,
 )
 from scripts.run_snapshots import SnapshotError, preserve_session_snapshot
+from scripts.validation_repairs import DEFAULT_REPAIR_ATTEMPTS, run_validation_with_repairs
 
 
 class TransactionError(RuntimeError):
@@ -321,6 +322,7 @@ def run_transaction(
     runs_dir: Path | None = None,
     check_command: Sequence[str] | None = None,
     runner: CommandRunner = default_runner,
+    repair_attempts: int = DEFAULT_REPAIR_ATTEMPTS,
 ) -> str:
     if not agent_command.strip():
         agent_command = default_agent_command()
@@ -372,7 +374,21 @@ def run_transaction(
             ensure_file_size_policy(worktree)
 
             diagnostic("running validation checks")
-            run_checks(worktree, check_command, runner)
+            try:
+                run_validation_with_repairs(
+                    worktree,
+                    agent_command,
+                    check_command,
+                    repair_attempts=repair_attempts,
+                    runner=runner,
+                    failure_details=command_failure_details,
+                    run_repair_session=run_inner_session,
+                    ensure_required_session_files=ensure_required_session_files,
+                    ensure_file_size_policy=ensure_file_size_policy,
+                    diagnostic=diagnostic,
+                )
+            except RuntimeError as exc:
+                raise TransactionError(str(exc)) from exc
 
             diagnostic("checking produced changes")
             ensure_session_changed_worktree(worktree, runner)
@@ -430,6 +446,12 @@ def parse_args() -> argparse.Namespace:
         default=[sys.executable, "-m", "pytest"],
         help="Command used to validate the worktree before applying changes.",
     )
+    parser.add_argument(
+        "--repair-attempts",
+        type=int,
+        default=DEFAULT_REPAIR_ATTEMPTS,
+        help="How many times to ask the agent to fix failed validation checks before rollback.",
+    )
     return parser.parse_args()
 
 
@@ -445,6 +467,7 @@ def main() -> int:
             runs_dir=runs_dir,
             check_command=args.check_command,
             runner=streaming_runner,
+            repair_attempts=args.repair_attempts,
         )
     except (TransactionError, CommandExecutionError) as exc:
         print(f"Transaction failed: {exc}", file=sys.stderr)

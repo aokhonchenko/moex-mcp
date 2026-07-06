@@ -73,6 +73,10 @@ def build_prompt(root: Path, session: int) -> str:
         state_dir / "external_messages.md",
         "_Внешних сообщений нет._\n",
     )
+    sleep_state = read_text_or_default(
+        state_dir / "sleep" / "last_sleep.md",
+        "_Сон ещё не выполнялся._\n",
+    )
     questions = read_questions(root)
 
     return f"""# Активный промпт сессии {session}
@@ -113,6 +117,12 @@ def build_prompt(root: Path, session: int) -> str:
 # state/questions/
 
 {questions}
+
+---
+
+# state/sleep/last_sleep.md
+
+{sleep_state}
 
 ---
 
@@ -174,6 +184,7 @@ def main() -> int:
         root / "projects",
         root / "tools",
         state_dir / "questions",
+        state_dir / "sleep",
     ):
         directory.mkdir(parents=True, exist_ok=True)
 

@@ -194,3 +194,15 @@ def test_main_dry_run_creates_questions_directory(tmp_path, monkeypatch):
 
     assert result == 0
     assert (tmp_path / "state" / "questions").is_dir()
+
+
+def test_build_prompt_includes_sleep_state(tmp_path):
+    write_minimal_experiment(tmp_path)
+    sleep_dir = tmp_path / "state" / "sleep"
+    sleep_dir.mkdir()
+    (sleep_dir / "last_sleep.md").write_text("Последний сон очистил память.\n", encoding="utf-8")
+
+    prompt = run_session.build_prompt(tmp_path, 7)
+
+    assert "# state/sleep/last_sleep.md" in prompt
+    assert "Последний сон очистил память" in prompt

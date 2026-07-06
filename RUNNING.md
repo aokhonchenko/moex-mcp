@@ -23,17 +23,10 @@ cp .env.example .env
 ```bash
 AI_API_KEY=replace-with-your-api-key
 AI_BASE_URL=https://your-openai-compatible-endpoint.example/v1
+AI_MODEL=openai/your-model-name
 ```
 
-Выберите модель в `config/project.toml`:
-
-```toml
-[mini_swe_agent]
-model = "openai/your-model-name"
-custom_llm_provider = "openai"
-```
-
-`AI_API_KEY` и `AI_BASE_URL` не коммитятся. `config/project.toml` коммитится, потому что это проектная настройка.
+Модель, URL и ключ находятся в `.env` и не коммитятся. `config/project.toml` коммитится и хранит только не-секретные параметры запуска `mini-swe-agent`.
 
 ## Ручной цикл
 
@@ -48,6 +41,17 @@ uv run python scripts/session_transaction.py
 4. Повторите цикл, когда хотите дать агенту следующий ход.
 
 Если перед запуском изменены только `GLOBAL_TARGET.md`, `state/external_messages.md` или `state/questions/*.md`, runner сам сделает checkpoint-коммит этих человеческих входов. Если изменены другие файлы, запуск будет остановлен.
+
+
+## Сон
+
+Сон не запускается отдельным внешним режимом. Вы запускаете обычную сессию:
+
+```bash
+uv run python scripts/session_transaction.py
+```
+
+Если агент решит, что накопилась усталость или нужно очистить память, он сам вызовет `uv run python scripts/sleep_memory.py --root .` внутри этой обычной сессии. Результат сна сохраняется в `state/sleep/last_sleep.md` и `state/sleep/reports/`.
 
 ## Что запускается внутри
 

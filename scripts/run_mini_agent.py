@@ -64,7 +64,7 @@ def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
     output_path = root / str(settings["output_path"])
 
     model = LitellmModel(
-        model_name=str(settings["model"]),
+        model_name=require_env("AI_MODEL"),
         model_kwargs=build_model_kwargs(settings),
         cost_tracking=str(settings["cost_tracking"]),
     )

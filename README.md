@@ -22,6 +22,7 @@
 ├── scripts/
 │   ├── run_session.py            # Сборка промпта и запуск одной сессии в текущей папке
 │   ├── run_mini_agent.py         # Non-interactive wrapper для mini-swe-agent
+│   ├── sleep_memory.py           # Инструмент сна, вызываемый агентом внутри обычной сессии
 │   └── session_transaction.py    # Атомарный запуск через временный git worktree
 ├── state/
 │   ├── active_prompt.md          # Промпт, собранный для текущей сессии
@@ -59,17 +60,10 @@ cp .env.example .env
 ```bash
 AI_API_KEY=replace-with-your-api-key
 AI_BASE_URL=https://your-openai-compatible-endpoint.example/v1
+AI_MODEL=openai/your-model-name
 ```
 
-Выберите модель в `config/project.toml`:
-
-```toml
-[mini_swe_agent]
-model = "openai/your-model-name"
-custom_llm_provider = "openai"
-```
-
-`AI_API_KEY` и `AI_BASE_URL` не коммитятся. Модель хранится в проектной настройке `config/project.toml`, потому что это часть воспроизводимой конфигурации эксперимента.
+Модель тоже хранится в `.env`, рядом с URL и ключом. `config/project.toml` содержит только не-секретные параметры запуска `mini-swe-agent`: лимиты шагов, cost tracking, timeout и путь к trajectory.
 
 ## Ручной запуск
 
@@ -112,6 +106,23 @@ uv run python scripts/run_mini_agent.py --root "{ROOT}" --prompt-file "{PROMPT_F
 11. Если агент или проверки падают, удаляет временный worktree и ветку сессии.
 
 Обычный `scripts/run_session.py` полезен для отладки и ручных запусков, но он пишет прямо в текущую директорию. Для автономного режима используйте `scripts/session_transaction.py`.
+
+
+## Сон агента
+
+Сон не запускается отдельной командой. Создатель запускает обычную сессию:
+
+```bash
+uv run python scripts/session_transaction.py
+```
+
+Агент сам решает, что пора спать, если накопилась усталость: много закрытых вопросов, шумная память, повторяющиеся действия или устаревшие решения. Внутри обычной сессии он может вызвать:
+
+```bash
+uv run python scripts/sleep_memory.py --root .
+```
+
+Сон архивирует закрытые вопросы из `state/questions/`, создаёт отчёт в `state/sleep/reports/`, обновляет `state/sleep/last_sleep.md` и оставляет будущей сессии более чистое состояние.
 
 ## Вопросы создателю
 

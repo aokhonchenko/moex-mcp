@@ -1,6 +1,4 @@
 [mini_swe_agent]
-# LiteLLM model name. For OpenAI-compatible endpoints, keep the provider prefix unless your provider documents otherwise.
-model = "openai/your-model-name"
 custom_llm_provider = "openai"
 
 # OpenAI-compatible endpoints often do not have public cost metadata in LiteLLM.

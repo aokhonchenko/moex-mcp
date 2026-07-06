@@ -7,6 +7,7 @@ import argparse
 import json
 import sys
 import tomllib
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -20,12 +21,19 @@ from scripts.llm_client import LlmClientError, OpenAICompatibleClient
 DEFAULT_SETTINGS = {
     "step_limit": 300,
     "request_timeout_seconds": 300,
+    "repeated_tool_error_limit": 3,
     "temperature": 0.2,
 }
 
 
 class AgentError(RuntimeError):
     """Raised when the local agent cannot complete a session."""
+
+
+@dataclass(frozen=True)
+class ToolExecutionBatch:
+    messages: list[dict[str, Any]]
+    error_signatures: list[str]
 
 
 def diagnostic(message: str) -> None:
@@ -104,8 +112,9 @@ def tool_observation(name: str, ok: bool, payload: dict[str, Any] | str) -> str:
     return tool_result_json({"tool": name, "ok": False, "error": str(payload)})
 
 
-def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> list[dict[str, Any]]:
+def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> ToolExecutionBatch:
     results = []
+    error_signatures = []
     for tool_call in message.get("tool_calls") or []:
         function = tool_call.get("function") or {}
         name = function.get("name", "")
@@ -116,6 +125,7 @@ def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> list[dict[
             content = tool_observation(name, True, result)
         except (AgentError, ToolError) as exc:
             diagnostic(f"tool error: {name} {exc}")
+            error_signatures.append(f"{name}: {exc}")
             content = tool_observation(name, False, str(exc))
         results.append(
             {
@@ -124,7 +134,7 @@ def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> list[dict[
                 "content": content,
             }
         )
-    return results
+    return ToolExecutionBatch(messages=results, error_signatures=error_signatures)
 
 
 def parse_text_protocol(content: str) -> dict[str, Any] | None:
@@ -138,7 +148,7 @@ def parse_text_protocol(content: str) -> dict[str, Any] | None:
     return parsed if isinstance(parsed, dict) else None
 
 
-def execute_text_protocol(root: Path, parsed: dict[str, Any]) -> dict[str, Any] | None:
+def execute_text_protocol(root: Path, parsed: dict[str, Any]) -> ToolExecutionBatch | None:
     if "final" in parsed:
         return None
     name = str(parsed.get("tool", ""))
@@ -149,13 +159,38 @@ def execute_text_protocol(root: Path, parsed: dict[str, Any]) -> dict[str, Any] 
     try:
         result = call_tool(root, name, arguments)
         content = tool_observation(name, True, result)
+        error_signatures = []
     except ToolError as exc:
         diagnostic(f"text tool error: {name} {exc}")
+        error_signatures = [f"{name}: {exc}"]
         content = tool_observation(name, False, str(exc))
-    return {
-        "role": "user",
-        "content": content,
-    }
+    return ToolExecutionBatch(
+        messages=[
+            {
+                "role": "user",
+                "content": content,
+            }
+        ],
+        error_signatures=error_signatures,
+    )
+
+
+def repeated_error_state(
+    error_signatures: list[str],
+    previous_signature: str | None,
+    previous_count: int,
+) -> tuple[str | None, int]:
+    if not error_signatures:
+        return None, 0
+    signature = "\n".join(error_signatures)
+    if signature == previous_signature:
+        return signature, previous_count + 1
+    return signature, 1
+
+
+def raise_on_repeated_tool_errors(signature: str | None, count: int, limit: int) -> None:
+    if signature and count >= limit:
+        raise AgentError(f"repeated tool error {count} times: {signature}")
 
 
 def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
@@ -172,6 +207,9 @@ def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
     diagnostic(f"step_limit: {settings['step_limit']}")
 
     messages = initial_messages(task)
+    last_tool_error_signature: str | None = None
+    repeated_tool_error_count = 0
+    repeated_tool_error_limit = int(settings["repeated_tool_error_limit"])
     for step in range(1, int(settings["step_limit"]) + 1):
         diagnostic(f"step {step}: requesting model")
         message = client.complete(messages, TOOL_SCHEMAS)
@@ -179,15 +217,36 @@ def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
         tool_calls = message.get("tool_calls") or []
         if tool_calls:
             diagnostic(f"step {step}: model requested {len(tool_calls)} tool call(s)")
-            messages.extend(execute_native_tool_calls(root, message))
+            execution = execute_native_tool_calls(root, message)
+            messages.extend(execution.messages)
+            last_tool_error_signature, repeated_tool_error_count = repeated_error_state(
+                execution.error_signatures,
+                last_tool_error_signature,
+                repeated_tool_error_count,
+            )
+            raise_on_repeated_tool_errors(
+                last_tool_error_signature,
+                repeated_tool_error_count,
+                repeated_tool_error_limit,
+            )
             continue
 
         content = message.get("content") or ""
         parsed = parse_text_protocol(content)
         if parsed is not None:
-            observation = execute_text_protocol(root, parsed)
-            if observation is not None:
-                messages.append(observation)
+            execution = execute_text_protocol(root, parsed)
+            if execution is not None:
+                messages.extend(execution.messages)
+                last_tool_error_signature, repeated_tool_error_count = repeated_error_state(
+                    execution.error_signatures,
+                    last_tool_error_signature,
+                    repeated_tool_error_count,
+                )
+                raise_on_repeated_tool_errors(
+                    last_tool_error_signature,
+                    repeated_tool_error_count,
+                    repeated_tool_error_limit,
+                )
                 continue
             final = str(parsed.get("final", "")).strip()
         else:

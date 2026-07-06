@@ -32,6 +32,7 @@ def test_read_settings_uses_agent_section(tmp_path):
     assert settings["step_limit"] == 2
     assert settings["temperature"] == 0.5
     assert settings["request_timeout_seconds"] == 300
+    assert settings["repeated_tool_error_limit"] == 3
 
 
 def test_read_settings_defaults_to_long_session(tmp_path):
@@ -186,6 +187,38 @@ def test_run_agent_reports_step_limit(tmp_path, monkeypatch):
 
     with pytest.raises(run_agent.AgentError, match="step limit exceeded"):
         run_agent.run_agent(tmp_path, prompt, settings)
+
+
+def test_run_agent_stops_repeated_unknown_native_tool_calls(tmp_path, monkeypatch, capsys):
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task", encoding="utf-8")
+    settings = tmp_path / "project.toml"
+    settings.write_text(
+        "[agent]\nstep_limit = 10\nrepeated_tool_error_limit = 3\n",
+        encoding="utf-8",
+    )
+    unknown_tool_reply = {
+        "content": "",
+        "tool_calls": [
+            {
+                "id": "call-1",
+                "type": "function",
+                "function": {
+                    "name": "run_command",
+                    "arguments": '{"command":"pytest"}',
+                },
+            }
+        ],
+    }
+    client = FakeClient([unknown_tool_reply, unknown_tool_reply, unknown_tool_reply])
+    install_fake_client(monkeypatch, client)
+
+    with pytest.raises(run_agent.AgentError, match="repeated tool error 3 times: run_command: unknown tool"):
+        run_agent.run_agent(tmp_path, prompt, settings)
+
+    captured = capsys.readouterr()
+    assert captured.out.count("tool error: run_command unknown tool: run_command") == 3
+    assert len(client.calls) == 3
 
 
 def test_main_returns_one_on_agent_error(tmp_path, monkeypatch, capsys):

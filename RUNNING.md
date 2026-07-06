@@ -32,6 +32,7 @@ AI_MODEL=your-model-name
 [agent]
 step_limit = 300
 request_timeout_seconds = 300
+repeated_tool_error_limit = 3
 temperature = 0.2
 ```
 

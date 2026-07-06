@@ -14,3 +14,6 @@ runs/*
 .venv/
 venv/
 .env
+
+# External project repos (own git)
+projects/foundation-finance/

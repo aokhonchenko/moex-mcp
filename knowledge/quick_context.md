@@ -1,6 +1,6 @@
 # Быстрый контекст проекта ai-lives
 
-**Обновлено:** сессия 33 (2026-07-06)
+**Обновлено:** сессия 55 (2026-07-06)
 
 ---
 
@@ -12,22 +12,28 @@
 
 | Директория | Назначение |
 |------------|------------|
-| `src/` | Код: `agent/context.py`, `tools/partial_reader.py`, `tools/prompt_builder.py`, `tools/code_analyzer.py`, `tools/compat.py`, `tools/reader.py`, `session_runner.py` |
-| `tests/` | Тесты: `test_code_analyzer.py`, `test_compat.py`, `test_partial_reader.py`, `test_reader.py` |
-| `state/` | Состояние: `last_session.md`, `current_plan.md`, `session_context.md` |
-| `tasks/` | Задачи: `active.md` (приоритеты), `archive.md` |
-| `knowledge/` | Знания: `system_map.md`, `file_manifest.md`, `quick_context.md`, `codebase-analysis-26.md`, `notes/` |
-| `tools/` | Инструменты: `dashboard/`, `notes/`, `sleep/`, `diff/`, `integrity/` |
-| `logs/` | История: `history.md`, `week-*.md` |
+| `src/tools/` | Инструменты агента: apply_patch, code_analyzer, command_runner, compat, partial_reader, prompt_builder, reader, read_file, read_lines, replace_text, run_command, run_pytest, run_python_script, self_review, write_file |
+| `src/agent/` | Логика агента: context.py |
+| `tests/` | Тесты: test_apply_patch, test_code_analyzer, test_command_runner, test_compat, test_partial_reader, test_reader, test_self_review |
+| `state/` | Состояние: last_session.md, current_plan.md, session_context.md, questions/ |
+| `tasks/` | Задачи: active.md, archive.md |
+| `knowledge/` | Знания: system_map.md, file_manifest.md, quick_context.md, codebase-analysis-26.md, notes/ |
+| `tools/` | Markdown-инструменты: dashboard/, notes/, sleep/, diff/, integrity/ |
+| `logs/` | История: history.md, week-*.md, archive/ |
+| `projects/` | Мини-проекты: TEMPLATE.md, task-tracker/, **foundation-finance/** |
 
 ## Текущее состояние
 
-- 33 сессии завершены, практическая фаза
-- 1 открытый вопрос (`state/questions/0032-project-structure.md`)
-- 2 активных задачи (1 средний, 1 низкий)
-- `src/` содержит 7 модулей, покрытие docstrings 100%
-- `tests/` содержит 4 тестовых модуля (~90+ тестов)
-- Практические инструменты: `code_analyzer.py`, `reader.py`, `dashboard/`
+- 55 сессий завершено, практическая фаза
+- 0 открытых вопросов
+- 2 активных задачи (command_runner интеграция, foundation-finance)
+- `src/tools/` содержит 15 инструментов (все с runtime tool.py)
+- `tests/` содержит 7 тестовых модулей (~290 тестов)
+- **foundation-finance** — финансовый дашборд (Go backend + Web frontend + Docker Compose)
+  - MOEX ISS API, кэширование, фундаментальные данные, LLM, свечной график
+  - Поиск по тикерам с автокомплитом, zoom/pan, кроссхейр
+  - ~117 Go unit-тестов
+  - Репозиторий: git@github.com:aokhonchenko/foundation-finance.git
 
 ## Сессионный цикл
 
@@ -40,41 +46,10 @@
 > оптимизируй чтение файлов, выдели код в src/, улучшай инструменты
 > сдвинуться от мета-работы к практике
 > я хочу UI дашборд для тебя
-
-## Новый инструмент: точечное чтение (`src/tools/reader.py`)
-
-Создан для решения проблемы неоптимального чтения больших файлов целиком.
-
-**Возможности:**
-- `--lines START END` — чтение диапазона строк (1-based)
-- `--head N` — первые N строк
-- `--tail N` — последние N строк
-- `--func ИМЯ` — определение функции из Python-файла (с декораторами)
-- `--class ИМЯ` — определение класса из Python-файла
-- `--pattern REGEX` — строки по регулярному выражению с контекстом
-- `--section ИМЯ` — секция markdown по заголовку `## ИМЯ`
-- `--info` — метаданные файла без чтения содержимого
-
-**Исправления сессии 33:**
-- Исправлены 0-based/1-based индексы в `read_func()` и `read_class()`
-- Добавлено поле `error: Optional[str]` в `ReadResult`
-- Все функции чтения теперь заполняют `error` при ошибках
-
-**Примеры использования:**
-```bash
-# Прочитать только функцию analyze_file без загрузки всего файла
-python src/tools/reader.py src/tools/code_analyzer.py --func analyze_file
-
-# Прочитать секцию плана без загрузки всего плана
-python src/tools/reader.py state/current_plan.md --section 'Следующий разумный шаг'
-
-# Посмотреть метаданные файла
-python src/tools/reader.py src/tools/code_analyzer.py --info
-```
+> для foundation-finance нужны российские источники (MOEX)
 
 ## Подробнее
 
 → `knowledge/system_map.md` — полная карта  
 → `knowledge/file_manifest.md` — размеры и правила чтения  
-→ `knowledge/artifact_links.md` — связи между артефактами  
-→ `knowledge/codebase-analysis-26.md` — анализ кодовой базы
+→ `knowledge/artifact_links.md` — связи между артефактами

@@ -21,6 +21,8 @@
 | 23 | **Быстрый контекст** | `knowledge/quick_context.md` — ≤30 строк, полная картина проекта |
 | 24 | **Оптимизация artifact_links** | `knowledge/artifact_links.md` реструктурирован — быстрая сводка в первых 30 строках |
 | 25 | **Сборщик промптов** | `src/tools/prompt_builder.py` + `src/session_runner.py` — оптимизированная сборка контекста |
+| 26 | **Анализатор кода** | `src/tools/code_analyzer.py` — AST-анализ Python, первый анализ кодовой базы |
+| 27 | **UI-дашборд** | `tools/dashboard/` — статический HTML-дашборд для браузера |
 
 ## Архив (сессии 1–12)
 
@@ -35,9 +37,3 @@
 | 10 | Карта связей | `knowledge/artifact_links.md` |
 | 11 | Дифф-отчёт | `tools/diff/report-template.md` |
 | 12 | Первый сон | `state/sleep/last_sleep.md` |
-
-## Сессия 26 - prompt prepared
-
-- Время: 2026-07-06 13:25:21 +0300
-- Активный промпт: `state/active_prompt.md`
-- Режим: agent command

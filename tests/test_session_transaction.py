@@ -1,5 +1,4 @@
 import shutil
-import subprocess
 from pathlib import Path
 
 import pytest
@@ -208,7 +207,9 @@ def test_default_runner_wraps_subprocess_result(monkeypatch, tmp_path):
         return Completed()
 
     monkeypatch.setenv("VIRTUAL_ENV", "C:/old/project/.venv")
-    monkeypatch.setattr(session_transaction.subprocess, "run", fake_run)
+    from scripts import command_runners
+
+    monkeypatch.setattr(command_runners.subprocess, "run", fake_run)
 
     result = session_transaction.default_runner(["cmd"], tmp_path)
 
@@ -219,6 +220,8 @@ def test_default_runner_wraps_subprocess_result(monkeypatch, tmp_path):
     assert "VIRTUAL_ENV" not in env
     assert text is True
     assert capture_output is True
+
+
 
 
 def test_run_checked_reports_failure_details(tmp_path):
@@ -262,10 +265,10 @@ def test_lock_file_tolerates_missing_lock_during_cleanup(tmp_path):
     assert not (tmp_path / ".session.lock").exists()
 
 
-def test_default_runs_dir_is_next_to_root(tmp_path):
+def test_default_runs_dir_is_inside_root(tmp_path):
     root = tmp_path / "pet"
 
-    assert session_transaction.default_runs_dir(root) == tmp_path / "pet-runs"
+    assert session_transaction.default_runs_dir(root) == root / "runs"
 
 
 def test_create_worktree_rejects_existing_directory(tmp_path):
@@ -293,6 +296,8 @@ def test_required_session_files_reports_missing_files(tmp_path):
 def test_find_oversized_files_skips_binary_and_sensitive_dirs(tmp_path):
     (tmp_path / ".git").mkdir()
     (tmp_path / ".git" / "huge.txt").write_text("x\n" * 600, encoding="utf-8")
+    (tmp_path / "runs" / "session-0001").mkdir(parents=True)
+    (tmp_path / "runs" / "session-0001" / "huge.txt").write_text("x\n" * 600, encoding="utf-8")
     (tmp_path / "bad.bin").write_bytes(b"\xff\xfe\xfd")
 
     assert session_transaction.find_oversized_files(tmp_path, max_lines=1) == []
@@ -325,11 +330,12 @@ def test_commit_and_apply_session_issue_git_commands(tmp_path):
 
 
 def test_main_returns_zero_on_success(monkeypatch, capsys, tmp_path):
-    def fake_transaction(root, agent_command, runs_dir, check_command):
+    def fake_transaction(root, agent_command, runs_dir, check_command, runner):
         assert root == tmp_path
         assert agent_command == "agent"
         assert runs_dir == tmp_path / "runs"
         assert check_command == ["check"]
+        assert runner is session_transaction.streaming_runner
         return "cafebabe"
 
     monkeypatch.setattr(session_transaction, "run_transaction", fake_transaction)

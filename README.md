@@ -98,7 +98,7 @@ uv run python scripts/run_mini_agent.py --root "{ROOT}" --prompt-file "{PROMPT_F
 3. Если изменены только человеческие входы, делает checkpoint-коммит.
 4. Проверяет, что основной worktree чистый.
 5. Берёт `.session.lock`, чтобы две сессии не шли одновременно.
-6. Создаёт временный `git worktree` в соседней директории `<project>-runs/session-NNNN`.
+6. Создаёт временный `git worktree` в директории проекта `runs/session-NNNN`.
 7. Запускает `scripts/run_session.py` внутри временного worktree.
 8. Запускает `mini-swe-agent` через `scripts/run_mini_agent.py`.
 9. Запускает проверки, по умолчанию `python -m pytest`.

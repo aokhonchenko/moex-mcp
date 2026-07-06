@@ -5,10 +5,8 @@ from __future__ import annotations
 
 import argparse
 import os
-import subprocess
 import sys
 from contextlib import contextmanager
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterator, Sequence
 
@@ -16,13 +14,12 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts import run_session
-
-
-@dataclass(frozen=True)
-class CommandResult:
-    returncode: int
-    stdout: str = ""
-    stderr: str = ""
+from scripts.command_runners import (
+    CommandExecutionError,
+    CommandResult,
+    default_runner,
+    streaming_runner,
+)
 
 
 class TransactionError(RuntimeError):
@@ -32,22 +29,13 @@ class TransactionError(RuntimeError):
 CommandRunner = Callable[[Sequence[str], Path], CommandResult]
 
 
-SENSITIVE_DIRS = {".git", ".pytest_cache", "__pycache__", ".venv"}
+SENSITIVE_DIRS = {".git", ".pytest_cache", "__pycache__", ".venv", "runs"}
 GENERATED_LONG_FILES = {"uv.lock", "poetry.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 HUMAN_INPUT_FILES = {"GLOBAL_TARGET.md", "state/external_messages.md"}
 
 
-def default_runner(args: Sequence[str], cwd: Path) -> CommandResult:
-    env = os.environ.copy()
-    env.pop("VIRTUAL_ENV", None)
-    completed = subprocess.run(
-        list(args),
-        cwd=cwd,
-        env=env,
-        text=True,
-        capture_output=True,
-    )
-    return CommandResult(completed.returncode, completed.stdout, completed.stderr)
+def diagnostic(message: str) -> None:
+    print(f"[session] {message}", flush=True)
 
 
 def run_checked(
@@ -187,7 +175,7 @@ def lock_file(root: Path) -> Iterator[Path]:
 
 
 def default_runs_dir(root: Path) -> Path:
-    return root.parent / f"{root.name}-runs"
+    return root / "runs"
 
 
 def create_worktree(
@@ -329,31 +317,65 @@ def run_transaction(
     runs_dir = (runs_dir or default_runs_dir(root)).resolve()
     check_command = check_command or [sys.executable, "-m", "pytest"]
 
+    diagnostic(f"root: {root}")
+    diagnostic(f"runs dir: {runs_dir}")
+
     with lock_file(root):
+        diagnostic("lock acquired")
+        diagnostic("checking repository")
         ensure_git_repo(root, runner)
-        load_dotenv(root / ".env")
-        checkpoint_human_input(root, runner)
+
+        loaded_env = load_dotenv(root / ".env")
+        if loaded_env:
+            diagnostic(f"loaded .env keys: {', '.join(sorted(loaded_env))}")
+        else:
+            diagnostic(".env not found or empty")
+
+        diagnostic("checking human input changes")
+        if checkpoint_human_input(root, runner):
+            diagnostic("human input checkpoint committed")
+
         ensure_clean_worktree(root, runner)
-        current_branch(root, runner)
+        branch_name = current_branch(root, runner)
+        diagnostic(f"main branch: {branch_name}")
 
         session = run_session.read_counter(root / "state" / "session_counter.txt")
+        diagnostic(f"session: {session_id(session)}")
         worktree: Path | None = None
         branch = ""
         applied = False
 
         try:
+            diagnostic("creating temporary worktree")
             worktree, branch = create_worktree(root, runs_dir, session, runner)
+            diagnostic(f"temporary branch: {branch}")
+
+            diagnostic("running agent session")
             run_inner_session(worktree, agent_command, runner)
+
+            diagnostic("checking required session files")
             ensure_required_session_files(worktree)
+
+            diagnostic("checking file size policy")
             ensure_file_size_policy(worktree)
+
+            diagnostic("running validation checks")
             run_checks(worktree, check_command, runner)
+
+            diagnostic("checking produced changes")
             ensure_session_changed_worktree(worktree, runner)
+
+            diagnostic("committing session changes")
             commit_hash = commit_session(worktree, session, runner)
+
+            diagnostic("applying session commit to main worktree")
             apply_session_commit(root, branch, runner)
             applied = True
+            diagnostic(f"applied commit: {commit_hash}")
             return commit_hash
         finally:
             if worktree is not None and branch:
+                diagnostic("cleaning temporary worktree")
                 remove_worktree_and_branch(
                     root,
                     worktree,
@@ -380,7 +402,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--runs-dir",
         default="",
-        help="Directory for temporary worktrees. Defaults to <root parent>/<root name>-runs.",
+        help="Directory for temporary worktrees. Defaults to <root>/runs.",
     )
     parser.add_argument(
         "--check-command",
@@ -402,8 +424,9 @@ def main() -> int:
             agent_command=args.agent_command,
             runs_dir=runs_dir,
             check_command=args.check_command,
+            runner=streaming_runner,
         )
-    except TransactionError as exc:
+    except (TransactionError, CommandExecutionError) as exc:
         print(f"Transaction failed: {exc}", file=sys.stderr)
         return 1
 

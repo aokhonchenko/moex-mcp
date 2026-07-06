@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 __pycache__/
 *.py[cod]
 .pytest_cache/
@@ -7,8 +7,8 @@ htmlcov/
 
 # Transaction runner
 .session.lock
-pet-runs/
-*-runs/
+runs/*
+!runs/.gitkeep
 
 # Local environment
 .venv/

@@ -1,7 +1,7 @@
-# Активный промпт сессии 55
+# Активный промпт сессии 56
 
-Время сборки промпта: 2026-07-06 22:19:35 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0055
+Время сборки промпта: 2026-07-06 22:23:35 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0056
 
 ---
 
@@ -143,49 +143,42 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 54)
+# Сообщение будущей сессии (сессия 55)
 
-## Что было сделано в сессии 54
+## Что было сделано в сессии 55
 
-**Поиск по тикерам с автокомплитом (MOEX ISS /securities?q=).**
+**Ревизия порядка (сон) — первая после 43 сессий без паузы.**
 
 ### Создано/изменено
 
-1. **`backend/internal/models/models.go`** — добавлены `SearchResult` и `SearchResponse`
-2. **`backend/internal/data/moex.go`** — метод `SearchSecurities(query)` через MOEX ISS `/iss/securities.json?q=`
-3. **`backend/internal/data/cached_provider.go`** — делегирование поиска внутреннему провайдеру + интерфейс `Searcher`
-4. **`backend/internal/api/handlers.go`** — интерфейс `Searcher`, поле `searcher` в `Handler`, метод `SearchSecurities`
-5. **`backend/main.go`** — маршрут `GET /api/search?q=`
-6. **`frontend/index.html`** — обёртка `.search-input-wrapper` + dropdown контейнер, версия 0.5.0
-7. **`frontend/app.js`** — автокомплит с debounce 300мс, навигация стрелками, Enter/Escape
-8. **`frontend/style.css`** — стили для dropdown (`.search-dropdown`, `.search-dropdown-item`, `.search-dropdown-symbol` и т.д.)
-9. **`backend/internal/data/moex_test.go`** — 3 новых теста (Success, Empty, ServerError)
-10. **`backend/internal/api/handlers_test.go`** — 4 новых теста (Success, EmptyQuery, NoSearcher, ProviderError, EmptyResults)
+1. **`knowledge/quick_context.md`** — полное обновление: актуальная структура 15 инструментов, foundation-finance, текущее состояние
+2. **`knowledge/system_map.md`** — полное обновление: архитектура src/tools/, foundation-finance, текущий статус
+3. **`knowledge/file_manifest.md`** — полное обновление: 15 инструментов, 9 тестовых модулей, foundation-finance
+4. **`state/current_plan.md`** — реструктуризация: сжат с 161 строки до ~80, таблица шагов foundation-finance, приоритеты следующих шагов
 
 ### Что проверено
 
-- `go build ./...` — собирается
-- `go test ./...` — все Go-тесты проходят
-- Коммит `b2ee178` запушен в `origin/main`
+- Тест `test_regex_multiline` проходит (1 passed) — проблема была только в coverage config
+- Все артефакты актуализированы
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график + cache stats + кнопки быстрого выбора + cache stats UI + clear cache + Docker healthcheck + zoom/pan + кроссхейр + **поиск по тикерам с автокомплитом**
-- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент + candles + cache stats + clear cache + **search**
-- Web frontend: Chart.js + chartjs-chart-financial + chartjs-plugin-zoom + hammerjs, тёмная тема, свечной график + объём, таблица фундаменталов, кнопки быстрого выбора, панель мониторинга кэша, зум/панорамирование, кроссхейр, **автокомплит поиска**
+- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график + cache stats + кнопки быстрого выбора + cache stats UI + clear cache + Docker healthcheck + zoom/pan + кроссхейр + поиск по тикерам с автокомплитом
+- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент + candles + cache stats + clear cache + search
+- Web frontend: Chart.js + chartjs-chart-financial + chartjs-plugin-zoom + hammerjs, тёмная тема, свечной график + объём, таблица фундаменталов, кнопки быстрого выбора, панель мониторинга кэша, зум/панорамирование, кроссхейр, автокомплит поиска
 - ~117 Go unit-тестов, 290 Python unit-тестов
 - Docker Compose работает с healthcheck
+- Инфраструктура агента: 15 инструментов в src/tools/, 9 тестовых модулей
 
-## Что важно для следующей сессии (сессия 55)
+## Что важно для следующей сессии (сессия 56)
 
 1. **Расчётные метрики** — P/E, P/B на основе доступных данных (market_cap / issue_size) — MOEX не даёт напрямую, но можно рассчитать
 2. **Система алертов** — уведомления при достижении пороговых значений индикаторов
-3. **Сон** — 13 сессий подряд без паузы, ревизия порядка
-4. **Docker Compose тест** — проверить что поиск работает в контейнере
+3. **Секторальная аналитика** — сравнение тикеров по секторам
 
 ## Рекомендация для следующей сессии
 
-Поиск по тикерам добавлен — теперь можно быстро находить любые бумаги MOEX. Следующий логичный шаг — **расчётные метрики** (P/E, P/B) или **сон** (13 сессий подряд). Сон особенно актуален: накопилось много сессий, стоит провести ревизию порядка.
+Порядок наведён: артефакты актуализированы, план реструктурирован. Следующий логичный шаг — **расчётные метрики** (P/E, P/B) для foundation-finance. MOEX ISS даёт `issue_size` и `issue_value` в `/iss/securities.json`, а рыночную цену мы уже получаем — можно рассчитать market_cap и базовые мультипликаторы.
 
 
 ---
@@ -194,165 +187,75 @@ _Заполни после учёта ответа._
 
 # Текущий план
 
+**Обновлён:** сессия 55 (2026-07-06) — ревизия порядка (сон)
 
-## Статус: практическая фаза (сессия 40)
+---
 
-- ✅ Создана карта системы (`knowledge/system_map.md`) — сессия 1
-- ✅ Обновлены файлы состояния и истории — сессия 1
-- ✅ Создан шаблон вопроса создателю — сессия 2
-- ✅ Правила именования файлов в `knowledge/` — сессия 3
-- ✅ Прототип инструмента сна — сессия 4
-- ✅ Чеклист пробуждения — сессия 8
-- ✅ Мини-проект «Идеи для улучшений» + инструмент проверки целостности — сессия 7
-- ✅ Шаблон мини-проекта — сессия 8
-- ✅ Архив закрытых вопросов — сессия 9
-- ✅ Карта связей между артефактами — сессия 10
-- ✅ Инструмент дифф-отчёта — сессия 11
-- ✅ Первый сон — сессия 12
-- ✅ Система задач — сессия 13
-- ✅ Интеграция задач в сессионный цикл — сессия 14
-- ✅ Система заметок — сессия 15
-- ✅ Стратегия ленивого чтения + инструмент чтения заголовков — сессия 16
-- ✅ Реструктуризация `logs/history.md` — сессия 17
-- ✅ Компактный контекст сессии (`state/session_context.md`) — сессия 18
-- ✅ Манифест файлов (`knowledge/file_manifest.md`) — сессия 18
-- ✅ Обновлён чеклист сессии (переход на контекст) — сессия 18
-- ✅ Оптимизирована карта системы (краткая сводка + отдельное дерево) — сессия 18
-- ✅ Оценщик чтения (`tools/reading-analyzer/`) — сессия 19
-- ✅ Обновлена карта связей — сессия 20
-- ✅ **Создан `src/` + `partial_reader.py`** — сессия 21
-- ✅ **Создан `src/agent/context.py`** — сессия 22
-- ✅ **Создан `knowledge/quick_context.md`** — сессия 23
-- ✅ **Оптимизирован `knowledge/artifact_links.md`** — сессия 24
-- ✅ **Создан `src/tools/prompt_builder.py`** — сессия 25
-- ✅ **Создан `src/session_runner.py`** — сессия 25
-- ✅ **Создан `src/tools/code_analyzer.py`** — сессия 26
-- ✅ **Первый анализ кодовой базы** — сессия 26
-- ✅ **Создан UI-дашборд** (`tools/dashboard/`) — сессия 27
-- ✅ **Устранено дублирование fallback-функций** (`src/tools/compat.py`) — сессия 28
-- ✅ **Первые тесты проекта** (`tests/test_code_analyzer.py`) — сессия 29
-- ✅ **Исправлен тест `test_analyze_self`** — сессия 30
-- ✅ **Тесты для `compat.py` и `partial_reader.py`** — сессия 31
-- ✅ **Точечное чтение файлов** (`src/tools/reader.py` + `tests/test_reader.py`) — сессия 32
-- ✅ **Исправлены баги `reader.py`** — 0-based/1-based индексы, добавлено поле `error` в `ReadResult` — сессия 33
-- ✅ **Закрыт вопрос о структуре проекта** — создатель подтвердил текущую структуру — сессия 34
-- ✅ **Закрыт вопрос о приоритетах** — приоритет: улучшение агента — сессия 35
-- ✅ **Создан инструмент частичных правок** (`src/tools/apply_patch.py`) — сессия 35
-- ✅ **Созданы тесты для apply_patch.py** (`tests/test_apply_patch.py`) — сессия 35
-- ✅ **Исправлен баг replace_regex** — добавлен `re.MULTILINE` — сессия 36
-- ✅ **Создан модуль self-review** (`src/tools/self_review.py`) — сессия 36
-- ✅ **Созданы тесты для self-review** (`tests/test_self_review.py`) — сессия 36
-- ✅ **Создан инструмент запуска команд** (`src/tools/command_runner.py`) — сессия 37
-- ✅ **Созданы тесты для command_runner** (`tests/test_command_runner.py`) — сессия 37
-
-## Завершённые мини-проекты
-
-1. **Система задач** ✅ — `tasks/`, `projects/task-tracker/`
-2. **Система заметок** ✅ — `tools/notes/`, `knowledge/notes/`
-3. **Оптимизация чтения (полная)** ✅ — `tools/file-headers/`, `state/session_context.md`, `knowledge/file_manifest.md`, `tools/reading-analyzer/`, `knowledge/quick_context.md`, реструктуризация больших файлов
-4. **Инструмент частичного чтения** ✅ — `src/tools/partial_reader.py`
-5. **Модуль управления контекстом** ✅ — `src/agent/context.py`
-6. **Быстрый контекст** ✅ — `knowledge/quick_context.md`
-7. **Сборщик промптов** ✅ — `src/tools/prompt_builder.py`, `src/session_runner.py`
-8. **Анализатор кода** ✅ — `src/tools/code_analyzer.py`, `knowledge/codebase-analysis-26.md`
-9. **UI-дашборд** ✅ — `tools/dashboard/generate.py`, `tools/dashboard/index.html`
-10. **Устранение дублирования** ✅ — `src/tools/compat.py`
-11. **Первые тесты** ✅ — `tests/test_code_analyzer.py`
-12. **Тесты для compat/partial_reader** ✅ — `tests/test_compat.py`, `tests/test_partial_reader.py`
-13. **Точечное чтение файлов** ✅ — `src/tools/reader.py`, `tests/test_reader.py`
-14. **Исправление багов reader.py** ✅ — 0-based/1-based индексы, поле `error` — сессия 33
-15. **Закрытие вопроса о структуре** ✅ — структура подтверждена — сессия 34
-16. **Закрытие вопроса о приоритетах** ✅ — приоритет: улучшение агента — сессия 35
-17. **Инструмент частичных правок** ✅ — `src/tools/apply_patch.py`, `tests/test_apply_patch.py` — сессия 35
-18. **Модуль self-review** ✅ — `src/tools/self_review.py`, `tests/test_self_review.py` — сессия 36
-19. **Инструмент запуска команд** ✅ — `src/tools/command_runner.py`, `tests/test_command_runner.py` — сессия 37
-
-## Текущий фокус: финансовый дашборд foundation-finance
+## Статус: практическая фаза, финансовый дашборд
 
 Приоритет определён создателем: улучшение агента (завершено) → финансовый дашборд.
 
-### Завершённые шаги foundation-finance
+---
 
-- ✅ **Создан финансовый дашборд `foundation-finance`** — сессия 42
-  - Go backend (chi, Yahoo Finance, 6 индикаторов, LLM-клиент)
-  - Web frontend (Chart.js, тёмная тема)
-  - Docker Compose
-  - Репозиторий: `git@github.com:aokhonchenko/foundation-finance.git`
+## Завершённые мини-проекты (инфраструктура агента, сессии 1–41)
 
-- ✅ **Unit-тесты для `indicators/calculator.go`** — 26 тестов — сессия 43
+1. **Карта системы и навигация** — system_map, file_manifest, quick_context, artifact_links
+2. **Система задач** — `tasks/active.md`, `tasks/archive.md`
+3. **Система заметок** — `tools/notes/`, `knowledge/notes/`
+4. **Оптимизация чтения** — partial_reader, prompt_builder, reader, compat, session_runner
+5. **Инструменты агента (15 шт.)** — apply_patch, code_analyzer, command_runner, self_review, read_file, read_lines, write_file, replace_text, run_command, run_pytest, run_python_script и др.
+6. **Тесты** — 9 модулей, ~290 Python-тестов
+7. **UI-дашборд** — `tools/dashboard/`
+8. **Система сна** — чеклисты, sleep_memory
 
-- ✅ **Замена Yahoo Finance на MOEX ISS API** — сессия 44
-  - 15 unit-тестов для data/moex.go, 10 для api/handlers.go
-  - Фронтенд: тикеры MOEX (SBER, GAZP, LKOH)
+## Завершённые шаги foundation-finance (сессии 42–54)
 
-- ✅ **In-memory кэширование MOEX данных** — сессия 45
-  - 23 unit-теста (11 cache + 12 cached_provider)
+| Сессия | Шаг | Коммит |
+|--------|-----|--------|
+| 42 | Создан дашборд: Go backend (chi) + Web frontend (Chart.js) + Docker Compose | — |
+| 43 | Unit-тесты indicators/calculator.go (26 тестов) | — |
+| 44 | Замена Yahoo Finance на MOEX ISS API (25 тестов) | — |
+| 45 | In-memory кэширование (23 теста) | — |
+| 46 | Фундаментальные данные (10 тестов) | — |
+| 47 | LLM unit-тесты (20 тестов) | — |
+| 48 | Свечной график (candlestick chart) + chartjs-chart-financial | — |
+| 49 | Docker Compose тест (build + up + healthcheck) | `35952ec` |
+| 50 | Cache stats endpoint + кнопки быстрого выбора | `8dd4c7a` |
+| 51 | Cache stats UI + clear cache + Docker healthcheck | `483045c` |
+| 52 | (не было сессии 52) | — |
+| 53 | Zoom/pan + кроссхейр (chartjs-plugin-zoom + hammerjs) | `637b98e` |
+| 54 | Поиск по тикерам с автокомплитом (MOEX ISS /securities?q=) | `b2ee178` |
 
-- ✅ **Фундаментальные данные (FundamentalData)** — сессия 46
-  - 10 unit-тестов, API + фронтенд
+**Текущий статус:** ~117 Go тестов, 290 Python тестов, версия фронтенда 0.5.0.
 
-- ✅ **LLM unit-тесты** — сессия 47
-  - 20 тестов с мок OpenAI-compatible сервером
+---
 
-- ✅ **Свечной график (candlestick chart)** — сессия 48
-  - `GET /api/ticker/{symbol}/candles` endpoint
-  - chartjs-chart-financial + luxon + adapter
-  - Fallback на line chart
-  - Таблица фундаментальных данных с русскими подписями
-  - 3 новых API теста
-  - Всего Go тестов: 106, Python тестов: 290
+## Следующие шаги для foundation-finance
 
-- ✅ **Docker Compose тест** — сессия 49
-  - Исправлен Dockerfile (пути к бинарнику и фронтенду)
-  - `docker-compose build` + `up` + health check + API + фронтенд — всё работает
-  - Коммит `35952ec` запушен в `origin/main`
-
-- ✅ **Cache stats endpoint + кнопки быстрого выбора** — сессия 50
-  - `GET /api/cache/stats` — CacheStatsResponse (tickers, candles, fundamentals, total)
-  - CacheStatsProvider интерфейс + auto-detection
-  - Кнопки быстрого выбора тикеров (SBER, GAZP, LKOH, GMKN, ROSN, NVTK, YDEX, TATN)
-  - 2 новых Go-теста, всего 108 Go + 290 Python
-  - Коммит `8dd4c7a` запушен в `origin/main`
-
-## Следующий разумный шаг (сессия 52)
-
-1. **Улучшить свечной график** — тултипы, кроссхейр, зум (chartjs-plugin-zoom)
-2. **Расчётные метрики** — P/E, P/B на основе доступных данных
-3. **Поиск по тикерам** — автокомплит из MOEX ISS /securities
-4. **Система алертов** — уведомления при достижении пороговых значений индикаторов
-5. **Сон** — 11 сессий подряд без паузы, ревизия порядка
-
-- ✅ **Cache stats UI + clear cache + Docker healthcheck** — сессия 51
-  - `POST /api/cache/clear` — CacheClearer interface + auto-detection
-  - Панель мониторинга кэша в футере (автообновление 30 сек)
-  - Кнопка очистки кэша
-  - Docker healthcheck (wget /api/health)
-  - 2 новых Go-теста, всего 110 Go + 290 Python
-  - Коммит `483045c` запушен в `origin/main`
-
-- ✅ **Zoom/pan для свечного графика + кроссхейр** — сессия 53
-  - chartjs-plugin-zoom (v2.2.0) + hammerjs (v2.0.8)
-  - Кроссхейр-плагин (вертикальная линия при наведении)
-  - Zoom колёсиком мыши + панорамирование перетаскиванием
-  - Кнопка «Сбросить зум» + подсказка
-  - Версия фронтенда: 0.4.0
-  - Коммит `637b98e` запушен в `origin/main`
-
-- ✅ **Поиск по тикерам с автокомплитом** — сессия 54
-  - MOEX ISS `/iss/securities.json?q=` → SearchSecurities
-  - `GET /api/search?q=` endpoint + Searcher интерфейс
-  - CachedProvider делегирует поиск
-  - Фронтенд: автокомплит с debounce 300мс, dropdown, навигация стрелками
-  - 7 новых Go-тестов (3 data + 4 API), всего ~117 Go + 290 Python
-  - Версия фронтенда: 0.5.0
-  - Коммит `b2ee178` запушен в `origin/main`
-
-
-## Следующий разумный шаг (сессия 55)
+### Высокий приоритет 🔴
 
 1. **Расчётные метрики** — P/E, P/B на основе доступных данных (market_cap / issue_size)
+   - MOEX не даёт напрямую, но можно рассчитать из fundamentals
+
 2. **Система алертов** — уведомления при достижении пороговых значений индикаторов
-3. **Сон** — 13 сессий подряд без паузы, ревизия порядка
+   - Хранение порогов, проверка при обновлении данных
+
+### Средний приоритет 🟡
+
+3. **Секторальная аналитика** — сравнение тикеров по секторам
+4. **Портфель** — добавление тикеров в «избранное», сводная таблица
+5. **Экспорт отчётов** — PDF/CSV экспорт данных и LLM-аналитики
+
+### Низкий приоритет 🟢
+
+6. **Тёмная/светлая тема** — переключатель
+7. **Мобильная адаптивность** — responsive layout
+
+---
+
+## Задачи по агенту (средний приоритет)
+
+- [ ] **Интеграция command_runner.py в сессионный цикл** — запускать тесты после изменений
 
 
 ---
@@ -589,33 +492,34 @@ _Что учтено из ответа создателя. Если вопрос
 # Последний сон
 
 **Дата:** 2026-07-06
-**Сессия:** 12
+**Сессия:** 55
 
 ## Что было сделано
 
-1. **Закрыт формальный вопрос** `0002-question-template.md` — перенесён в архив (`state/questions/archive/`). Это был шаблон, не живой вопрос.
-2. **Очищен `logs/history.md`** — удалены шумные записи "prompt prepared" (сессии 7–12), оставлены только содержательные записи о действиях.
-3. **Исправлена карта системы** `knowledge/system_map.md` — обновлено имя директории с `session-0011/` на `session-0012/`, актуализировано состояние.
-4. **Обновлён чеклист сна** — добавлена запись о первом применении.
+1. **Обновлён `knowledge/quick_context.md`** — актуализирована структура: 15 инструментов, foundation-finance, текущий статус (55 сессий).
+2. **Обновлён `knowledge/system_map.md`** — полная карта: архитектура src/tools/ (15 инструментов), foundation-finance, текущее состояние.
+3. **Обновлён `knowledge/file_manifest.md`** — таблица всех инструментов, тестовых модулей, проектов.
+4. **Реструктурирован `state/current_plan.md`** — сжат с 161 до ~80 строк: таблица шагов foundation-finance, приоритеты следующих шагов, убрано дублирование.
+5. **Проверен тест `test_regex_multiline`** — проходит (1 passed), проблема была только в coverage config.
 
 ## Состояние после сна
 
 - Все артефакты целы и актуальны.
 - 0 открытых вопросов.
-- Инфраструктура полностью построена (11 сессий).
-- Цикл из 5 идей завершён.
-- Готов к новому мини-проекту или практическому артефакту.
+- Инфраструктура агента: 15 инструментов, 9 тестовых модулей (~290 тестов).
+- foundation-finance: ~117 Go тестов, версия фронтенда 0.5.0.
+- План реструктурирован, дублирование устранено.
 
 ## Рекомендация для следующей сессии
 
-Сдвинуться от мета-работы к практике: выбрать конкретную полезную задачу за пределами самой среды (анализ, генератор, инструмент для работы с кодом/данными) или предложить создателю варианты.
+Порядок наведён. Следующий логичный шаг — **расчётные метрики** (P/E, P/B) для foundation-finance.
 
 
 ---
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 55. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0055`.
+Ты находишься в сессии 56. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0056`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

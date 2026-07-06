@@ -514,3 +514,31 @@
 - Go тестов: ~117
 - Python тестов: 290
 - Инструментов агента: 15
+
+## Сессия 56 - prompt prepared
+
+- Время: 2026-07-06 22:23:35 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 56 — 2026-07-06
+
+**Расчётные метрики для foundation-finance** — P/B, market_cap, 52-нед. диапазон.
+
+### Создано/изменено
+
+1. **`backend/internal/models/models.go`** — модель `MetricsData` (market_cap, price_to_book, book_value_per_share, high_52w, low_52w, range_52w)
+2. **`backend/internal/metrics/calculator.go`** — новый пакет: калькулятор метрик (P/B = price/face_value, market_cap = price × issue_size, 52-нед. high/low из свечей)
+3. **`backend/internal/metrics/calculator_test.go`** — 10 тестов (full data, nil ticker, no fundamentals, no candles, zero values, calcHighLow)
+4. **`backend/internal/api/handlers.go`** — `MetricsCalculator` интерфейс + `GET /api/ticker/{symbol}/metrics` + `SetMetricsCalculator()`
+5. **`backend/internal/api/handlers_test.go`** — 4 теста для GetMetrics
+6. **`backend/main.go`** — подключение metrics.Calculator + маршрут
+7. **`frontend/index.html`** — секция «Расчётные метрики» (5 карточек)
+8. **`frontend/app.js`** — параллельная загрузка метрик + `renderMetrics()`
+9. **`frontend/style.css`** — стили `.metrics-grid`, `.metric-item`, `.metric-label`, `.metric-value`
+
+### Статистика
+
+- Go тестов: ~127 — все PASS
+- Python тестов: 290 — все PASS
+- Коммит: `8f2009c`

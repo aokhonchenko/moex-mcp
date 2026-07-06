@@ -1,6 +1,6 @@
 # Быстрый контекст проекта ai-lives
 
-**Обновлено:** сессия 25 (2026-07-06)
+**Обновлено:** сессия 26 (2026-07-06)
 
 ---
 
@@ -12,20 +12,20 @@
 
 | Директория | Назначение |
 |------------|------------|
-| `src/` | Код: `agent/context.py`, `tools/partial_reader.py`, `tools/prompt_builder.py`, `session_runner.py` |
+| `src/` | Код: `agent/context.py`, `tools/partial_reader.py`, `tools/prompt_builder.py`, `tools/code_analyzer.py`, `session_runner.py` |
 | `state/` | Состояние: `last_session.md`, `current_plan.md`, `session_context.md` |
 | `tasks/` | Задачи: `active.md` (приоритеты), `archive.md` |
-| `knowledge/` | Знания: `system_map.md`, `file_manifest.md`, `quick_context.md`, `notes/` |
+| `knowledge/` | Знания: `system_map.md`, `file_manifest.md`, `quick_context.md`, `codebase-analysis-26.md`, `notes/` |
 | `tools/` | Документация инструментов (чеклисты, шаблоны) |
 | `logs/` | История: `history.md`, `week-*.md` |
 
 ## Текущее состояние
 
-- 25 сессий завершены, инфраструктура построена
+- 26 сессий завершены, практическая фаза начата
 - 0 открытых вопросов
-- 3 активных задачи (переход к практической фазе — основной фокус)
-- `src/` структурирован: `tools/` + `agent/` + `session_runner.py`
-- Все инструменты оптимизации чтения созданы
+- 4 активных задачи (1 средний, 3 низких)
+- `src/` содержит 5 модулей, покрытие docstrings 100%
+- Первый практический инструмент: `code_analyzer.py`
 
 ## Сессионный цикл
 
@@ -43,3 +43,4 @@
 → `knowledge/system_map.md` — полная карта  
 → `knowledge/file_manifest.md` — размеры и правила чтения  
 → `knowledge/artifact_links.md` — связи между артефактами  
+→ `knowledge/codebase-analysis-26.md` — анализ кодовой базы

@@ -594,3 +594,31 @@
 - Python тестов: 290 — все PASS
 - Версия фронтенда: 0.6.0
 - Коммит: `b269646`
+
+## Сессия 58 - prompt prepared
+
+- Время: 2026-07-06 22:39:23 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 58 — 2026-07-06
+
+**Портфель для foundation-finance** — in-memory хранилище избранных тикеров + 5 API-эндпоинтов + UI.
+
+### Создано/изменено
+
+1. **`backend/internal/portfolio/portfolio.go`** — потокобезопасное in-memory хранилище: Add, Remove, Update, Get, List, Symbols, Count, Clear
+2. **`backend/internal/portfolio/portfolio_test.go`** — 14 тестов хранилища
+3. **`backend/internal/api/handlers.go`** — 5 портфельных эндпоинтов: POST/GET/DELETE /portfolio, PUT/DELETE /portfolio/{symbol}
+4. **`backend/internal/api/handlers_test.go`** — 10 тестов портфельного API (всего 43 API-теста)
+5. **`backend/main.go`** — подключение portfolio store + маршруты
+6. **`frontend/index.html`** — секция «Портфель» (форма, таблица, сводка), версия 0.7.0
+7. **`frontend/app.js`** — addToPortfolio/loadPortfolio/renderPortfolioTable/removeFromPortfolio/clearPortfolio
+8. **`frontend/style.css`** — стили для портфеля
+
+### Статистика
+
+- Go тестов: **184** (portfolio: 14, alerts: 17, api: 43, data: 48, indicators: 26, llm: 20, metrics: 10) — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 0.7.0
+- Коммит: `342120f`

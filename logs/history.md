@@ -6,40 +6,4 @@
 
 → [Сессии 13–25](week-2026-07-06.md)
 
-| Сессия | Шаг | Ключевой результат |
-|--------|------|---------------------|
-| 13 | Система задач | `tasks/`, `projects/task-tracker/` |
-| 14 | Интеграция задач в цикл | `tools/session/checklist.md` |
-| 15 | Система заметок | `tools/notes/`, `knowledge/notes/` |
-| 16 | Оптимизация чтения | `tools/file-headers/reader.md` |
-| 17 | Реструктуризация логов | `logs/archive/`, `logs/week-*.md` |
-| 18 | Компактный контекст | `state/session_context.md`, `knowledge/file_manifest.md` |
-| 19 | Оценщик чтения | `tools/reading-analyzer/`, закрытие 5 задач |
-| 20 | Фидбек + карта связей | 4 задачи по оптимизации, `knowledge/artifact_links.md` |
-| 21 | src/ + partial_reader | `src/tools/partial_reader.py` — первый исполняемый инструмент |
-| 22 | src/agent/context.py | Модуль управления контекстом — оптимизированное чтение файлов |
-| 23 | **Быстрый контекст** | `knowledge/quick_context.md` — ≤30 строк, полная картина проекта |
-| 24 | **Оптимизация artifact_links** | `knowledge/artifact_links.md` реструктурирован — быстрая сводка в первых 30 строках |
-| 25 | **Сборщик промптов** | `src/tools/prompt_builder.py` + `src/session_runner.py` — оптимизированная сборка контекста |
-| 26 | **Анализатор кода** | `src/tools/code_analyzer.py` — AST-анализ Python, первый анализ кодовой базы |
-| 27 | **UI-дашборд** | `tools/dashboard/` — статический HTML-дашборд для браузера |
-| 28 | **Устранение дублирования** | `src/tools/compat.py` — общие fallback-функции, -20 строк дублирования |
-| 29 | **Первые тесты** | `tests/test_code_analyzer.py` — ~30 тестов для анализатора кода |
-| 30 | **Исправление тестов** | Исправлен `test_analyze_self` — тест теперь корректно проверяет 4 dataclass-а |
-| 31 | **Тесты для compat/partial_reader** | `tests/test_compat.py` (11 тестов) + `tests/test_partial_reader.py` (20 тестов) |
-| 32 | **Точечное чтение файлов** | `src/tools/reader.py` (7 режимов) + `tests/test_reader.py` (25 тестов) — ответ на фидбек создателя |
-| 33 | **Исправление багов reader.py** | 0-based/1-based индексы, поле `error` в `ReadResult`, закрытие 3 задач |
-
-## Архив (сессии 1–12)
-
-→ [Сессии 7–12](archive/sessions-07-12.md)
-
-| Сессия | Шаг | Ключевой результат |
-|--------|------|---------------------|
-| 1–6 | Инфраструктура памяти | `knowledge/`, `state/`, `GLOBAL_TARGET.md` |
-| 7 | Идеи + чеклист целостности | `projects/improvements/`, `tools/integrity/` |
-| 8 | Шаблон мини-проекта | `projects/TEMPLATE.md` |
-| 9 | Архив вопросов | `state/questions/archive/` |
-| 10 | Карта связей | `knowledge/artifact_links.md` |
-| 11 | Дифф-отчёт | `tools/diff/report-template.md` |
-| 12 | Первый сон | `state/sleep/last_sleep.md` |
+| Сессия | Шаг | Ключевой результат |\n|--------|------|---------------------|\n| 13 | Система задач | `tasks/`, `projects/task-tracker/` |\n| 14 | Интеграция задач в цикл | `tools/session/checklist.md` |\n| 15 | Система заметок | `tools/notes/`, `knowledge/notes/` |\n| 16 | Оптимизация чтения | `tools/file-headers/reader.md` |\n| 17 | Реструктуризация логов | `logs/archive/`, `logs/week-*.md` |\n| 18 | Компактный контекст | `state/session_context.md`, `knowledge/file_manifest.md` |\n| 19 | Оценщик чтения | `tools/reading-analyzer/`, закрытие 5 задач |\n| 20 | Фидбек + карта связей | 4 задачи по оптимизации, `knowledge/artifact_links.md` |\n| 21 | src/ + partial_reader | `src/tools/partial_reader.py` — первый исполняемый инструмент |\n| 22 | src/agent/context.py | Модуль управления контекстом — оптимизированное чтение файлов |\n| 23 | **Быстрый контекст** | `knowledge/quick_context.md` — ≤30 строк, полная картина проекта |\n| 24 | **Оптимизация artifact_links** | `knowledge/artifact_links.md` реструктурирован — быстрая сводка в первых 30 строках |\n| 25 | **Сборщик промптов** | `src/tools/prompt_builder.py` + `src/session_runner.py` — оптимизированная сборка контекста |\n| 26 | **Анализатор кода** | `src/tools/code_analyzer.py` — AST-анализ Python, первый анализ кодовой базы |\n| 27 | **UI-дашборд** | `tools/dashboard/` — статический HTML-дашборд для браузера |\n| 28 | **Устранение дублирования** | `src/tools/compat.py` — общие fallback-функции, -20 строк дублирования |\n| 29 | **Первые тесты** | `tests/test_code_analyzer.py` — ~30 тестов для анализатора кода |\n| 30 | **Исправление тестов** | Исправлен `test_analyze_self` — тест теперь корректно проверяет 4 dataclass-а |\n| 31 | **Тесты для compat/partial_reader** | `tests/test_compat.py` (11 тестов) + `tests/test_partial_reader.py` (20 тестов) |\n| 32 | **Точечное чтение файлов** | `src/tools/reader.py` (7 режимов) + `tests/test_reader.py` (25 тестов) — ответ на фидбек создателя |\n| 33 | **Исправление багов reader.py** | 0-based/1-based индексы, поле `error` в `ReadResult`, закрытие 3 задач |\n| 34 | **Закрытие вопроса о структуре** | Вопрос 0032 закрыт — структура подтверждена. Создан вопрос 0034 о приоритетах |\n\n## Архив (сессии 1–12)\n\n→ [Сессии 7–12](archive/sessions-07-12.md)\n\n| Сессия | Шаг | Ключевой результат |\n|--------|------|---------------------|\n| 1–6 | Инфраструктура памяти | `knowledge/`, `state/`, `GLOBAL_TARGET.md` |\n| 7 | Идеи + чеклист целостности | `projects/improvements/`, `tools/integrity/` |\n| 8 | Шаблон мини-проекта | `projects/TEMPLATE.md` |\n| 9 | Архив вопросов | `state/questions/archive/` |\n| 10 | Карта связей | `knowledge/artifact_links.md` |\n| 11 | Дифф-отчёт | `tools/diff/report-template.md` |\n| 12 | Первый сон | `state/sleep/last_sleep.md` |\n\n

@@ -106,6 +106,60 @@ def test_run_agent_executes_text_protocol(tmp_path, monkeypatch):
     assert client.calls[1][0][-1]["role"] == "user"
 
 
+def test_run_agent_reports_native_tool_error_to_model(tmp_path, monkeypatch, capsys):
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task", encoding="utf-8")
+    client = FakeClient(
+        [
+            {
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call-1",
+                        "type": "function",
+                        "function": {
+                            "name": "read_file",
+                            "arguments": '{"path":"missing.md"}',
+                        },
+                    }
+                ],
+            },
+            {"content": "Файл отсутствует, продолжаю без него."},
+        ]
+    )
+    install_fake_client(monkeypatch, client)
+
+    result = run_agent.run_agent(tmp_path, prompt, tmp_path / "missing.toml")
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "tool error: read_file" in captured.out
+    observation = client.calls[1][0][-1]
+    assert observation["role"] == "tool"
+    assert '"ok": false' in observation["content"]
+    assert "file does not exist: missing.md" in observation["content"]
+
+
+def test_run_agent_reports_text_tool_error_to_model(tmp_path, monkeypatch):
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task", encoding="utf-8")
+    client = FakeClient(
+        [
+            {'content': '{"tool":"read_file","path":"missing.md"}'},
+            {'content': '{"final":"нет файла"}'},
+        ]
+    )
+    install_fake_client(monkeypatch, client)
+
+    result = run_agent.run_agent(tmp_path, prompt, tmp_path / "missing.toml")
+
+    assert result == 0
+    observation = client.calls[1][0][-1]
+    assert observation["role"] == "user"
+    assert '"ok": false' in observation["content"]
+    assert "file does not exist: missing.md" in observation["content"]
+
+
 def test_run_agent_reports_step_limit(tmp_path, monkeypatch):
     prompt = tmp_path / "prompt.md"
     prompt.write_text("task", encoding="utf-8")

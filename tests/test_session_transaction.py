@@ -139,7 +139,7 @@ def test_run_transaction_applies_successful_session(tmp_path):
     assert ["git", "merge", "--ff-only", "session/0003"] in commands
     assert ["git", "branch", "-d", "session/0003"] in commands
     assert not (runs_dir / "session-0003").exists()
-    assert not runs_dir.exists()
+    assert (runs_dir / "snapshots" / "session-0003-applied").exists()
 
 
 def test_run_transaction_rolls_back_failed_agent(tmp_path):
@@ -159,7 +159,7 @@ def test_run_transaction_rolls_back_failed_agent(tmp_path):
     assert ["git", "merge", "--ff-only", "session/0003"] not in commands
     assert ["git", "branch", "-D", "session/0003"] in commands
     assert not (runs_dir / "session-0003").exists()
-    assert not runs_dir.exists()
+    assert (runs_dir / "snapshots" / "session-0003-failed").exists()
 
 
 def test_run_transaction_uses_default_agent_command(tmp_path):

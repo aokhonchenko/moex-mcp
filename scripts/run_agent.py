@@ -54,6 +54,9 @@ def system_message() -> str:
 - read_file: прочитать UTF-8 файл внутри корня сессии;
 - write_file: записать UTF-8 файл внутри корня сессии.
 
+Если инструмент вернул `ok:false`, это не системная ошибка, а наблюдение о реальном состоянии файлов.
+Скорректируй план: создай недостающий файл, выбери другой путь или явно зафиксируй отсутствие.
+
 У тебя нет shell-инструмента. Если нужен новый инструмент, создай его как файл проекта через write_file,
 но текущую сессию всё равно завершай доступными средствами.
 
@@ -95,19 +98,30 @@ def assistant_message_for_history(message: dict[str, Any]) -> dict[str, Any]:
     return stored
 
 
+def tool_observation(name: str, ok: bool, payload: dict[str, Any] | str) -> str:
+    if ok:
+        return tool_result_json({"tool": name, "ok": True, "result": payload})
+    return tool_result_json({"tool": name, "ok": False, "error": str(payload)})
+
+
 def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> list[dict[str, Any]]:
     results = []
     for tool_call in message.get("tool_calls") or []:
         function = tool_call.get("function") or {}
         name = function.get("name", "")
-        arguments = parse_tool_arguments(function.get("arguments", "{}"))
-        diagnostic(f"tool: {name} {arguments}")
-        result = call_tool(root, name, arguments)
+        try:
+            arguments = parse_tool_arguments(function.get("arguments", "{}"))
+            diagnostic(f"tool: {name} {arguments}")
+            result = call_tool(root, name, arguments)
+            content = tool_observation(name, True, result)
+        except (AgentError, ToolError) as exc:
+            diagnostic(f"tool error: {name} {exc}")
+            content = tool_observation(name, False, str(exc))
         results.append(
             {
                 "role": "tool",
                 "tool_call_id": tool_call.get("id", name),
-                "content": tool_result_json({"ok": True, "result": result}),
+                "content": content,
             }
         )
     return results
@@ -132,10 +146,15 @@ def execute_text_protocol(root: Path, parsed: dict[str, Any]) -> dict[str, Any] 
         return None
     arguments = {key: value for key, value in parsed.items() if key != "tool"}
     diagnostic(f"text tool: {name} {arguments}")
-    result = call_tool(root, name, arguments)
+    try:
+        result = call_tool(root, name, arguments)
+        content = tool_observation(name, True, result)
+    except ToolError as exc:
+        diagnostic(f"text tool error: {name} {exc}")
+        content = tool_observation(name, False, str(exc))
     return {
         "role": "user",
-        "content": tool_result_json({"tool": name, "ok": True, "result": result}),
+        "content": content,
     }
 
 

@@ -20,6 +20,7 @@ from scripts.command_runners import (
     default_runner,
     streaming_runner,
 )
+from scripts.run_snapshots import SnapshotError, preserve_session_snapshot
 
 
 class TransactionError(RuntimeError):
@@ -386,6 +387,14 @@ def run_transaction(
             return commit_hash
         finally:
             if worktree is not None and branch:
+                sid = session_id(session)
+                status = "applied" if applied else "failed"
+                try:
+                    snapshot = preserve_session_snapshot(worktree, runs_dir, sid, applied)
+                    diagnostic(f"preserved {status} session snapshot: {snapshot}")
+                except SnapshotError as exc:
+                    diagnostic(f"session snapshot was not preserved: {exc}")
+
                 diagnostic("cleaning temporary worktree")
                 remove_worktree_and_branch(
                     root,

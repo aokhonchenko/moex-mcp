@@ -1,6 +1,6 @@
 [agent]
 # Maximum number of model turns in one autonomous session.
-step_limit = 30
+step_limit = 300
 
 # HTTP timeout for one OpenAI-compatible chat completion request.
 request_timeout_seconds = 120

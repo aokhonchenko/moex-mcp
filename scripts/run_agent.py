@@ -18,7 +18,7 @@ from scripts.llm_client import LlmClientError, OpenAICompatibleClient
 
 
 DEFAULT_SETTINGS = {
-    "step_limit": 30,
+    "step_limit": 300,
     "request_timeout_seconds": 120,
     "temperature": 0.2,
 }

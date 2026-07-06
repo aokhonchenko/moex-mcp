@@ -34,6 +34,12 @@ def test_read_settings_uses_agent_section(tmp_path):
     assert settings["request_timeout_seconds"] == 120
 
 
+def test_read_settings_defaults_to_long_session(tmp_path):
+    settings = run_agent.read_settings(tmp_path / "missing.toml")
+
+    assert settings["step_limit"] == 300
+
+
 def test_read_task_requires_existing_prompt(tmp_path):
     with pytest.raises(run_agent.AgentError, match="Prompt file does not exist"):
         run_agent.read_task(tmp_path / "missing.md")

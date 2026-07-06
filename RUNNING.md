@@ -31,7 +31,7 @@ AI_MODEL=your-model-name
 ```toml
 [agent]
 step_limit = 300
-request_timeout_seconds = 120
+request_timeout_seconds = 300
 temperature = 0.2
 ```
 

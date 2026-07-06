@@ -13,7 +13,7 @@ class LlmClientError(RuntimeError):
     """Raised when an OpenAI-compatible request fails."""
 
 
-DEFAULT_TIMEOUT_SECONDS = 120
+DEFAULT_TIMEOUT_SECONDS = 300
 
 
 def optional_env(name: str) -> str:

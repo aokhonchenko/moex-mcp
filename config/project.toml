@@ -3,6 +3,6 @@
 step_limit = 300
 
 # HTTP timeout for one OpenAI-compatible chat completion request.
-request_timeout_seconds = 120
+request_timeout_seconds = 300
 
 temperature = 0.2

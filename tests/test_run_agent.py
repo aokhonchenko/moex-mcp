@@ -31,7 +31,7 @@ def test_read_settings_uses_agent_section(tmp_path):
 
     assert settings["step_limit"] == 2
     assert settings["temperature"] == 0.5
-    assert settings["request_timeout_seconds"] == 120
+    assert settings["request_timeout_seconds"] == 300
 
 
 def test_read_settings_defaults_to_long_session(tmp_path):

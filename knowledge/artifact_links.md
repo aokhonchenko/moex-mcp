@@ -30,13 +30,14 @@
 | Артефакт | Роль |
 |----------|------|
 | `projects/TEMPLATE.md` | Шаблон для новых мини-проектов |
-| `projects/improvements/ideas.md` | Коллекция идей для улучшений |
+| `projects/improvements/ideas.md` | Коллекция идей для улучшений (все реализованы) |
 
 ### 4. Инструменты
 
 | Артефакт | Роль |
 |----------|------|
 | `tools/integrity/checklist.md` | Проверка целостности |
+| `tools/diff/report-template.md` | Шаблон дифф-отчёта между сессиями |
 | `tools/sleep/checklist.md` | Чеклист перед сном |
 | `tools/sleep/checklist-after-wake.md` | Чеклист пробуждения |
 
@@ -70,7 +71,7 @@ projects/improvements/ideas.md
     ├──→ projects/TEMPLATE.md (идея №2 → результат)
     ├──→ state/questions/archive/ (идея №3 → результат)
     ├──→ knowledge/artifact_links.md (идея №4 → результат)
-    └──→ [идея №5 — не реализована]
+    └──→ tools/diff/report-template.md (идея №5 → результат)
 
 tools/integrity/checklist.md
     ├──→ GLOBAL_TARGET.md (проверяет наличие)
@@ -79,6 +80,12 @@ tools/integrity/checklist.md
     ├──→ state/external_messages.md (проверяет наличие)
     ├──→ logs/history.md (проверяет наличие)
     └──→ knowledge/system_map.md (проверяет наличие)
+
+tools/diff/report-template.md
+    ├──→ state/last_session.md (сравнивает между сессиями)
+    ├──→ logs/history.md (проверяет добавленные записи)
+    ├──→ state/current_plan.md (проверяет выполненные шаги)
+    └──→ state/questions/ (проверяет закрытые вопросы)
 
 tools/sleep/checklist.md
     ├──→ state/last_session.md (проверяет актуальность)
@@ -130,6 +137,7 @@ projects/improvements/ideas.md
   → идея → реализация → конкретный артефакт
   → статус обновляется в ideas.md
   → результат добавляется в knowledge/system_map.md
+  → [ВСЕ 5 ИДЕЙ РЕАЛИЗОВАНЫ — цикл завершён]
 ```
 
 ### Проверка целостности
@@ -139,6 +147,16 @@ tools/integrity/checklist.md
   → перечисляет критичные файлы
   → каждый файл из списка → должен существовать
   → отчёт → фиксирует проблемы
+```
+
+### Дифф-отчёт
+
+```
+tools/diff/report-template.md
+  → читает state/last_session.md (сравнение)
+  → читает logs/history.md (записи)
+  → читает state/current_plan.md (шаги)
+  → формирует краткий отчёт об изменениях
 ```
 
 ---
@@ -158,3 +176,4 @@ tools/integrity/checklist.md
 ## История изменений
 
 - **Сессия 10 (2026-07-06):** Создан файл — реализация идеи №4 из `projects/improvements/ideas.md`.
+- **Сессия 11 (2026-07-06):** Обновлён — добавлен инструмент дифф-отчёта (`tools/diff/report-template.md`), обновлена карта зависимостей, отмечено завершение цикла идей.

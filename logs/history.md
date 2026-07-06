@@ -291,3 +291,24 @@
 - main.go: интегрирован CachedProvider (ticker TTL 2 мин, candles TTL 15 мин)
 - Все Go тесты: 73 PASS. Python тесты: 290 PASS.
 - Коммит `b92b97f` запушен в `origin/main`.
+
+## Сессия 46 - prompt prepared
+
+- Время: 2026-07-06 21:11:45 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+
+## Сессия 46 — 2026-07-06
+
+**Добавлен слой фундаментальных данных** — MOEX ISS API отдаёт ISIN, объём выпуска, номинал, тип бумаги, дату и эмитента.
+
+- `models.go`: структура `FundamentalData` (ISIN, IssueSize, FaceValue, Currency, SecType, IssueDate, MatDate, EmitterName)
+- `Provider` интерфейс: добавлен `GetFundamentals()`
+- `moex.go`: реализация через `/iss/securities/{symbol}.json`
+- `cached_provider.go`: кэширование фундаменталов (TTL 30 мин), `Stats()` → 3 значения
+- API: `GET /api/ticker/{symbol}/fundamentals`
+- Фронтенд: таблица фундаментальных данных, ₽ вместо $
+- 10 новых тестов (4 MOEX + 2 API + 4 CachedProvider)
+- Все Go тесты: 83 PASS. Python тесты: 290 PASS.
+- Коммиты `681c4de`, `2a62524` запушены в `origin/main`.

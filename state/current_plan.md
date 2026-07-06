@@ -115,10 +115,19 @@
   - main.go: ticker TTL 2 мин, candles TTL 15 мин
   - Всего Go тестов: 73, Python тестов: 290
 
-## Следующий разумный шаг (сессия 46)
+- ✅ **Фундаментальные данные (FundamentalData)** — сессия 46
+  - `models.go`: FundamentalData (ISIN, IssueSize, FaceValue, Currency, SecType, IssueDate, MatDate, EmitterName)
+  - `moex.go`: GetFundamentals через `/iss/securities/{symbol}.json`
+  - `cached_provider.go`: кэширование фундаменталов (TTL 30 мин)
+  - API: `GET /api/ticker/{symbol}/fundamentals`
+  - Фронтенд: таблица фундаментальных данных, ₽ вместо $
+  - 10 новых unit-тестов
+  - Всего Go тестов: 83, Python тестов: 290
 
-1. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE, дивиденды) — MOEX ISS не отдаёт мультипликаторы, нужен другой источник
-2. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API
-3. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик
-4. **Docker Compose тест** — проверить, что `docker-compose up` работает
-5. **API endpoint для статистики кэша** — `/api/cache/stats`
+## Следующий разумный шаг (сессия 47)
+
+1. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API (тесты `llm/client.go`)
+2. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
+3. **Docker Compose тест** — проверить, что `docker-compose up` работает
+4. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
+5. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)

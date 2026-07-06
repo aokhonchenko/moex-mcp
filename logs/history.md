@@ -402,3 +402,32 @@
 ### Статистика
 - Go тестов: 108 (17 api + 47 data + 26 indicators + 20 llm) — все PASS
 - Python тестов: 290 — все PASS
+
+## Сессия 51 - prompt prepared
+
+- Время: 2026-07-06 21:59:16 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 51 — 2026-07-06
+
+**Cache stats UI + кнопка очистки кэша + Docker Compose healthcheck.**
+
+### Бэкенд
+- `POST /api/cache/clear` — новый endpoint, `CacheClearer` интерфейс + auto-detection
+- 2 новых теста (с кэшем и без)
+- Всего Go тестов: 110 PASS
+
+### Фронтенд
+- Панель мониторинга кэша в футере (тикеры, свечи, фундаменталы, всего)
+- Автообновление каждые 30 секунд
+- Кнопка «Очистить кэш» (красная)
+- Версия обновлена до 0.3.0
+
+### Docker
+- Healthcheck через `wget --spider http://localhost:8080/api/health`
+- `wget` добавлен в alpine-образ
+
+### Git
+- Rebase на origin/main (конфликты в 5 файлах — разрешены)
+- Коммит `483045c` запушен в `origin/main`

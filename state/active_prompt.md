@@ -1,7 +1,7 @@
-# Активный промпт сессии 43
+# Активный промпт сессии 44
 
-Время сборки промпта: 2026-07-06 20:11:11 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0043
+Время сборки промпта: 2026-07-06 20:25:31 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0044
 
 ---
 
@@ -143,61 +143,47 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 43)
+# Сообщение будущей сессии (сессия 44)
 
-## Что было сделано в сессии 42
+## Что было сделано в сессии 43
 
-**Создан финансовый дашборд `foundation-finance`** — первый коммит в `git@github.com:aokhonchenko/foundation-finance.git`.
+**Написаны unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят.
 
-### Содержимое проекта
+### Содержимое тестов (`backend/internal/indicators/calculator_test.go`)
 
-**Backend (Go):**
-- `backend/main.go` — точка входа, chi router, CORS
-- `backend/internal/models/models.go` — модели данных (TickerData, OHLCV, IndicatorResult)
-- `backend/internal/data/yahoo.go` — Yahoo Finance провайдер (котировки + исторические свечи)
-- `backend/internal/indicators/calculator.go` — 6 индикаторов: SMA, EMA, RSI, MACD, Bollinger Bands, ATR
-- `backend/internal/llm/client.go` — OpenAI-compatible клиент для генерации отчётов
-- `backend/internal/api/handlers.go` — HTTP handlers: GetTicker, GetIndicators, GetReport, Health
-
-**Frontend:**
-- `frontend/index.html` — SPA с Chart.js
-- `frontend/style.css` — тёмная тема
-- `frontend/app.js` — логика дашборда: загрузка тикеров, отрисовка графиков, генерация LLM-отчётов
-
-**Инфраструктура:**
-- `Dockerfile` — multi-stage build (Go builder → Alpine runtime)
-- `docker-compose.yml` — один сервис, порт 8080
-- `.env.example` — шаблон переменных окружения для LLM
-
-### API endpoints
-- `GET /api/ticker/{symbol}` — текущая котировка
-- `GET /api/ticker/{symbol}/indicators?period=3mo` — технические индикаторы
-- `GET /api/ticker/{symbol}/report` — LLM-отчёт
-- `GET /api/health` — health check
+- **SMA** (4 теста): базовый расчёт, короткие данные, период = длина, период = 1
+- **EMA** (3 теста): базовый расчёт, короткие данные, проверка формулы
+- **RSI** (5 тестов): монотонный рост (→100), монотонное падение (→0), короткие данные, чередование (→50), проверка диапазона [0,100]
+- **MACD** (3 теста): короткие данные, постоянная цена (→0), наличие компонентов (macd/signal/histogram)
+- **Bollinger Bands** (3 теста): базовый расчёт, короткие данные, постоянная цена (→0 std dev)
+- **ATR** (3 теста): базовый расчёт, короткие данные, постоянные свечи (→0)
+- **AllIndicators** (4 теста): пустой ввод, короткие данные, полный набор индикаторов, проверка длин массивов
+- **NewCalculator** (1 тест): не nil
 
 ### Технические детали
-- Go-код компилируется успешно
-- Репозиторий запушен в `origin/main`
-- Директория `projects/foundation-finance` добавлена в `.gitignore` основного проекта
+- Клонирован репозиторий `git@github.com:aokhonchenko/foundation-finance.git` в `projects/foundation-finance/`
+- Тесты запущены через `go test ./internal/indicators/ -v` — все 26 PASS
+- Коммит `aca3547` запушен в `origin/main`
+- Тесты основного проекта (Python) — все 284 прошли
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — рабочий каркас с Go backend + web frontend
-- 16 файлов, ~1600 строк кода
-- Код компилируется, но не тестирован в runtime (нет unit-тестов)
-- Yahoo Finance API может потребовать User-Agent или быть заблокирован
+- `projects/foundation-finance/` — рабочий каркас с Go backend + web frontend + unit-тесты индикаторов
+- 17 файлов, ~2050 строк кода
+- 26 Go unit-тестов для indicators/calculator.go
+- Yahoo Finance API не тестирован в runtime
 
-## Что важно для следующей сессии (сессия 43)
+## Что важно для следующей сессии (сессия 44)
 
-1. **Написать unit-тесты** для indicators/calculator.go (чистая логика, легко тестируется)
-2. **Проверить работу Yahoo Finance API** — возможны блокировки или изменения формата
-3. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE) — требуют другого источника данных
-4. **Улучшить фронтенд** — добавить загрузку свечного графика, таблицу с фундаментальными метриками
-5. **Интегрировать `command_runner`** в сессионный цикл для запуска Go-тестов
+1. **Проверить Yahoo Finance API в runtime** — запустить сервер, вызвать `/api/ticker/AAPL`, проверить ответ
+2. **Добавить тесты для data/yahoo.go** — нужны моки HTTP или integration-тесты
+3. **Добавить тесты для api/handlers.go** — нужны моки зависимостей
+4. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE) — нужен другой источник данных
+5. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик
 
 ## Рекомендация для следующей сессии
 
-Начать с unit-тестов для `indicators/calculator.go` — это самая тестируемая часть (чистые функции). Затем проверить Yahoo Finance API в runtime и при необходимости добавить fallback-источник.
+Проверить Yahoo Finance API в runtime — запустить `go run main.go` и вызвать endpoints. Если API заблокирован, добавить User-Agent header или fallback-источник. Затем добавить тесты для HTTP-слоя (handlers + data provider).
 
 
 ---
@@ -305,10 +291,12 @@ _Заполни после учёта ответа._
   - Docker Compose
   - Репозиторий: `git@github.com:aokhonchenko/foundation-finance.git`
 
-## Следующий разумный шаг (сессия 43)
+- ✅ **Unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят — сессия 43
 
-1. **Unit-тесты для `indicators/calculator.go`** — чистые функции, легко тестируются
-2. **Проверить Yahoo Finance API в runtime** — возможны блокировки
+## Следующий разумный шаг (сессия 44)
+
+1. **Проверить Yahoo Finance API в runtime** — запустить сервер, вызвать endpoints
+2. **Добавить тесты для data/yahoo.go и api/handlers.go** — нужны моки HTTP
 3. **Добавить фундаментальные индикаторы** (P/E, P/B, ROE) — нужен другой источник данных
 4. **Улучшить фронтенд** — свечной график, таблица фундаментальных метрик
 
@@ -400,6 +388,8 @@ FAILED tests/test_apply_patch.py::TestReplaceRegex::test_regex_multiline - As...
 ```
 
 очевидно ты должен дать агенту инструмент для запуска команд. чтобы он мог гонять те же тесты.
+
+ты давно не спал. замечание для foundation-finance - это для мосбиржи. так что нужны российские источники.
 
 
 ---
@@ -571,7 +561,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 43. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0043`.
+Ты находишься в сессии 44. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0044`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

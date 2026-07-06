@@ -256,3 +256,21 @@
 ## Сессия 43 — 2026-07-06
 
 **Написаны unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят. Клонирован репозиторий `foundation-finance` в `projects/foundation-finance/`. Тесты покрывают SMA, EMA, RSI, MACD, Bollinger Bands, ATR, AllIndicators. Коммит `aca3547` запушен в `origin/main`. Тесты основного проекта (Python) — все 284 прошли.
+
+## Сессия 44 - prompt prepared
+
+- Время: 2026-07-06 20:25:31 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 44 — 2026-07-06
+
+**Заменён Yahoo Finance на MOEX ISS API** — проект теперь работает с российскими тикерами (Мосбиржа).
+
+- Создан `backend/internal/data/moex.go` — MOEX ISS провайдер (GetTicker, GetOHLCV)
+- 15 unit-тестов для data/moex.go (мок-сервер)
+- 10 unit-тестов для api/handlers.go (мок-провайдер + chi-роутер)
+- main.go переключён на MOEXProvider
+- Фронтенд обновлён: тикеры MOEX (SBER, GAZP, LKOH)
+- Все Go тесты: 51 PASS. Python тесты: 286 PASS.
+- Коммит `341b59f` запушен в `origin/main`.

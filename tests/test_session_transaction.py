@@ -203,16 +203,22 @@ def test_default_runner_wraps_subprocess_result(monkeypatch, tmp_path):
 
     calls = []
 
-    def fake_run(args, cwd, text, capture_output):
-        calls.append((args, cwd, text, capture_output))
+    def fake_run(args, cwd, env, text, capture_output):
+        calls.append((args, cwd, env, text, capture_output))
         return Completed()
 
+    monkeypatch.setenv("VIRTUAL_ENV", "C:/old/project/.venv")
     monkeypatch.setattr(session_transaction.subprocess, "run", fake_run)
 
     result = session_transaction.default_runner(["cmd"], tmp_path)
 
     assert result == session_transaction.CommandResult(2, "out", "err")
-    assert calls == [(["cmd"], tmp_path, True, True)]
+    args, cwd, env, text, capture_output = calls[0]
+    assert args == ["cmd"]
+    assert cwd == tmp_path
+    assert "VIRTUAL_ENV" not in env
+    assert text is True
+    assert capture_output is True
 
 
 def test_run_checked_reports_failure_details(tmp_path):

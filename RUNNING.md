@@ -77,7 +77,7 @@ uv run python scripts/session_transaction.py --agent-command 'your-agent --cwd "
 uv run python scripts/run_session.py --dry-run
 ```
 
-Проверить wrapper без реального запуска модели нельзя без `AI_BASE_URL`, `AI_MODEL` и рабочей модели. `AI_API_KEY` может быть пустым, если endpoint это допускает. Ошибки подключения будут откатываться транзакционным runner'ом.
+Проверить wrapper без реального запуска модели нельзя без `AI_BASE_URL`, `AI_MODEL` и рабочей модели. `AI_API_KEY` может быть пустым, если endpoint это допускает; wrapper подставит технический dummy credential для LiteLLM/OpenAI SDK. Ошибки подключения будут откатываться транзакционным runner'ом.
 
 ## Тесты
 

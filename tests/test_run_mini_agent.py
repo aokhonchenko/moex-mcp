@@ -51,7 +51,7 @@ def test_build_model_kwargs_uses_ai_environment(monkeypatch):
     }
 
 
-def test_build_model_kwargs_allows_empty_ai_api_key(monkeypatch):
+def test_build_model_kwargs_uses_dummy_key_for_empty_ai_api_key(monkeypatch):
     monkeypatch.delenv("AI_API_KEY", raising=False)
     monkeypatch.setenv("AI_BASE_URL", "https://example.test/v1")
 
@@ -59,7 +59,7 @@ def test_build_model_kwargs_allows_empty_ai_api_key(monkeypatch):
         {"custom_llm_provider": "openai"}
     )
 
-    assert kwargs["api_key"] == ""
+    assert kwargs["api_key"] == "not-needed"
 
 
 def test_read_task_requires_existing_prompt(tmp_path):

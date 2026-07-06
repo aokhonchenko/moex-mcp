@@ -38,9 +38,12 @@ HUMAN_INPUT_FILES = {"GLOBAL_TARGET.md", "state/external_messages.md"}
 
 
 def default_runner(args: Sequence[str], cwd: Path) -> CommandResult:
+    env = os.environ.copy()
+    env.pop("VIRTUAL_ENV", None)
     completed = subprocess.run(
         list(args),
         cwd=cwd,
+        env=env,
         text=True,
         capture_output=True,
     )

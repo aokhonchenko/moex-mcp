@@ -20,6 +20,7 @@ DEFAULT_SETTINGS = {
     "command_timeout_seconds": 60,
     "output_path": "logs/mini-swe-agent-last-run.json",
 }
+DEFAULT_EMPTY_API_KEY = "not-needed"
 
 
 def read_settings(path: Path) -> dict[str, Any]:
@@ -43,11 +44,15 @@ def optional_env(name: str) -> str:
     return os.environ.get(name, "").strip()
 
 
+def api_key() -> str:
+    return optional_env("AI_API_KEY") or DEFAULT_EMPTY_API_KEY
+
+
 def build_model_kwargs(settings: dict[str, Any]) -> dict[str, Any]:
     return {
         "custom_llm_provider": settings["custom_llm_provider"],
         "api_base": require_env("AI_BASE_URL"),
-        "api_key": optional_env("AI_API_KEY"),
+        "api_key": api_key(),
         "drop_params": True,
     }
 

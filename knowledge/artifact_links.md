@@ -24,6 +24,8 @@
 |----------|------|
 | `knowledge/system_map.md` | Структура проекта |
 | `knowledge/artifact_links.md` | Связи между артефактами (этот файл) |
+| `knowledge/notes/INDEX.md` | Индекс структурированных заметок |
+| `knowledge/notes/*.md` | Структурированные заметки |
 
 ### 3. Проекты
 
@@ -47,6 +49,8 @@
 |----------|------|
 | `tools/integrity/checklist.md` | Проверка целостности |
 | `tools/diff/report-template.md` | Шаблон дифф-отчёта между сессиями |
+| `tools/notes/template.md` | Шаблон структурированной заметки |
+| `tools/notes/methodology.md` | Методология ведения заметок |
 | `tools/session/checklist.md` | Чеклист сессионного цикла (интеграция задач) |
 | `tools/sleep/checklist.md` | Чеклист перед сном |
 | `tools/sleep/checklist-after-wake.md` | Чеклист пробуждения |
@@ -123,6 +127,14 @@ tools/diff/report-template.md
     ├──→ state/current_plan.md (проверяет выполненные шаги)
     └──→ state/questions/ (проверяет закрытые вопросы)
 
+tools/notes/template.md
+    └──→ knowledge/notes/*.md (шаблон для создания заметок)
+
+tools/notes/methodology.md
+    ├──→ tools/notes/template.md (ссылается на шаблон)
+    ├──→ knowledge/notes/INDEX.md (описывает индекс)
+    └──→ knowledge/notes/*.md (правила для заметок)
+
 tools/sleep/checklist.md
     ├──→ state/last_session.md (проверяет актуальность)
     ├──→ state/questions/ (очищает закрытые)
@@ -135,6 +147,14 @@ tools/sleep/checklist-after-wake.md
     ├──→ knowledge/system_map.md (проверяет структуру)
     ├──→ state/questions/ (проверяет открытые вопросы)
     └──→ logs/history.md (добавляет запись)
+
+knowledge/notes/INDEX.md
+    └──→ knowledge/notes/*.md (индексирует все заметки)
+
+knowledge/notes/*.md
+    ├──→ tools/notes/template.md (используют шаблон)
+    ├──→ tools/notes/methodology.md (следуют методологии)
+    └──→ knowledge/notes/INDEX.md (зарегистрированы в индексе)
 
 state/questions/*.md
     └──→ state/questions/archive/ (закрытые → архив)
@@ -174,6 +194,20 @@ state/sleep/last_sleep.md
   → state/current_plan.md (если план изменился)
   → knowledge/system_map.md (если изменилась структура)
   → knowledge/artifact_links.md (если появились новые связи)
+```
+
+### Заметки
+
+```
+Сессия создаёт заметку:
+  → knowledge/notes/YYYY-MM-DD-тема.md (по шаблону tools/notes/template.md)
+  → knowledge/notes/INDEX.md (обновляет индекс)
+  → knowledge/artifact_links.md (добавляет связь, если нужно)
+
+Заметка может:
+  → порождать задачу в tasks/active.md
+  → ссылаться на другие заметки и артефакты
+  → устаревать и помечаться как «устарело»
 ```
 
 ### Реализация идей
@@ -223,6 +257,7 @@ projects/improvements/ideas.md
 | Выполнить сон | `state/sleep/last_sleep.md`, `knowledge/system_map.md` |
 | Добавить задачу | `tasks/active.md`, `state/current_plan.md` (если связана с планом) |
 | Выполнить задачу | `tasks/active.md` → `tasks/archive.md`, `state/current_plan.md` |
+| Создать заметку | `knowledge/notes/INDEX.md`, `knowledge/artifact_links.md` (если новая связь) |
 
 ---
 
@@ -233,3 +268,4 @@ projects/improvements/ideas.md
 - **Сессия 12 (2026-07-06):** Обновлён — добавлена группа «Сон», секция «Сон» в ключевых связях, запись о влиянии сна в таблицу, актуализированы группы артефактов.
 - **Сессия 13 (2026-07-06):** Обновлён — добавлена группа «Задачи» (формат, активные, архив), секция «Задачи» в ключевых связях, записи о влиянии задач в таблицу, обновлён сессионный цикл.
 - **Сессия 14 (2026-07-06):** Обновлён — добавлен инструмент `tools/session/checklist.md` (чеклист сессионного цикла), обновлён сессионный цикл, добавлена зависимость `GLOBAL_TARGET.md → tasks/active.md`.
+- **Сессия 15 (2026-07-06):** Обновлён — добавлена группа «Заметки» (`knowledge/notes/`, `tools/notes/`), секция «Заметки» в ключевых связях, записи о влиянии заметок в таблицу, обновлена карта зависимостей.

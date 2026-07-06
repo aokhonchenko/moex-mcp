@@ -37,6 +37,7 @@ class ToolExecutionBatch:
     messages: list[dict[str, Any]]
     error_signatures: list[str]
     call_signatures: list[str]
+    final: str | None = None
 
 
 def diagnostic(message: str) -> None:
@@ -81,7 +82,8 @@ Prefer read_lines and replace_text for existing files. Use write_file only for n
 3. Если менялся план, обновить state/current_plan.md.
 
 Все пользовательские артефакты пиши на русском языке. Для завершения ответь обычным финальным
-сообщением без вызова инструментов. Если endpoint не поддерживает tool calling, можно вернуть ровно
+сообщением без вызова инструментов. Не вызывай инструмент `final`: такого инструмента нет.
+Если endpoint не поддерживает tool calling, можно вернуть ровно
 JSON-объект одного из видов:
 {"tool":"read_lines","path":"state/last_session.md","start_line":1,"line_count":40}
 {"tool":"replace_text","path":"state/last_session.md","old":"...","new":"..."}
@@ -156,6 +158,14 @@ def execute_native_tool_calls(root: Path, message: dict[str, Any]) -> ToolExecut
         name = function.get("name", "")
         try:
             arguments = parse_tool_arguments(function.get("arguments", "{}"))
+            if name == "final":
+                final = str(arguments.get("final") or arguments.get("message") or "").strip()
+                return ToolExecutionBatch(
+                    messages=results,
+                    error_signatures=error_signatures,
+                    call_signatures=call_signatures,
+                    final=final,
+                )
             compact_arguments = compact_tool_arguments(name, arguments)
             call_signatures.append(tool_call_signature(name, arguments))
             diagnostic(f"tool: {name} {compact_arguments}")
@@ -267,6 +277,9 @@ def run_agent(root: Path, prompt_file: Path, settings_path: Path) -> int:
         if tool_calls:
             diagnostic(f"step {step}: model requested {len(tool_calls)} tool call(s)")
             execution = execute_native_tool_calls(root, message)
+            if execution.final is not None:
+                diagnostic(f"finished: {execution.final or '<empty final response>'}")
+                return 0
             messages.extend(execution.messages)
             last_tool_error_signature, repeated_tool_error_count = repeated_error_state(
                 execution.error_signatures,

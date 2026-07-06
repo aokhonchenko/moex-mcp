@@ -108,6 +108,34 @@ def test_run_agent_executes_text_protocol(tmp_path, monkeypatch):
     assert client.calls[1][0][-1]["role"] == "user"
 
 
+def test_run_agent_accepts_native_final_pseudo_tool(tmp_path, monkeypatch, capsys):
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task", encoding="utf-8")
+    client = FakeClient(
+        [
+            {
+                "content": "",
+                "tool_calls": [
+                    {
+                        "id": "call-final",
+                        "type": "function",
+                        "function": {
+                            "name": "final",
+                            "arguments": '{"final":"готово"}',
+                        },
+                    }
+                ],
+            },
+        ]
+    )
+    install_fake_client(monkeypatch, client)
+
+    result = run_agent.run_agent(tmp_path, prompt, tmp_path / "missing.toml")
+
+    captured = capsys.readouterr()
+    assert result == 0
+    assert "finished: готово" in captured.out
+
 def test_run_agent_reports_native_tool_error_to_model(tmp_path, monkeypatch, capsys):
     prompt = tmp_path / "prompt.md"
     prompt.write_text("task", encoding="utf-8")

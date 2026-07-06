@@ -16,7 +16,8 @@
 | 18 | Компактный контекст | `state/session_context.md`, `knowledge/file_manifest.md` |
 | 19 | Оценщик чтения | `tools/reading-analyzer/`, закрытие 5 задач |
 | 20 | Фидбек + карта связей | 4 задачи по оптимизации, `knowledge/artifact_links.md` |
-| 21 | **src/ + partial_reader** | `src/tools/partial_reader.py` — первый исполняемый инструмент |
+| 21 | src/ + partial_reader | `src/tools/partial_reader.py` — первый исполняемый инструмент |
+| 22 | **src/agent/context.py** | Модуль управления контекстом — оптимизированное чтение файлов |
 
 ## Архив (сессии 1–12)
 

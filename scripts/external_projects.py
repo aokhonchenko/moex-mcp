@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import stat
 from pathlib import Path
 from typing import Callable, Sequence
 
@@ -17,6 +18,7 @@ CommandRunner = Callable[[Sequence[str], Path], CommandResult]
 
 EXTERNAL_PROJECTS_DIR = "projects"
 EXTERNAL_PROJECT_COPY_IGNORES = {"__pycache__", ".pytest_cache", ".venv", "node_modules", "target"}
+EXISTING_PROJECT_COPY_IGNORES = EXTERNAL_PROJECT_COPY_IGNORES | {".git"}
 
 
 def is_git_ignored(root: Path, path: Path, runner: CommandRunner = default_runner) -> bool:
@@ -45,11 +47,62 @@ def external_project_dirs(root: Path, runner: CommandRunner = default_runner) ->
     return candidates
 
 
+def _is_ignored_name(name: str, ignores: set[str]) -> bool:
+    return name in ignores
+
+
+def _make_writable(path: Path) -> None:
+    try:
+        path.chmod(path.stat().st_mode | stat.S_IWRITE)
+    except OSError:
+        pass
+
+
+def _remove_path(path: Path) -> None:
+    if path.is_dir():
+        shutil.rmtree(path, onerror=lambda func, item, _exc: (_make_writable(Path(item)), func(item)))
+        return
+    _make_writable(path)
+    path.unlink()
+
+
+def _copy_into_existing(source: Path, target: Path) -> None:
+    target.mkdir(parents=True, exist_ok=True)
+    source_names = {
+        child.name
+        for child in source.iterdir()
+        if not _is_ignored_name(child.name, EXISTING_PROJECT_COPY_IGNORES)
+    }
+    for child in list(target.iterdir()):
+        if _is_ignored_name(child.name, EXISTING_PROJECT_COPY_IGNORES):
+            continue
+        if child.name not in source_names:
+            _remove_path(child)
+
+    for child in source.iterdir():
+        if _is_ignored_name(child.name, EXISTING_PROJECT_COPY_IGNORES):
+            continue
+        destination = target / child.name
+        if child.is_dir():
+            if destination.exists() and not destination.is_dir():
+                _remove_path(destination)
+            _copy_into_existing(child, destination)
+            continue
+        if destination.exists() and destination.is_dir():
+            _remove_path(destination)
+        if destination.exists():
+            _make_writable(destination)
+        shutil.copy2(child, destination)
+
+
 def copy_external_project(source: Path, target: Path) -> None:
     ignore = shutil.ignore_patterns(*EXTERNAL_PROJECT_COPY_IGNORES)
     if target.exists() and not target.is_dir():
         raise ExternalProjectError(f"external project target is not a directory: {target}")
     try:
+        if target.exists():
+            _copy_into_existing(source, target)
+            return
         shutil.copytree(source, target, dirs_exist_ok=True, ignore=ignore)
     except (OSError, shutil.Error) as exc:
         raise ExternalProjectError(f"cannot replicate external project {source} to {target}: {exc}") from exc

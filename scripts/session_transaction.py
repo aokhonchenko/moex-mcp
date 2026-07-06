@@ -24,22 +24,17 @@ from scripts.external_projects import ExternalProjectError, replicate_external_p
 from scripts.run_snapshots import SnapshotError, preserve_session_snapshot
 from scripts.validation_repairs import DEFAULT_REPAIR_ATTEMPTS, run_validation_with_repairs
 
-
 class TransactionError(RuntimeError):
     """Raised when a session cannot be applied atomically."""
 
-
 CommandRunner = Callable[[Sequence[str], Path], CommandResult]
-
 
 SENSITIVE_DIRS = {".git", ".pytest_cache", "__pycache__", ".venv", "runs"}
 GENERATED_LONG_FILES = {"uv.lock", "poetry.lock", "package-lock.json", "pnpm-lock.yaml", "yarn.lock"}
 HUMAN_INPUT_FILES = {"GLOBAL_TARGET.md", "state/external_messages.md"}
 
-
 def diagnostic(message: str) -> None:
     print(f"[session] {message}", flush=True)
-
 
 def command_failure_details(result: CommandResult, max_lines: int = 40) -> str:
     details = (result.stderr or result.stdout).strip()
@@ -66,10 +61,8 @@ def run_checked(
         raise TransactionError(f"{action}: command failed with exit code {result.returncode}")
     return result
 
-
 def git(runner: CommandRunner, root: Path, *args: str) -> CommandResult:
     return run_checked(runner, ["git", *args], root, f"git {' '.join(args)}")
-
 
 def ensure_git_repo(root: Path, runner: CommandRunner = default_runner) -> None:
     result = git(runner, root, "rev-parse", "--show-toplevel")
@@ -77,16 +70,10 @@ def ensure_git_repo(root: Path, runner: CommandRunner = default_runner) -> None:
     if repo_root != root.resolve():
         raise TransactionError(f"expected git root {root}, got {repo_root}")
 
-
 def ensure_clean_worktree(root: Path, runner: CommandRunner = default_runner) -> None:
     result = git(runner, root, "status", "--porcelain")
     if result.stdout.strip():
         raise TransactionError("main worktree must be clean before transactional session")
-
-
-
-
-
 
 def parse_env_line(line: str) -> tuple[str, str] | None:
     stripped = line.strip()
@@ -102,7 +89,6 @@ def parse_env_line(line: str) -> tuple[str, str] | None:
     if not key:
         return None
     return key, value
-
 
 def load_dotenv(path: Path) -> dict[str, str]:
     if not path.exists():
@@ -130,14 +116,12 @@ def parse_porcelain_paths(status: str) -> list[tuple[str, str]]:
         changes.append((code, path.replace("\\", "/")))
     return changes
 
-
 def is_human_input_change(code: str, path: str) -> bool:
     if "D" in code:
         return False
     if path in HUMAN_INPUT_FILES:
         return True
     return path.startswith("state/questions/") and path.endswith(".md")
-
 
 def checkpoint_human_input(root: Path, runner: CommandRunner = default_runner) -> bool:
     result = git(runner, root, "status", "--porcelain")
@@ -155,7 +139,6 @@ def checkpoint_human_input(root: Path, runner: CommandRunner = default_runner) -
     git(runner, root, "commit", "-m", "record human input before session")
     return True
 
-
 def current_branch(root: Path, runner: CommandRunner = default_runner) -> str:
     result = git(runner, root, "branch", "--show-current")
     branch = result.stdout.strip()
@@ -163,10 +146,8 @@ def current_branch(root: Path, runner: CommandRunner = default_runner) -> str:
         raise TransactionError("main worktree must be on a branch, not detached HEAD")
     return branch
 
-
 def session_id(session: int) -> str:
     return f"{session:04d}"
-
 
 @contextmanager
 def lock_file(root: Path) -> Iterator[Path]:
@@ -187,10 +168,8 @@ def lock_file(root: Path) -> Iterator[Path]:
         except FileNotFoundError:
             pass
 
-
 def default_runs_dir(root: Path) -> Path:
     return root / "runs"
-
 
 def create_worktree(
     root: Path,
@@ -208,7 +187,6 @@ def create_worktree(
     git(runner, root, "worktree", "add", "-b", branch, str(worktree), "HEAD")
     return worktree, branch
 
-
 def remove_worktree_and_branch(
     root: Path,
     worktree: Path,
@@ -224,7 +202,6 @@ def remove_worktree_and_branch(
     except OSError:
         pass
 
-
 def run_inner_session(
     worktree: Path,
     agent_command: str,
@@ -237,7 +214,6 @@ def run_inner_session(
         details = command_failure_details(result)
         raise TransactionError(f"agent session failed: {details or 'see streamed output above'}")
 
-
 def run_checks(
     worktree: Path,
     check_command: Sequence[str],
@@ -248,7 +224,6 @@ def run_checks(
         details = command_failure_details(result)
         raise TransactionError(f"checks failed: {details or 'see streamed output above'}")
 
-
 def ensure_required_session_files(worktree: Path) -> None:
     required = [
         worktree / "state" / "last_session.md",
@@ -257,7 +232,6 @@ def ensure_required_session_files(worktree: Path) -> None:
     missing = [str(path.relative_to(worktree)) for path in required if not path.exists()]
     if missing:
         raise TransactionError(f"required session files are missing: {', '.join(missing)}")
-
 
 def find_oversized_files(root: Path, max_lines: int = 500) -> list[Path]:
     oversized: list[Path] = []
@@ -276,13 +250,11 @@ def find_oversized_files(root: Path, max_lines: int = 500) -> list[Path]:
             oversized.append(path)
     return oversized
 
-
 def ensure_file_size_policy(worktree: Path, max_lines: int = 500) -> None:
     oversized = find_oversized_files(worktree, max_lines=max_lines)
     if oversized:
         relative = ", ".join(str(path.relative_to(worktree)) for path in oversized)
         raise TransactionError(f"files exceed {max_lines} lines and must be decomposed: {relative}")
-
 
 def ensure_session_changed_worktree(
     worktree: Path,
@@ -291,7 +263,6 @@ def ensure_session_changed_worktree(
     result = git(runner, worktree, "status", "--porcelain")
     if not result.stdout.strip():
         raise TransactionError("session produced no tracked or untracked changes")
-
 
 def commit_session(
     worktree: Path,
@@ -303,14 +274,12 @@ def commit_session(
     result = git(runner, worktree, "rev-parse", "HEAD")
     return result.stdout.strip()
 
-
 def apply_session_commit(
     root: Path,
     branch: str,
     runner: CommandRunner = default_runner,
 ) -> None:
     git(runner, root, "merge", "--ff-only", branch)
-
 
 def default_agent_command() -> str:
     return 'uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"'
@@ -351,17 +320,27 @@ def run_transaction(
         ensure_clean_worktree(root, runner)
         branch_name = current_branch(root, runner)
         diagnostic(f"main branch: {branch_name}")
+        base_head = git(runner, root, "rev-parse", "HEAD").stdout.strip()
 
         session = run_session.read_counter(root / "state" / "session_counter.txt")
         diagnostic(f"session: {session_id(session)}")
         worktree: Path | None = None
         branch = ""
         applied = False
+        merged = False
 
         try:
             diagnostic("creating temporary worktree")
             worktree, branch = create_worktree(root, runs_dir, session, runner)
             diagnostic(f"temporary branch: {branch}")
+
+            diagnostic("seeding external project repositories")
+            seeded_projects = replicate_external_projects(root, worktree, runner)
+            if seeded_projects:
+                joined = ", ".join(str(path) for path in seeded_projects)
+                diagnostic(f"seeded external projects: {joined}")
+            else:
+                diagnostic("no external projects to seed")
 
             diagnostic("running agent session")
             run_inner_session(worktree, agent_command, runner)
@@ -397,6 +376,7 @@ def run_transaction(
 
             diagnostic("applying session commit to main worktree")
             apply_session_commit(root, branch, runner)
+            merged = True
 
             diagnostic("replicating external project repositories")
             replicated_projects = replicate_external_projects(worktree, root, runner)
@@ -409,6 +389,11 @@ def run_transaction(
             applied = True
             diagnostic(f"applied commit: {commit_hash}")
             return commit_hash
+        except Exception:
+            if merged and not applied:
+                diagnostic("rolling back main worktree to pre-session HEAD")
+                git(runner, root, "reset", "--hard", base_head)
+            raise
         finally:
             if worktree is not None and branch:
                 sid = session_id(session)
@@ -427,7 +412,6 @@ def run_transaction(
                     runner,
                     force_branch=not applied,
                 )
-
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -462,7 +446,6 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
 def main() -> int:
     args = parse_args()
     root = Path(args.root)
@@ -483,7 +466,6 @@ def main() -> int:
 
     print(f"Transaction applied: {commit_hash}")
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())

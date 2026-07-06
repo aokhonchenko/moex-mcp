@@ -1,4 +1,7 @@
+import stat
 from pathlib import Path
+
+import pytest
 
 from scripts import external_projects, session_transaction
 from test_session_transaction import FakeRunner, make_root
@@ -67,3 +70,54 @@ def test_run_transaction_replicates_external_projects_after_success(tmp_path):
 
     assert (root / "projects" / "foundation-finance" / "README.md").read_text(encoding="utf-8") == "created\n"
     assert (root / "projects" / "foundation-finance" / ".git").exists()
+
+
+def test_copy_external_project_preserves_existing_git_metadata(tmp_path):
+    source = tmp_path / "source"
+    target = tmp_path / "target"
+    source_pack_dir = source / ".git" / "objects" / "pack"
+    target_pack_dir = target / ".git" / "objects" / "pack"
+    source_pack_dir.mkdir(parents=True)
+    target_pack_dir.mkdir(parents=True)
+    (source_pack_dir / "pack-demo.pack").write_text("source git data\n", encoding="utf-8")
+    target_pack = target_pack_dir / "pack-demo.pack"
+    target_pack.write_text("target git data\n", encoding="utf-8")
+    target_pack.chmod(stat.S_IREAD)
+    (source / "README.md").write_text("new content\n", encoding="utf-8")
+    (target / "stale.md").write_text("old content\n", encoding="utf-8")
+
+    try:
+        external_projects.copy_external_project(source, target)
+    finally:
+        target_pack.chmod(stat.S_IWRITE | stat.S_IREAD)
+
+    assert target_pack.read_text(encoding="utf-8") == "target git data\n"
+    assert (target / "README.md").read_text(encoding="utf-8") == "new content\n"
+    assert not (target / "stale.md").exists()
+
+
+def test_run_transaction_rolls_back_main_merge_when_external_replication_fails(tmp_path, monkeypatch):
+    root = make_root(tmp_path)
+    runs_dir = tmp_path / "runs"
+    runner = FakeRunner(root)
+
+    def fake_replicate(source, target, command_runner):
+        if Path(target) == root:
+            raise external_projects.ExternalProjectError("copy failed")
+        return []
+
+    monkeypatch.setattr(session_transaction, "replicate_external_projects", fake_replicate)
+
+    with pytest.raises(external_projects.ExternalProjectError, match="copy failed"):
+        session_transaction.run_transaction(
+            root=root,
+            agent_command="agent --ok",
+            runs_dir=runs_dir,
+            runner=runner,
+        )
+
+    commands = [command for command, _ in runner.commands]
+    assert ["git", "merge", "--ff-only", "session/0003"] in commands
+    assert ["git", "reset", "--hard", "abc123"] in commands
+    assert ["git", "branch", "-D", "session/0003"] in commands
+    assert (runs_dir / "snapshots" / "session-0003-failed").exists()

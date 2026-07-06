@@ -39,11 +39,15 @@ def require_env(name: str) -> str:
     return value
 
 
+def optional_env(name: str) -> str:
+    return os.environ.get(name, "").strip()
+
+
 def build_model_kwargs(settings: dict[str, Any]) -> dict[str, Any]:
     return {
         "custom_llm_provider": settings["custom_llm_provider"],
         "api_base": require_env("AI_BASE_URL"),
-        "api_key": require_env("AI_API_KEY"),
+        "api_key": optional_env("AI_API_KEY"),
         "drop_params": True,
     }
 

@@ -58,12 +58,12 @@ cp .env.example .env
 Заполните `.env`:
 
 ```bash
-AI_API_KEY=replace-with-your-api-key
+AI_API_KEY=
 AI_BASE_URL=https://your-openai-compatible-endpoint.example/v1
 AI_MODEL=openai/your-model-name
 ```
 
-Модель тоже хранится в `.env`, рядом с URL и ключом. `config/project.toml` содержит только не-секретные параметры запуска `mini-swe-agent`: лимиты шагов, cost tracking, timeout и путь к trajectory.
+Модель тоже хранится в `.env`, рядом с URL и ключом. `AI_API_KEY` можно оставить пустым, если выбранный OpenAI-compatible endpoint не требует ключ. `config/project.toml` содержит только не-секретные параметры запуска `mini-swe-agent`: лимиты шагов, cost tracking, timeout и путь к trajectory.
 
 ## Ручной запуск
 

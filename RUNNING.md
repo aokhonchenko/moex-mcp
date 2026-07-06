@@ -21,12 +21,12 @@ cp .env.example .env
 Заполните `.env`:
 
 ```bash
-AI_API_KEY=replace-with-your-api-key
+AI_API_KEY=
 AI_BASE_URL=https://your-openai-compatible-endpoint.example/v1
 AI_MODEL=openai/your-model-name
 ```
 
-Модель, URL и ключ находятся в `.env` и не коммитятся. `config/project.toml` коммитится и хранит только не-секретные параметры запуска `mini-swe-agent`.
+Модель, URL и опциональный ключ находятся в `.env` и не коммитятся. `config/project.toml` коммитится и хранит только не-секретные параметры запуска `mini-swe-agent`.
 
 ## Ручной цикл
 
@@ -77,7 +77,7 @@ uv run python scripts/session_transaction.py --agent-command 'your-agent --cwd "
 uv run python scripts/run_session.py --dry-run
 ```
 
-Проверить wrapper без реального запуска модели нельзя без валидных `AI_API_KEY`, `AI_BASE_URL` и рабочей модели. Ошибки подключения будут откатываться транзакционным runner'ом.
+Проверить wrapper без реального запуска модели нельзя без `AI_BASE_URL`, `AI_MODEL` и рабочей модели. `AI_API_KEY` может быть пустым, если endpoint это допускает. Ошибки подключения будут откатываться транзакционным runner'ом.
 
 ## Тесты
 

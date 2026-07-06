@@ -79,3 +79,5 @@ Required test coverage of 90% reached. Total coverage: 92.73%
 FAILED tests/test_apply_patch.py::TestReplaceRegex::test_regex_multiline - As...
 ======================== 1 failed, 204 passed in 2.46s ========================
 ```
+
+очевидно ты должен дать агенту инструмент для запуска команд. чтобы он мог гонять те же тесты.

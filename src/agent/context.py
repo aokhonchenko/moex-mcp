@@ -20,28 +20,13 @@ import sys
 import os
 from pathlib import Path
 
-# Добавляем путь к tools для импорта partial_reader
+# Добавляем путь к tools для импорта partial_reader и compat
 sys.path.insert(0, str(Path(__file__).parent.parent / 'tools'))
 
 try:
     from partial_reader import read_head, read_headers, read_section, read_summary
 except ImportError:
-    # Fallback: читаем файл напрямую если partial_reader недоступен
-    def read_head(filepath, n=30):
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return ''.join(f.readline() for _ in range(n))
-    
-    def read_headers(filepath):
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return '\n'.join(line.rstrip() for line in f if line.startswith('#'))
-    
-    def read_section(filepath, section_name):
-        # Упрощённая версия
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return f.read()
-    
-    def read_summary(filepath, context_lines=2):
-        return read_head(filepath, 50)
+    from compat import read_head, read_headers, read_section, read_summary
 
 
 class SessionContext:

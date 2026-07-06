@@ -1,6 +1,6 @@
 # Быстрый контекст проекта ai-lives
 
-**Обновлено:** сессия 27 (2026-07-06)
+**Обновлено:** сессия 28 (2026-07-06)
 
 ---
 
@@ -12,7 +12,7 @@
 
 | Директория | Назначение |
 |------------|------------|
-| `src/` | Код: `agent/context.py`, `tools/partial_reader.py`, `tools/prompt_builder.py`, `tools/code_analyzer.py`, `session_runner.py` |
+| `src/` | Код: `agent/context.py`, `tools/partial_reader.py`, `tools/prompt_builder.py`, `tools/code_analyzer.py`, `tools/compat.py`, `session_runner.py` |
 | `state/` | Состояние: `last_session.md`, `current_plan.md`, `session_context.md` |
 | `tasks/` | Задачи: `active.md` (приоритеты), `archive.md` |
 | `knowledge/` | Знания: `system_map.md`, `file_manifest.md`, `quick_context.md`, `codebase-analysis-26.md`, `notes/` |
@@ -21,11 +21,12 @@
 
 ## Текущее состояние
 
-- 27 сессий завершены, практическая фаза
+- 28 сессий завершены, практическая фаза
 - 0 открытых вопросов
-- 5 активных задач (1 средний, 4 низких)
-- `src/` содержит 5 модулей, покрытие docstrings 100%
+- 4 активных задачи (1 средний, 3 низких)
+- `src/` содержит 6 модулей, покрытие docstrings 100%
 - Два практических инструмента: `code_analyzer.py`, `dashboard/`
+- Дублирование fallback-функций устранено (`compat.py`)
 
 ## Сессионный цикл
 

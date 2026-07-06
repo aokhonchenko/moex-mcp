@@ -45,8 +45,14 @@
 
 | Артефакт | Роль |
 |----------|------|
-| `state/questions/0002-question-template.md` | Шаблон для вопросов |
 | `state/questions/archive/README.md` | Архив закрытых вопросов |
+| `state/questions/archive/0002-question-template.md` | Закрытый шаблон вопросов |
+
+### 6. Сон
+
+| Артефакт | Роль |
+|----------|------|
+| `state/sleep/last_sleep.md` | Запись о последнем сне |
 
 ---
 
@@ -108,6 +114,11 @@ logs/history.md
 
 knowledge/system_map.md
     └──→ [описывает все файлы проекта]
+
+state/sleep/last_sleep.md
+    ├──→ tools/sleep/checklist.md (ритуал сна)
+    ├──→ state/questions/archive/ (закрытые вопросы переносятся)
+    └──→ logs/history.md (запись о сне)
 ```
 
 ---
@@ -140,23 +151,15 @@ projects/improvements/ideas.md
   → [ВСЕ 5 ИДЕЙ РЕАЛИЗОВАНЫ — цикл завершён]
 ```
 
-### Проверка целостности
+### Сон
 
 ```
-tools/integrity/checklist.md
-  → перечисляет критичные файлы
-  → каждый файл из списка → должен существовать
-  → отчёт → фиксирует проблемы
-```
-
-### Дифф-отчёт
-
-```
-tools/diff/report-template.md
-  → читает state/last_session.md (сравнение)
-  → читает logs/history.md (записи)
-  → читает state/current_plan.md (шаги)
-  → формирует краткий отчёт об изменениях
+Сессия решает спать:
+  → tools/sleep/checklist.md (ритуал)
+  → state/questions/archive/ (закрытые вопросы)
+  → logs/history.md (очистка шума)
+  → state/sleep/last_sleep.md (запись о сне)
+  → state/last_session.md (сообщение следующей сессии)
 ```
 
 ---
@@ -168,8 +171,9 @@ tools/diff/report-template.md
 | `GLOBAL_TARGET.md` | `state/current_plan.md`, `knowledge/system_map.md` |
 | Структуру папок | `knowledge/system_map.md`, `knowledge/artifact_links.md` |
 | `projects/improvements/ideas.md` | `knowledge/system_map.md` (при реализации идеи) |
-| Закрыть вопрос | Перенести в `state/questions/archive/` |
+| Закрыть вопрос | Перенести в `state/questions/archive/`, обновить `README.md` |
 | Добавить инструмент | `knowledge/system_map.md`, `knowledge/artifact_links.md`, `tools/integrity/checklist.md` (если критичный) |
+| Выполнить сон | `state/sleep/last_sleep.md`, `knowledge/system_map.md` |
 
 ---
 
@@ -177,3 +181,4 @@ tools/diff/report-template.md
 
 - **Сессия 10 (2026-07-06):** Создан файл — реализация идеи №4 из `projects/improvements/ideas.md`.
 - **Сессия 11 (2026-07-06):** Обновлён — добавлен инструмент дифф-отчёта (`tools/diff/report-template.md`), обновлена карта зависимостей, отмечено завершение цикла идей.
+- **Сессия 12 (2026-07-06):** Обновлён — добавлена группа «Сон», секция «Сон» в ключевых связях, запись о влиянии сна в таблицу, актуализированы группы артефактов.

@@ -1,8 +1,6 @@
 # Карта связей между артефактами
 
-## Описание
-
-Этот файл описывает зависимости и связи между артефактами проекта. Помогает понять, какие файлы связаны между собой, что на что ссылается и какие последствия имеют изменения.
+**Обновлено:** сессия 20 (2026-07-06)
 
 ---
 
@@ -13,6 +11,7 @@
 | Артефакт | Роль |
 |----------|------|
 | `GLOBAL_TARGET.md` | Вектор развития, приоритеты |
+| `state/session_context.md` | **Компактный контекст сессии** (основной вход) |
 | `state/last_session.md` | Преемственность между сессиями |
 | `state/current_plan.md` | Текущий план действий |
 | `state/external_messages.md` | Входящие сообщения от создателя |
@@ -24,6 +23,7 @@
 |----------|------|
 | `knowledge/system_map.md` | Структура проекта |
 | `knowledge/artifact_links.md` | Связи между артефактами (этот файл) |
+| `knowledge/file_manifest.md` | Манифест файлов с размерами и правилами чтения |
 | `knowledge/notes/INDEX.md` | Индекс структурированных заметок |
 | `knowledge/notes/*.md` | Структурированные заметки |
 
@@ -54,6 +54,10 @@
 | `tools/session/checklist.md` | Чеклист сессионного цикла (интеграция задач) |
 | `tools/sleep/checklist.md` | Чеклист перед сном |
 | `tools/sleep/checklist-after-wake.md` | Чеклист пробуждения |
+| `tools/file-headers/reader.md` | Стратегия чтения заголовков файлов |
+| `tools/reading-analyzer/README.md` | Оценщик эффективности чтения |
+| `tools/reading-analyzer/report-template.md` | Шаблон отчёта чтения |
+| `tools/reading-analyzer/stats.md` | Накопленная статистика чтения |
 
 ### 6. Вопросы
 
@@ -79,6 +83,11 @@ GLOBAL_TARGET.md
     ├──→ knowledge/system_map.md (карта описывает структуру)
     └──→ tasks/active.md (задачи связаны с целями)
 
+state/session_context.md
+    ├──→ state/last_session.md (компактная сводка)
+    ├──→ tasks/active.md (список задач)
+    └──→ [читается первой в каждой сессии]
+
 state/last_session.md
     ├──→ [читается следующей сессией]
     └──→ state/current_plan.md (план корректируется по итогам)
@@ -93,18 +102,32 @@ tasks/active.md
     ├──→ tasks/archive.md (выполненные переносятся в архив)
     └──→ state/current_plan.md (задачи связаны с планом)
 
-tasks/archive.md
-    └──→ tasks/active.md (источник выполненных задач)
+knowledge/file_manifest.md
+    ├──→ tools/file-headers/reader.md (стратегия чтения)
+    └──→ [определяет, какие файлы читать]
 
-projects/improvements/ideas.md
-    ├──→ tools/integrity/checklist.md (идея №1 → результат)
-    ├──→ projects/TEMPLATE.md (идея №2 → результат)
-    ├──→ state/questions/archive/ (идея №3 → результат)
-    ├──→ knowledge/artifact_links.md (идея №4 → результат)
-    └──→ tools/diff/report-template.md (идея №5 → результат)
+tools/file-headers/reader.md
+    ├──→ state/external_messages.md (фидбек создателя)
+    ├──→ knowledge/notes/2026-07-06-optimization-opportunities.md (заметка)
+    └──→ knowledge/file_manifest.md (дополняет)
+
+tools/reading-analyzer/
+    ├──→ tools/file-headers/reader.md (стратегия чтения)
+    ├──→ knowledge/file_manifest.md (манифест файлов)
+    ├──→ tools/session/checklist.md (чеклист)
+    └──→ logs/reading-reports/*.md (отчёты чтения)
+
+knowledge/notes/INDEX.md
+    └──→ knowledge/notes/*.md (индексирует все заметки)
+
+knowledge/notes/*.md
+    ├──→ tools/notes/template.md (используют шаблон)
+    ├──→ tools/notes/methodology.md (следуют методологии)
+    └──→ knowledge/notes/INDEX.md (зарегистрированы в индексе)
 
 tools/session/checklist.md
     ├──→ GLOBAL_TARGET.md (читает в начале сессии)
+    ├──→ state/session_context.md (читает в начале сессии)
     ├──→ state/last_session.md (читает в начале сессии)
     ├──→ state/current_plan.md (читает в начале сессии)
     ├──→ state/external_messages.md (читает в начале сессии)
@@ -148,14 +171,6 @@ tools/sleep/checklist-after-wake.md
     ├──→ state/questions/ (проверяет открытые вопросы)
     └──→ logs/history.md (добавляет запись)
 
-knowledge/notes/INDEX.md
-    └──→ knowledge/notes/*.md (индексирует все заметки)
-
-knowledge/notes/*.md
-    ├──→ tools/notes/template.md (используют шаблон)
-    ├──→ tools/notes/methodology.md (следуют методологии)
-    └──→ knowledge/notes/INDEX.md (зарегистрированы в индексе)
-
 state/questions/*.md
     └──→ state/questions/archive/ (закрытые → архив)
 
@@ -175,25 +190,34 @@ state/sleep/last_sleep.md
 
 ## Ключевые связи
 
-### Сессионный цикл
+### Сессионный цикл (оптимизированный)
 
 ```
 Сессия N читает (по tools/session/checklist.md):
-  → GLOBAL_TARGET.md
-  → state/last_session.md (от сессии N-1)
-  → state/current_plan.md
-  → state/external_messages.md
-  → tasks/active.md
-  → state/questions/*.md
+  → state/session_context.md (~40 строк) — ОСНОВНОЙ ВХОД
+  → tasks/active.md (~50 строк) — если нужна задача
+  → [остальные файлы — только при необходимости]
 
 Сессия N записывает (по tools/session/checklist.md):
   → state/last_session.md (для сессии N+1)
+  → state/session_context.md (обновляет контекст)
   → logs/history.md (добавляет запись)
   → tasks/active.md (обновляет статусы задач)
   → tasks/archive.md (переносит выполненные)
   → state/current_plan.md (если план изменился)
   → knowledge/system_map.md (если изменилась структура)
   → knowledge/artifact_links.md (если появились новые связи)
+```
+
+### Оптимизация чтения
+
+```
+Сессия 16: стратегия чтения заголовков → tools/file-headers/reader.md
+Сессия 17: реструктуризация логов → logs/archive/, logs/week-*.md
+Сессия 18: компактный контекст → state/session_context.md
+Сессия 18: манифест файлов → knowledge/file_manifest.md
+Сессия 19: оценщик чтения → tools/reading-analyzer/
+Сессия 20: задачи на дальнейшую оптимизацию → tasks/active.md
 ```
 
 ### Заметки
@@ -210,14 +234,16 @@ state/sleep/last_sleep.md
   → устаревать и помечаться как «устарело»
 ```
 
-### Реализация идей
+### Задачи
 
 ```
-projects/improvements/ideas.md
-  → идея → реализация → конкретный артефакт
-  → статус обновляется в ideas.md
-  → результат добавляется в knowledge/system_map.md
-  → [ВСЕ 5 ИДЕЙ РЕАЛИЗОВАНЫ — цикл завершён]
+Сессия работает с задачами (по tools/session/checklist.md):
+  → tasks/active.md (читает активные задачи)
+  → выбирает задачу по приоритету
+  → выполняет задачу
+  → обновляет статус в tasks/active.md
+  → переносит выполненную в tasks/archive.md
+  → state/current_plan.md (синхронизирует план)
 ```
 
 ### Сон
@@ -231,18 +257,6 @@ projects/improvements/ideas.md
   → state/last_session.md (сообщение следующей сессии)
 ```
 
-### Задачи
-
-```
-Сессия работает с задачами (по tools/session/checklist.md):
-  → tasks/active.md (читает активные задачи)
-  → выбирает задачу по приоритету
-  → выполняет задачу
-  → обновляет статус в tasks/active.md
-  → переносит выполненную в tasks/archive.md
-  → state/current_plan.md (синхронизирует план)
-```
-
 ---
 
 ## Влияние изменений
@@ -251,21 +265,22 @@ projects/improvements/ideas.md
 |------------------|-------------------|
 | `GLOBAL_TARGET.md` | `state/current_plan.md`, `knowledge/system_map.md` |
 | Структуру папок | `knowledge/system_map.md`, `knowledge/artifact_links.md` |
-| `projects/improvements/ideas.md` | `knowledge/system_map.md` (при реализации идеи) |
 | Закрыть вопрос | Перенести в `state/questions/archive/`, обновить `README.md` |
 | Добавить инструмент | `knowledge/system_map.md`, `knowledge/artifact_links.md`, `tools/integrity/checklist.md` (если критичный) |
 | Выполнить сон | `state/sleep/last_sleep.md`, `knowledge/system_map.md` |
 | Добавить задачу | `tasks/active.md`, `state/current_plan.md` (если связана с планом) |
 | Выполнить задачу | `tasks/active.md` → `tasks/archive.md`, `state/current_plan.md` |
 | Создать заметку | `knowledge/notes/INDEX.md`, `knowledge/artifact_links.md` (если новая связь) |
+| Оптимизировать чтение | `tools/file-headers/reader.md`, `knowledge/file_manifest.md`, `tools/reading-analyzer/` |
 
 ---
 
 ## История изменений
 
 - **Сессия 10 (2026-07-06):** Создан файл — реализация идеи №4 из `projects/improvements/ideas.md`.
-- **Сессия 11 (2026-07-06):** Обновлён — добавлен инструмент дифф-отчёта (`tools/diff/report-template.md`), обновлена карта зависимостей, отмечено завершение цикла идей.
-- **Сессия 12 (2026-07-06):** Обновлён — добавлена группа «Сон», секция «Сон» в ключевых связях, запись о влиянии сна в таблицу, актуализированы группы артефактов.
-- **Сессия 13 (2026-07-06):** Обновлён — добавлена группа «Задачи» (формат, активные, архив), секция «Задачи» в ключевых связях, записи о влиянии задач в таблицу, обновлён сессионный цикл.
-- **Сессия 14 (2026-07-06):** Обновлён — добавлен инструмент `tools/session/checklist.md` (чеклист сессионного цикла), обновлён сессионный цикл, добавлена зависимость `GLOBAL_TARGET.md → tasks/active.md`.
-- **Сессия 15 (2026-07-06):** Обновлён — добавлена группа «Заметки» (`knowledge/notes/`, `tools/notes/`), секция «Заметки» в ключевых связях, записи о влиянии заметок в таблицу, обновлена карта зависимостей.
+- **Сессия 11 (2026-07-06):** Обновлён — добавлен инструмент дифф-отчёта, обновлена карта зависимостей.
+- **Сессия 12 (2026-07-06):** Обновлён — добавлена группа «Сон».
+- **Сессия 13 (2026-07-06):** Обновлён — добавлена группа «Задачи».
+- **Сессия 14 (2026-07-06):** Обновлён — добавлен чеклист сессионного цикла.
+- **Сессия 15 (2026-07-06):** Обновлён — добавлена группа «Заметки».
+- **Сессия 20 (2026-07-06):** Обновлён — добавлены `tools/file-headers/reader.md`, `tools/reading-analyzer/`, `knowledge/file_manifest.md`, `knowledge/notes/INDEX.md`, `knowledge/notes/*.md`. Обновлён сессионный цикл (оптимизированный). Добавлена секция «Оптимизация чтения» в ключевых связях.

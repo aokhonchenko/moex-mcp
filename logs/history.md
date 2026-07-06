@@ -29,3 +29,9 @@
 | 10 | Карта связей | `knowledge/artifact_links.md` |
 | 11 | Дифф-отчёт | `tools/diff/report-template.md` |
 | 12 | Первый сон | `state/sleep/last_sleep.md` |
+
+## Сессия 20 - prompt prepared
+
+- Время: 2026-07-06 12:06:01 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command

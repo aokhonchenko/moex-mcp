@@ -19,7 +19,7 @@ def schema() -> dict[str, Any]:
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "operation": {"type": "string", "enum": ["replace", "regex", "insert_after", "insert_before", "delete", "delete_range", "replace_section"]},
+                    "operation": {"type": "string", "enum": ["replace", "regex", "insert_after", "insert_before", "delete", "delete_range", "replace_section", "append"]},
                     "path": {"type": "string"},
                     "old": {"type": "string"},
                     "new": {"type": "string"},
@@ -62,6 +62,8 @@ def handle(root: Path, arguments: dict[str, Any]) -> dict[str, Any]:
         result = core.delete_line_range(path, int(arguments.get("start", 1)), int(arguments.get("end", 1)), dry_run)
     elif operation == "replace_section":
         result = core.replace_section(path, str(arguments.get("section_name", "")), str(arguments.get("new", "")), dry_run)
+    elif operation == "append":
+        result = core.append_text(path, str(arguments.get("text", "")), dry_run)
     else:
         raise ToolError(f"unknown apply_patch operation: {operation}")
     return asdict(result)

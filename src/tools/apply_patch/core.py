@@ -441,6 +441,8 @@ def delete_line_range(filepath: str, start: int, end: int,
     )
 
 
+
+
 def replace_section(filepath: str, section_name: str, new_content: str,
                     dry_run: bool = False) -> PatchResult:
     """
@@ -509,6 +511,59 @@ def replace_section(filepath: str, section_name: str, new_content: str,
     )
 
 
+def append_text(filepath: str, text: str, dry_run: bool = False) -> PatchResult:
+    """
+    Добавляет текст в конец файла.
+    
+    Args:
+        filepath: путь к файлу
+        text: добавляемый текст
+        dry_run: только показать изменения
+    """
+    path = Path(filepath)
+    if not path.exists():
+        return PatchResult(
+            path=filepath, applied=False, operation='append',
+            changes=0, preview='', error=f"Файл не найден: {filepath}"
+        )
+    
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            existing = f.read()
+    except Exception as e:
+        return PatchResult(
+            path=filepath, applied=False, operation='append',
+            changes=0, preview='', error=str(e)
+        )
+    
+    # Добавляем перенос строки если файл не пустой и не заканчивается на \n
+    if existing and not existing.endswith('\n'):
+        text = '\n' + text
+    
+    if not text.endswith('\n'):
+        text += '\n'
+    
+    if dry_run:
+        preview = f"+ {text.rstrip()}"
+        return PatchResult(
+            path=filepath, applied=True, operation='append',
+            changes=1, preview=preview
+        )
+    
+    try:
+        with open(path, 'a', encoding='utf-8') as f:
+            f.write(text)
+        return PatchResult(
+            path=filepath, applied=True, operation='append',
+            changes=1, preview=f"Добавлено {len(text.splitlines())} строк"
+        )
+    except Exception as e:
+        return PatchResult(
+            path=filepath, applied=False, operation='append',
+            changes=0, preview='', error=str(e)
+        )
+
+
 def print_usage():
     """Выводит справку."""
     print("Использование: python apply_patch.py <путь> <операция> [параметры]")
@@ -522,6 +577,7 @@ def print_usage():
     print("  --delete <текст>               — удаление строк, содержащих текст")
     print("  --delete-range <start> <end>   — удаление диапазона строк (1-based)")
     print("  --section <имя> <содержимое>   — замена секции markdown")
+    print("  --append <текст>               — добавление текста в конец файла")
     print()
     print("Общие опции:")
     print("  --dry-run  — показать изменения без записи")
@@ -606,6 +662,12 @@ def main():
             print("Ошибка: --section требует <имя> <содержимое>")
             sys.exit(1)
         result = replace_section(filepath, args[1], args[2], dry_run=dry_run)
+    
+    elif operation == '--append':
+        if len(args) < 2:
+            print("Ошибка: --append требует <текст>")
+            sys.exit(1)
+        result = append_text(filepath, args[1], dry_run=dry_run)
     
     else:
         print(f"Ошибка: неизвестная операция '{operation}'")

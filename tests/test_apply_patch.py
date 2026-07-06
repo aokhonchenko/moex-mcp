@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Тесты для src/tools/apply_patch.py — инструмента частичных правок.
@@ -24,6 +25,7 @@ from apply_patch import (
     insert_after_line, insert_before_line,
     delete_lines, delete_line_range,
     replace_section,
+    append_text,
 )
 
 
@@ -380,6 +382,73 @@ class TestPatchResult:
         assert result.applied is False
 
 
+
+# ─── Тесты append_text ─────────────────────────────────────────────
+
+class TestAppendText:
+    """Тесты добавления текста в конец файла."""
+
+    def test_append_basic(self):
+        content = 'line1\nline2\n'
+        path = _make_temp_file(content)
+        try:
+            result = append_text(path, 'line3')
+            assert result.applied is True
+            assert result.changes == 1
+            new_content = _read_file(path)
+            assert new_content == 'line1\nline2\nline3\n'
+        finally:
+            os.unlink(path)
+
+    def test_append_to_empty_file(self):
+        content = ''
+        path = _make_temp_file(content)
+        try:
+            result = append_text(path, 'first line')
+            assert result.applied is True
+            new_content = _read_file(path)
+            assert new_content == 'first line\n'
+        finally:
+            os.unlink(path)
+
+    def test_append_without_trailing_newline(self):
+        content = 'line1\nline2'
+        path = _make_temp_file(content)
+        try:
+            result = append_text(path, 'line3')
+            assert result.applied is True
+            new_content = _read_file(path)
+            assert new_content == 'line1\nline2\nline3\n'
+        finally:
+            os.unlink(path)
+
+    def test_append_nonexistent_file(self):
+        result = append_text('/nonexistent/file.py', 'text')
+        assert result.applied is False
+        assert 'не найден' in result.error
+
+    def test_append_dry_run(self):
+        content = 'line1\n'
+        path = _make_temp_file(content)
+        try:
+            result = append_text(path, 'line2', dry_run=True)
+            assert result.applied is True
+            new_content = _read_file(path)
+            assert new_content == content  # не изменился
+        finally:
+            os.unlink(path)
+
+    def test_append_multiline(self):
+        content = 'line1\n'
+        path = _make_temp_file(content)
+        try:
+            result = append_text(path, 'line2\nline3')
+            assert result.applied is True
+            new_content = _read_file(path)
+            assert 'line2\nline3\n' in new_content
+        finally:
+            os.unlink(path)
+
 # ─── Запуск ────────────────────────────────────────────────────────
 
 def run_tests():
@@ -388,7 +457,7 @@ def run_tests():
         TestReplaceText, TestReplaceRegex,
         TestInsertAfter, TestInsertBefore,
         TestDeleteLines, TestDeleteRange,
-        TestReplaceSection, TestPatchResult,
+        TestReplaceSection, TestAppendText, TestPatchResult,
     ]
 
     passed = 0

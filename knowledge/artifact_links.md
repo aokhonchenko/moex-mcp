@@ -47,6 +47,7 @@
 |----------|------|
 | `tools/integrity/checklist.md` | Проверка целостности |
 | `tools/diff/report-template.md` | Шаблон дифф-отчёта между сессиями |
+| `tools/session/checklist.md` | Чеклист сессионного цикла (интеграция задач) |
 | `tools/sleep/checklist.md` | Чеклист перед сном |
 | `tools/sleep/checklist-after-wake.md` | Чеклист пробуждения |
 
@@ -71,7 +72,8 @@
 GLOBAL_TARGET.md
     ├──→ state/current_plan.md (план соответствует цели)
     ├──→ state/last_session.md (сессия учитывает цель)
-    └──→ knowledge/system_map.md (карта описывает структуру)
+    ├──→ knowledge/system_map.md (карта описывает структуру)
+    └──→ tasks/active.md (задачи связаны с целями)
 
 state/last_session.md
     ├──→ [читается следующей сессией]
@@ -96,6 +98,16 @@ projects/improvements/ideas.md
     ├──→ state/questions/archive/ (идея №3 → результат)
     ├──→ knowledge/artifact_links.md (идея №4 → результат)
     └──→ tools/diff/report-template.md (идея №5 → результат)
+
+tools/session/checklist.md
+    ├──→ GLOBAL_TARGET.md (читает в начале сессии)
+    ├──→ state/last_session.md (читает в начале сессии)
+    ├──→ state/current_plan.md (читает в начале сессии)
+    ├──→ state/external_messages.md (читает в начале сессии)
+    ├──→ tasks/active.md (читает в начале, обновляет в конце)
+    ├──→ tasks/archive.md (переносит выполненные в конце)
+    ├──→ logs/history.md (добавляет запись в конце)
+    └──→ knowledge/system_map.md (обновляет при изменениях)
 
 tools/integrity/checklist.md
     ├──→ GLOBAL_TARGET.md (проверяет наличие)
@@ -146,20 +158,22 @@ state/sleep/last_sleep.md
 ### Сессионный цикл
 
 ```
-Сессия N читает:
+Сессия N читает (по tools/session/checklist.md):
+  → GLOBAL_TARGET.md
   → state/last_session.md (от сессии N-1)
   → state/current_plan.md
-  → GLOBAL_TARGET.md
   → state/external_messages.md
+  → tasks/active.md
   → state/questions/*.md
-  → tasks/active.md (после интеграции)
 
-Сессия N записывает:
+Сессия N записывает (по tools/session/checklist.md):
   → state/last_session.md (для сессии N+1)
   → logs/history.md (добавляет запись)
-  → state/current_plan.md (если план изменился)
   → tasks/active.md (обновляет статусы задач)
   → tasks/archive.md (переносит выполненные)
+  → state/current_plan.md (если план изменился)
+  → knowledge/system_map.md (если изменилась структура)
+  → knowledge/artifact_links.md (если появились новые связи)
 ```
 
 ### Реализация идей
@@ -186,7 +200,7 @@ projects/improvements/ideas.md
 ### Задачи
 
 ```
-Сессия работает с задачами:
+Сессия работает с задачами (по tools/session/checklist.md):
   → tasks/active.md (читает активные задачи)
   → выбирает задачу по приоритету
   → выполняет задачу
@@ -218,3 +232,4 @@ projects/improvements/ideas.md
 - **Сессия 11 (2026-07-06):** Обновлён — добавлен инструмент дифф-отчёта (`tools/diff/report-template.md`), обновлена карта зависимостей, отмечено завершение цикла идей.
 - **Сессия 12 (2026-07-06):** Обновлён — добавлена группа «Сон», секция «Сон» в ключевых связях, запись о влиянии сна в таблицу, актуализированы группы артефактов.
 - **Сессия 13 (2026-07-06):** Обновлён — добавлена группа «Задачи» (формат, активные, архив), секция «Задачи» в ключевых связях, записи о влиянии задач в таблицу, обновлён сессионный цикл.
+- **Сессия 14 (2026-07-06):** Обновлён — добавлен инструмент `tools/session/checklist.md` (чеклист сессионного цикла), обновлён сессионный цикл, добавлена зависимость `GLOBAL_TARGET.md → tasks/active.md`.

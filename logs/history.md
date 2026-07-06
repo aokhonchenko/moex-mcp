@@ -622,3 +622,28 @@
 - Python тестов: 290 — все PASS
 - Версия фронтенда: 0.7.0
 - Коммит: `342120f`
+
+## Сессия 59 - prompt prepared
+
+- Время: 2026-07-06 22:43:22 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 59 — 2026-07-06
+
+**Персистентность портфеля** — сохранение в JSON-файл при каждом мутабельном действии.
+
+### Создано/изменено
+
+1. **`backend/internal/portfolio/portfolio.go`** — `NewPersistentStore(filePath)`: загрузка из JSON при старте, автосохранение при Add/Remove/Update/Clear. Формат: `persistedData` с `persistedItem` (AddedAt в RFC3339). `NewStore()` остаётся in-memory.
+2. **`backend/internal/portfolio/portfolio_test.go`** — 8 новых тестов персистентности (save/load, remove+reload, update+reload, clear+reload, non-existent file, sort order, AddedAt, in-memory). Всего 22 теста.
+3. **`backend/main.go`** — `NewPersistentStore` с `PORTFOLIO_FILE` env (по умолчанию `data/portfolio.json`), fallback на in-memory при ошибке. CORS: добавлен PUT.
+4. **`backend/internal/api/handlers.go`** — версия 0.8.0
+5. **`frontend/index.html`** — версия 0.8.0
+
+### Статистика
+
+- Go тестов: **~192** (portfolio: 22, alerts: 17, api: 43, data: 48, indicators: 26, llm: 20, metrics: 10) — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 0.8.0
+- Коммит: `91ceb07`

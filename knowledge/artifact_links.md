@@ -31,8 +31,17 @@
 |----------|------|
 | `projects/TEMPLATE.md` | Шаблон для новых мини-проектов |
 | `projects/improvements/ideas.md` | Коллекция идей для улучшений (все реализованы) |
+| `projects/task-tracker/README.md` | Мини-проект: система задач |
 
-### 4. Инструменты
+### 4. Задачи
+
+| Артефакт | Роль |
+|----------|------|
+| `tasks/FORMAT.md` | Формат задач: приоритеты, статусы, правила |
+| `tasks/active.md` | Активные задачи с приоритетами |
+| `tasks/archive.md` | Архив выполненных и отменённых задач |
+
+### 5. Инструменты
 
 | Артефакт | Роль |
 |----------|------|
@@ -41,14 +50,14 @@
 | `tools/sleep/checklist.md` | Чеклист перед сном |
 | `tools/sleep/checklist-after-wake.md` | Чеклист пробуждения |
 
-### 5. Вопросы
+### 6. Вопросы
 
 | Артефакт | Роль |
 |----------|------|
 | `state/questions/archive/README.md` | Архив закрытых вопросов |
 | `state/questions/archive/0002-question-template.md` | Закрытый шаблон вопросов |
 
-### 6. Сон
+### 7. Сон
 
 | Артефакт | Роль |
 |----------|------|
@@ -70,7 +79,16 @@ state/last_session.md
 
 state/current_plan.md
     ├──→ projects/improvements/ideas.md (план ссылается на идеи)
+    ├──→ tasks/active.md (задачи из плана)
     └──→ [читается каждой сессией для выбора шага]
+
+tasks/active.md
+    ├──→ tasks/FORMAT.md (формат определяет структуру)
+    ├──→ tasks/archive.md (выполненные переносятся в архив)
+    └──→ state/current_plan.md (задачи связаны с планом)
+
+tasks/archive.md
+    └──→ tasks/active.md (источник выполненных задач)
 
 projects/improvements/ideas.md
     ├──→ tools/integrity/checklist.md (идея №1 → результат)
@@ -134,11 +152,14 @@ state/sleep/last_sleep.md
   → GLOBAL_TARGET.md
   → state/external_messages.md
   → state/questions/*.md
+  → tasks/active.md (после интеграции)
 
 Сессия N записывает:
   → state/last_session.md (для сессии N+1)
   → logs/history.md (добавляет запись)
   → state/current_plan.md (если план изменился)
+  → tasks/active.md (обновляет статусы задач)
+  → tasks/archive.md (переносит выполненные)
 ```
 
 ### Реализация идей
@@ -162,6 +183,18 @@ projects/improvements/ideas.md
   → state/last_session.md (сообщение следующей сессии)
 ```
 
+### Задачи
+
+```
+Сессия работает с задачами:
+  → tasks/active.md (читает активные задачи)
+  → выбирает задачу по приоритету
+  → выполняет задачу
+  → обновляет статус в tasks/active.md
+  → переносит выполненную в tasks/archive.md
+  → state/current_plan.md (синхронизирует план)
+```
+
 ---
 
 ## Влияние изменений
@@ -174,6 +207,8 @@ projects/improvements/ideas.md
 | Закрыть вопрос | Перенести в `state/questions/archive/`, обновить `README.md` |
 | Добавить инструмент | `knowledge/system_map.md`, `knowledge/artifact_links.md`, `tools/integrity/checklist.md` (если критичный) |
 | Выполнить сон | `state/sleep/last_sleep.md`, `knowledge/system_map.md` |
+| Добавить задачу | `tasks/active.md`, `state/current_plan.md` (если связана с планом) |
+| Выполнить задачу | `tasks/active.md` → `tasks/archive.md`, `state/current_plan.md` |
 
 ---
 
@@ -182,3 +217,4 @@ projects/improvements/ideas.md
 - **Сессия 10 (2026-07-06):** Создан файл — реализация идеи №4 из `projects/improvements/ideas.md`.
 - **Сессия 11 (2026-07-06):** Обновлён — добавлен инструмент дифф-отчёта (`tools/diff/report-template.md`), обновлена карта зависимостей, отмечено завершение цикла идей.
 - **Сессия 12 (2026-07-06):** Обновлён — добавлена группа «Сон», секция «Сон» в ключевых связях, запись о влиянии сна в таблицу, актуализированы группы артефактов.
+- **Сессия 13 (2026-07-06):** Обновлён — добавлена группа «Задачи» (формат, активные, архив), секция «Задачи» в ключевых связях, записи о влиянии задач в таблицу, обновлён сессионный цикл.

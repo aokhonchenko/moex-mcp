@@ -1,7 +1,7 @@
-# Активный промпт сессии 48
+# Активный промпт сессии 49
 
-Время сборки промпта: 2026-07-06 21:38:06 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0048
+Время сборки промпта: 2026-07-06 21:48:04 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0049
 
 ---
 
@@ -143,58 +143,67 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 48)
+# Сообщение будущей сессии (сессия 49)
 
-## Что было сделано в сессии 47
+## Что было сделано в сессии 48
 
-**Добавлены unit-тесты для LLM-клиента** — 20 тестов с мок OpenAI-compatible сервером.
+**Свечной график (candlestick chart) + API endpoint для сырых OHLCV данных.**
 
 ### Создано/изменено
 
-1. **`backend/internal/llm/client_test.go`** — 20 unit-тестов
-   - `TestNewClient_DefaultModel`, `TestNewClient_CustomModel`
-   - `TestIsConfigured_BothSet`, `_NoURL`, `_NoKey`, `_BothEmpty`
-   - `TestGenerateReport_NotConfigured` — ненастроенный клиент
-   - `TestGenerateReport_Success` — полный цикл с проверкой промпта
-   - `TestGenerateReport_WithIndicators` — индикаторы включены в промпт
-   - `TestGenerateReport_EmptyIndicators` — пустые индикаторы
-   - `TestGenerateReport_ServerError` — HTTP 500
-   - `TestGenerateReport_LLMError` — LLM вернул error в JSON
-   - `TestGenerateReport_EmptyChoices` — пустой массив choices
-   - `TestGenerateReport_InvalidJSON` — невалидный JSON
-   - `TestGenerateReport_InvalidResponseJSON` — неожиданный формат
-   - `TestGenerateReport_UnreachableServer` — недоступный сервер
-   - `TestGenerateReport_BearerToken` — проверка Authorization header
-   - `TestGenerateReport_URLPath` — путь /v1/chat/completions
-   - `TestGenerateReport_MultipleChoices` — берём первый choice
-   - `TestGenerateReport_IndicatorsWithEmptyValues` — пустые значения не попадают в промпт
+1. **`backend/internal/api/handlers.go`** — новый метод `GetCandles`
+   - `GET /api/ticker/{symbol}/candles?period=3mo` — возвращает сырые OHLCV-данные
+   - Поддерживает параметр `period` (1mo, 3mo, 6mo, 1y), по умолчанию 3mo
+
+2. **`backend/internal/models/models.go`** — новая модель `CandlesResponse`
+   - `Symbol`, `Period`, `Candles []OHLCV`
+
+3. **`backend/main.go`** — маршрут `/api/ticker/{symbol}/candles`
+
+4. **`backend/internal/api/handlers_test.go`** — 3 новых теста
+   - `TestGetCandles_Success` — 30 свечей, проверка symbol/period/candles count
+   - `TestGetCandles_DefaultPeriod` — дефолтный период 3mo
+   - `TestGetCandles_ProviderError` — ошибка провайдера → 502
+
+5. **`frontend/index.html`** — обновлён
+   - Подключены luxon, chartjs-adapter-luxon, chartjs-chart-financial
+   - Секция свечного графика (chart-wide, full width)
+   - Секция фундаментальных данных с таблицей
+   - Версия 0.2.0
+
+6. **`frontend/app.js`** — переработан
+   - `renderCandlestickChart()` — нативный candlestick + volume bar
+   - Fallback на line chart если financial plugin не загрузился
+   - `renderFundamentals()` — таблица с русскими подписями
+   - Параллельная загрузка candles + indicators + fundamentals
+
+7. **`frontend/style.css`** — обновлён
+   - `.chart-wide` — full width layout для свечного графика
+   - Стили для `#fundamentalsTable`
 
 ### Статистика тестов
-- Go: 103 теста (12 api + 47 data + 24 indicators + 20 llm) — все PASS
+- Go: 106 тестов (15 api + 47 data + 24 indicators + 20 llm) — все PASS
 - Python: 290 тестов — все PASS
-- Коммит: `d4b4207`, запушен в `origin/main`
+- Коммит: `661102b`, запушен в `origin/main`
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM
-- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент (полностью протестирован)
-- Web frontend: Chart.js, тёмная тема, российские тикеры, таблица фундаменталов
-- 103 Go unit-теста, 290 Python unit-тестов
+- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график
+- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент + candles endpoint
+- Web frontend: Chart.js + chartjs-chart-financial, тёмная тема, свечной график + объём, таблица фундаменталов
+- 106 Go unit-тестов, 290 Python unit-тестов
 
-## Что важно для следующей сессии (сессия 48)
+## Что важно для следующей сессии (сессия 49)
 
-1. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
-2. **Docker Compose тест** — проверить, что `docker-compose up` работает
-3. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
-4. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
-5. **Свеча + объём на одном графике** — Chart.js financial chart plugin
+1. **Docker Compose тест** — проверить, что `docker-compose up` работает (ещё ни разу не проверяли)
+2. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
+3. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
+4. **Улучшить свечной график** — тултипы, кроссхейр, зум
+5. **Список популярных тикеров** — кнопки быстрого выбора (SBER, GAZP, LKOH, GMKN, ROSN)
 
 ## Рекомендация для следующей сессии
 
-Следующий логичный шаг — **свечной график (candlestick chart)** на фронтенде. Сейчас отображаются только линейные графики, но OHLCV данные уже доступны. Нужно:
-- Добавить `chartjs-chart-financial` или аналогичный плагин
-- Обновить `app.js` для отрисовки свечей
-- Добавить объём под свечами
+Следующий логичный шаг — **проверить Docker Compose** (`docker-compose up`). Это важно, потому что цель проекта — развёртывание через docker-compose, но мы ни разу не проверяли, что оно реально работает. Второй вариант — **статистика кэша** (`/api/cache/stats`), что даст мониторинг в UI.
 
 
 ---
@@ -276,25 +285,11 @@ _Заполни после учёта ответа._
 18. **Модуль self-review** ✅ — `src/tools/self_review.py`, `tests/test_self_review.py` — сессия 36
 19. **Инструмент запуска команд** ✅ — `src/tools/command_runner.py`, `tests/test_command_runner.py` — сессия 37
 
-## Текущий фокус: улучшение агента
+## Текущий фокус: финансовый дашборд foundation-finance
 
-Приоритет определён создателем: улучшение агента. Финансовый дашборд — когда задачи в этой области кончатся.
+Приоритет определён создателем: улучшение агента (завершено) → финансовый дашборд.
 
-- ✅ Точечное чтение файлов (`reader.py`, `partial_reader.py`)
-- ✅ Инструмент частичных правок (`apply_patch.py`)
-- ✅ Модуль self-review (`self_review.py`)
-- ✅ Инструмент запуска команд (`command_runner.py`)
-- ✅ Интеграция self_review.py в сессионный цикл — запущен и сохранён отчёт в `state/self_review/`
-- ✅ Запуск тестов через command_runner — все 275 тестов прошли, включая `test_regex_multiline`
-- ✅ **Интеграция точечного чтения в сессионный цикл** — `prompt_builder.py` использует `partial_reader.py` для оптимизированного чтения
-- ✅ Интеграция `apply_patch.py` в сессионный цикл (частичные правки вместо полной перезаписи) — сессия 41
-- ⏳ Интеграция `command_runner.py` в сессионный цикл (кроме тестов)
-
-## Следующий разумный шаг (сессия 42)
-
-Задачи по улучшению агента в основном завершены. Два варианта:
-1. **Интегрировать `command_runner` в сессионный цикл** — если есть конкретные сценарии использования
-2. **Начать работу над финансовым дашбордом `foundation-finance`** — создать директорию в `projects/`, подключить git-репозиторий, выбрать стек (Rust/Go + frontend)
+### Завершённые шаги foundation-finance
 
 - ✅ **Создан финансовый дашборд `foundation-finance`** — сессия 42
   - Go backend (chi, Yahoo Finance, 6 индикаторов, LLM-клиент)
@@ -302,43 +297,36 @@ _Заполни после учёта ответа._
   - Docker Compose
   - Репозиторий: `git@github.com:aokhonchenko/foundation-finance.git`
 
-- ✅ **Unit-тесты для `indicators/calculator.go`** — 26 тестов, все проходят — сессия 43
+- ✅ **Unit-тесты для `indicators/calculator.go`** — 26 тестов — сессия 43
 
 - ✅ **Замена Yahoo Finance на MOEX ISS API** — сессия 44
-  - Создан `data/moex.go` (MOEX ISS провайдер)
-  - 15 unit-тестов для data/moex.go (мок-сервер)
-  - 10 unit-тестов для api/handlers.go (мок-провайдер + chi-роутер)
-  - main.go переключён на MOEXProvider
-  - Фронтенд обновлён: тикеры MOEX (SBER, GAZP, LKOH)
+  - 15 unit-тестов для data/moex.go, 10 для api/handlers.go
+  - Фронтенд: тикеры MOEX (SBER, GAZP, LKOH)
 
 - ✅ **In-memory кэширование MOEX данных** — сессия 45
-  - `data/cache.go` — потокобезопасный кэш с TTL, max size, auto-cleanup
-  - `data/cached_provider.go` — декоратор Provider с кэшированием
-  - 23 новых unit-теста (11 cache + 12 cached_provider)
-  - main.go: ticker TTL 2 мин, candles TTL 15 мин
-  - Всего Go тестов: 73, Python тестов: 290
+  - 23 unit-теста (11 cache + 12 cached_provider)
 
 - ✅ **Фундаментальные данные (FundamentalData)** — сессия 46
-  - `models.go`: FundamentalData (ISIN, IssueSize, FaceValue, Currency, SecType, IssueDate, MatDate, EmitterName)
-  - `moex.go`: GetFundamentals через `/iss/securities/{symbol}.json`
-  - `cached_provider.go`: кэширование фундаменталов (TTL 30 мин)
-  - API: `GET /api/ticker/{symbol}/fundamentals`
-  - Фронтенд: таблица фундаментальных данных, ₽ вместо $
-  - 10 новых unit-тестов
-  - Всего Go тестов: 83, Python тестов: 290
+  - 10 unit-тестов, API + фронтенд
 
 - ✅ **LLM unit-тесты** — сессия 47
-  - `llm/client_test.go`: 20 тестов с мок OpenAI-compatible сервером
-  - NewClient, IsConfigured, GenerateReport (success, errors, edge cases)
-  - Всего Go тестов: 103, Python тестов: 290
+  - 20 тестов с мок OpenAI-compatible сервером
 
-## Следующий разумный шаг (сессия 48)
+- ✅ **Свечной график (candlestick chart)** — сессия 48
+  - `GET /api/ticker/{symbol}/candles` endpoint
+  - chartjs-chart-financial + luxon + adapter
+  - Fallback на line chart
+  - Таблица фундаментальных данных с русскими подписями
+  - 3 новых API теста
+  - Всего Go тестов: 106, Python тестов: 290
 
-1. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
-2. **Docker Compose тест** — проверить, что `docker-compose up` работает
-3. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
-4. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
-5. **Свеча + объём на одном графике** — Chart.js financial chart plugin
+## Следующий разумный шаг (сессия 49)
+
+1. **Docker Compose тест** — проверить, что `docker-compose up` работает
+2. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
+3. **Расчётные метрики** — P/E, P/B на основе доступных данных
+4. **Улучшить свечной график** — тултипы, кроссхейр, зум
+5. **Список популярных тикеров** — кнопки быстрого выбора
 
 
 ---
@@ -601,7 +589,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 48. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0048`.
+Ты находишься в сессии 49. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0049`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

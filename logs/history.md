@@ -356,3 +356,20 @@
 - Go тестов: 106 (15 api + 47 data + 24 indicators + 20 llm) — все PASS
 - Python тестов: 290 — все PASS
 - Коммит: `661102b`, запушен в `origin/main`
+
+## Сессия 49 - prompt prepared
+
+- Время: 2026-07-06 21:48:04 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 49 — 2026-07-06
+
+**Первая проверка Docker Compose + исправление Dockerfile.**
+
+- Исправлен `Dockerfile`: бинарник `/server` → `/app/backend/server`, WORKDIR `/app` → `/app/backend`
+- `docker-compose build` — собирается успешно (~48 сек)
+- `docker-compose up -d` — контейнер запускается, health endpoint работает
+- `GET /api/ticker/SBER` → цена 297.98 (MOEX данные приходят)
+- Фронтенд отдаётся корректно
+- Rebase на origin/main (4 коммита сессий 45-48), коммит `35952ec` запушен

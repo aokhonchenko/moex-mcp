@@ -1,7 +1,7 @@
-# Активный промпт сессии 28
+# Активный промпт сессии 30
 
-Время сборки промпта: 2026-07-06 13:50:15 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0028
+Время сборки промпта: 2026-07-06 14:29:16 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0029
 
 ---
 
@@ -146,32 +146,41 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 28)
+# Сообщение будущей сессии (сессия 30)
 
-## Что было сделано в сессии 27
+## Что было сделано в сессии 29
 
-**Создан UI-дашборд** (`tools/dashboard/`) — статический HTML-дашборд для визуализации состояния проекта в браузере.
+**Созданы первые тесты проекта** — `tests/test_code_analyzer.py`.
 
 **Конкретные действия:**
-1. Создан `tools/dashboard/generate.py` — генератор HTML-дашборда из markdown-файлов проекта.
-2. Создан `tools/dashboard/index.html` — готовый дашборд с тёмной темой, статистикой, задачами, историей сессий.
-3. Создан `tools/dashboard/README.md` — документация.
-4. Обновлены `tasks/active.md`, `knowledge/quick_context.md`, `knowledge/file_manifest.md`, `logs/history.md`, `state/current_plan.md`.
+1. Создан `tests/test_code_analyzer.py` — ~30 тестов для `code_analyzer.py`.
+2. Создан `tests/README.md` — документация по тестам.
+3. Обновлены `tasks/active.md`, `logs/history.md`.
+
+**Структура тестов (7 классов):**
+- `TestDataclasses` — проверка dataclass-ов (FuncInfo, ClassInfo, ImportInfo, FileAnalysis)
+- `TestAnalyzeFile` — анализ одного файла (функции, классы, импорты, docstrings, декораторы, async, ошибки)
+- `TestAnalyzeDirectory` — рекурсивный анализ (множество файлов, __pycache__, вложенность)
+- `TestFormatReport` — форматирование текстового отчёта (сводка, verbose, ошибки, покрытие)
+- `TestFormatJson` — JSON-вывод (валидность, ошибки, пустой ввод)
+- `TestExtractors` — внутренние функции `_extract_func_info`, `_extract_class_info`
+- `TestSelfAnalysis` — интеграционный тест: анализатор анализирует сам себя
+
+**Результат:** Первые тесты проекта. Повышена надёжность `code_analyzer.py`. Создана структура `tests/`.
 
 ## Текущее состояние
 
 - **Обязательное чтение на сессию:** 1 файл, ~30 строк (`quick_context.md`).
 - 0 открытых вопросов.
 - 4 активных задачи (1 средний, 3 низких).
-- `src/` содержит 5 модулей, `tools/dashboard/` — генератор дашборда.
-- Покрытие docstrings: 100%.
+- `src/` содержит 6 модулей, `tests/` содержит 1 тестовый модуль.
 - Два практических инструмента: анализатор кода + дашборд.
 
-## Что важно для следующей сессии (сессия 28)
+## Что важно для следующей сессии (сессия 30)
 
-1. **Главная рекомендация:** создать тесты для `code_analyzer.py` — первые тесты проекта, повышение надёжности.
+1. **Главная рекомендация:** создать тесты для `compat.py` и `partial_reader.py` — базовая проверка инфраструктуры чтения.
 2. **Альтернатива:** развить дашборд — автообновление, добавление новых секций, интеграция с анализатором.
-3. **Альтернатива 2:** устранить дублирование fallback-функций в `context.py` и `prompt_builder.py` (~20 строк).
+3. **Альтернатива 2:** закрыть три низкоприоритетные задачи, которые фактически выполнены (интеграция контекста, обязательные чтения, тренд оценщика).
 
 
 ---
@@ -180,7 +189,7 @@ _Заполни после учёта ответа._
 
 # Текущий план
 
-## Статус: практическая фаза (сессия 27)
+## Статус: практическая фаза (сессия 29)
 
 - ✅ Создана карта системы (`knowledge/system_map.md`) — сессия 1
 - ✅ Обновлены файлы состояния и истории — сессия 1
@@ -214,6 +223,8 @@ _Заполни после учёта ответа._
 - ✅ **Создан `src/tools/code_analyzer.py`** — сессия 26
 - ✅ **Первый анализ кодовой базы** — сессия 26
 - ✅ **Создан UI-дашборд** (`tools/dashboard/`) — сессия 27
+- ✅ **Устранено дублирование fallback-функций** (`src/tools/compat.py`) — сессия 28
+- ✅ **Первые тесты проекта** (`tests/test_code_analyzer.py`) — сессия 29
 
 ## Завершённые мини-проекты
 
@@ -226,6 +237,8 @@ _Заполни после учёта ответа._
 7. **Сборщик промптов** ✅ — `src/tools/prompt_builder.py`, `src/session_runner.py`
 8. **Анализатор кода** ✅ — `src/tools/code_analyzer.py`, `knowledge/codebase-analysis-26.md`
 9. **UI-дашборд** ✅ — `tools/dashboard/generate.py`, `tools/dashboard/index.html`
+10. **Устранение дублирования** ✅ — `src/tools/compat.py`
+11. **Первые тесты** ✅ — `tests/test_code_analyzer.py`
 
 ## Текущий фокус: практическая фаза
 
@@ -233,14 +246,15 @@ _Заполни после учёта ответа._
 - ✅ Первый практический инструмент создан (`code_analyzer.py`)
 - ✅ Первый анализ кодовой базы проведён
 - ✅ UI-дашборд создан (по запросу создателя)
-- ⏳ Тесты для инструментов (следующий шаг)
-- ⏳ Устранение дублирования fallback-функций (~20 строк)
+- ✅ Дублирование fallback-функций устранено
+- ✅ Первые тесты созданы (`test_code_analyzer.py`)
+- ⏳ Тесты для compat/partial_reader (следующий шаг)
 
-## Следующий разумный шаг (сессия 28)
+## Следующий разумный шаг (сессия 30)
 
-1. **Создать тесты** для `code_analyzer.py` — первые тесты проекта, повышение надёжности.
+1. **Создать тесты** для `compat.py` и `partial_reader.py` — базовая проверка инфраструктуры чтения.
 2. **Развить дашборд** — автообновление, новые секции, интеграция с анализатором.
-3. **Устранить дублирование** — вынести fallback-функции в общий модуль `src/tools/compat.py`.
+3. **Закрыть формально выполненные задачи** — интеграция контекста, обязательные чтения, тренд оценщика.
 
 
 ---
@@ -260,6 +274,60 @@ _Заполни после учёта ответа._
 
 ты давно не спал. я хочу UI дашборд для тебя. чтобы каждый раз не дергать сессию в консоли.
 
+
+
+# Диагностика упавших проверок
+
+- Попытка исправления: 1/2
+- Команда проверки: `c:\_dev\own\pet\.venv\Scripts\python.exe -m pytest`
+
+Проверки упали. Это не финальный результат сессии: исправь ошибки в текущем временном worktree и снова обнови обязательные файлы сессии.
+
+## Вывод проверок
+
+```text
+... 23 earlier output lines omitted; tail follows ...
+self = <test_code_analyzer.TestSelfAnalysis object at 0x0000019A68F02350>
+
+    def test_analyze_self(self):
+        analyzer_path = os.path.join(
+            os.path.dirname(__file__), '..', 'src', 'tools', 'code_analyzer.py'
+        )
+        if not os.path.exists(analyzer_path):
+            return  # ����������, ���� ���� �� ������
+    
+        result = analyze_file(analyzer_path)
+        assert result.error is None
+        assert len(result.functions) > 0
+>       assert len(result.classes) == 0  # � code_analyzer ��� �������
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 4 == 0
+E        +  where 4 = len([ClassInfo(name='FuncInfo', line=29, methods=[], has_docstring=True, bases=[], decorators=['dataclass']), ClassInfo(na...aclass']), ClassInfo(name='FileAnalysis', line=60, methods=[], has_docstring=True, bases=[], decorators=['dataclass'])])
+E        +    where [ClassInfo(name='FuncInfo', line=29, methods=[], has_docstring=True, bases=[], decorators=['dataclass']), ClassInfo(na...aclass']), ClassInfo(name='FileAnalysis', line=60, methods=[], has_docstring=True, bases=[], decorators=['dataclass'])] = FileAnalysis(path='C:\\_dev\\own\\pet\\runs\\session-0029\\tests\\..\\src\\tools\\code_analyzer.py', lines=453, functi...'Dict', 'Optional'], line=25, is_from=True)], has_docstring=True, top_level_assigns=0, try_except_blocks=0, error=None).classes
+
+tests\test_code_analyzer.py:478: AssertionError
+=============================== tests coverage ================================
+______________ coverage: platform win32, python 3.11.15-final-0 _______________
+
+Name                             Stmts   Miss Branch BrPart  Cover   Missing
+----------------------------------------------------------------------------
+scripts\command_runners.py          68      2      8      1    96%   92-93, 104->107
+scripts\file_tools.py               42      2     14      2    93%   54, 74
+scripts\llm_client.py               62      5     10      1    92%   26, 74-75, 79-80
+scripts\run_agent.py               139      6     34      5    94%   14, 136-137, 146, 219, 221->224, 232
+scripts\run_session.py              91      2     22      2    96%   214, 253
+scripts\run_snapshots.py            35      3      6      1    90%   60, 69-70
+scripts\session_transaction.py     281     12     74     10    94%   14, 97, 102, 114, 124, 246->exit, 274->263, 344, 350, 390-391, 411-412, 481
+scripts\sleep_memory.py             84     18     18      3    79%   22, 51-53, 133-136, 140-149, 153
+----------------------------------------------------------------------------
+TOTAL                              842     50    190     25    93%
+
+2 files skipped due to complete coverage.
+Required test coverage of 90% reached. Total coverage: 92.73%
+=========================== short test summary info ===========================
+FAILED tests/test_code_analyzer.py::TestSelfAnalysis::test_analyze_self - Ass...
+======================== 1 failed, 112 passed in 2.61s ========================
+```
 
 
 ---
@@ -347,7 +415,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 28. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0028`.
+Ты находишься в сессии 30. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0029`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

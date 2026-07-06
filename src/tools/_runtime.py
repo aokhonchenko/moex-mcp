@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import signal
 import subprocess
 import sys
 import time
@@ -17,6 +18,14 @@ class ToolError(RuntimeError):
 FORBIDDEN_PARTS = {".git", ".venv", "__pycache__", ".pytest_cache", "runs"}
 MAX_TIMEOUT_SECONDS = 300.0
 MAX_OUTPUT_CHARS = 20000
+PROCESS_KILL_GRACE_SECONDS = 5.0
+NON_INTERACTIVE_ENV = {
+    "GIT_TERMINAL_PROMPT": "0",
+    "GIT_EDITOR": "true",
+    "VISUAL": "true",
+    "EDITOR": "true",
+    "GCM_INTERACTIVE": "Never",
+}
 
 
 def safe_path(root: Path, path: str) -> Path:
@@ -67,9 +76,12 @@ def timeout_seconds(value: Any, default: float = 120.0) -> float:
     return timeout
 
 
-def subprocess_env() -> dict[str, str]:
+def subprocess_env(overrides: dict[str, Any] | None = None) -> dict[str, str]:
     env = os.environ.copy()
     env.pop("VIRTUAL_ENV", None)
+    env.update(NON_INTERACTIVE_ENV)
+    if overrides:
+        env.update({str(key): str(value) for key, value in overrides.items()})
     return env
 
 
@@ -81,60 +93,115 @@ def normalize_args(value: Any, field: str) -> list[str]:
     return [str(item) for item in value]
 
 
-def trim_output(value: str) -> tuple[str, bool]:
-    if len(value) <= MAX_OUTPUT_CHARS:
-        return value, False
-    return value[:MAX_OUTPUT_CHARS], True
+def trim_output(value: str | bytes | None) -> tuple[str, bool]:
+    if value is None:
+        text = ""
+    elif isinstance(value, bytes):
+        text = value.decode("utf-8", errors="replace")
+    else:
+        text = value
+    if len(text) <= MAX_OUTPUT_CHARS:
+        return text, False
+    return text[:MAX_OUTPUT_CHARS], True
+
+
+def _popen_kwargs() -> dict[str, Any]:
+    if os.name == "nt":
+        return {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+    return {"start_new_session": True}
+
+
+def _kill_process_tree(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+    if os.name == "nt":
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=PROCESS_KILL_GRACE_SECONDS,
+                check=False,
+            )
+            return
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    else:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+            return
+        except OSError:
+            pass
+    try:
+        process.kill()
+    except OSError:
+        pass
+
+
+def _communicate_after_kill(process: subprocess.Popen[str]) -> tuple[str, str]:
+    try:
+        return process.communicate(timeout=PROCESS_KILL_GRACE_SECONDS)
+    except subprocess.TimeoutExpired:
+        _kill_process_tree(process)
+        if process.stdout:
+            process.stdout.close()
+        if process.stderr:
+            process.stderr.close()
+        return "", ""
 
 
 def command_result(
     command: str | Sequence[str],
     cwd: Path,
-    timeout: float,
+    timeout: float | None,
     *,
     shell: bool = False,
+    env_overrides: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     start = time.monotonic()
     try:
-        completed = subprocess.run(
+        process = subprocess.Popen(
             command,
             cwd=cwd,
-            env=subprocess_env(),
+            env=subprocess_env(env_overrides),
             text=True,
             encoding="utf-8",
             errors="replace",
-            capture_output=True,
-            timeout=timeout,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             shell=shell,
+            **_popen_kwargs(),
         )
-        stdout, stdout_truncated = trim_output(completed.stdout or "")
-        stderr, stderr_truncated = trim_output(completed.stderr or "")
-        return {
-            "command": command if isinstance(command, str) else list(command),
-            "cwd": str(cwd),
-            "returncode": completed.returncode,
-            "stdout": stdout,
-            "stderr": stderr,
-            "stdout_truncated": stdout_truncated,
-            "stderr_truncated": stderr_truncated,
-            "duration_seconds": round(time.monotonic() - start, 3),
-        }
-    except subprocess.TimeoutExpired as exc:
-        stdout, stdout_truncated = trim_output(exc.stdout or "")
-        stderr, stderr_truncated = trim_output(exc.stderr or "")
-        return {
-            "command": command if isinstance(command, str) else list(command),
-            "cwd": str(cwd),
-            "returncode": -1,
-            "stdout": stdout,
-            "stderr": stderr or f"command timed out after {timeout} seconds",
-            "stdout_truncated": stdout_truncated,
-            "stderr_truncated": stderr_truncated,
-            "duration_seconds": round(time.monotonic() - start, 3),
-            "timed_out": True,
-        }
     except OSError as exc:
         raise ToolError(f"failed to start command: {exc}") from exc
+
+    timed_out = False
+    try:
+        stdout_raw, stderr_raw = process.communicate(timeout=timeout)
+        returncode = process.returncode
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        _kill_process_tree(process)
+        stdout_raw, stderr_raw = _communicate_after_kill(process)
+        returncode = -1
+
+    stdout, stdout_truncated = trim_output(stdout_raw)
+    stderr, stderr_truncated = trim_output(stderr_raw)
+    if timed_out and not stderr:
+        stderr = f"command timed out after {timeout} seconds"
+    payload = {
+        "command": command if isinstance(command, str) else list(command),
+        "cwd": str(cwd),
+        "returncode": returncode,
+        "stdout": stdout,
+        "stderr": stderr,
+        "stdout_truncated": stdout_truncated,
+        "stderr_truncated": stderr_truncated,
+        "duration_seconds": round(time.monotonic() - start, 3),
+    }
+    if timed_out:
+        payload["timed_out"] = True
+    return payload
 
 
 def python_executable() -> str:

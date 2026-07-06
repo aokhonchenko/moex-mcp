@@ -23,13 +23,14 @@
 
 import sys
 import os
-import subprocess
 import shlex
 import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 from datetime import datetime
+
+from src.tools._runtime import ToolError, command_result as safe_command_result
 
 
 @dataclass
@@ -142,35 +143,27 @@ def run_command(
         cmd_env.update(env)
 
     try:
-        result = subprocess.run(
+        result = safe_command_result(
             cmd if shell else [command] + list(args),
-            cwd=cwd,
-            capture_output=capture_output,
-            text=True,
-            timeout=timeout,
+            Path(cwd),
+            timeout,
             shell=shell,
-            env=cmd_env,
+            env_overrides=env,
         )
-        duration = time.time() - start_time
+        if not capture_output:
+            if result.get("stdout"):
+                print(result["stdout"], end="")
+            if result.get("stderr"):
+                print(result["stderr"], end="", file=sys.stderr)
         return CommandResult(
             command=cmd_str,
-            returncode=result.returncode,
-            stdout=result.stdout or "",
-            stderr=result.stderr or "",
+            returncode=result["returncode"],
+            stdout=result.get("stdout", "") if capture_output else "",
+            stderr=result.get("stderr", "") if capture_output else "",
             cwd=cwd,
-            duration_sec=duration,
+            duration_sec=float(result.get("duration_seconds", time.time() - start_time)),
         )
-    except subprocess.TimeoutExpired:
-        duration = time.time() - start_time
-        return CommandResult(
-            command=cmd_str,
-            returncode=-1,
-            stdout="",
-            stderr=f"Команда превысила таймаут ({timeout}с)",
-            cwd=cwd,
-            duration_sec=duration,
-        )
-    except FileNotFoundError as e:
+    except ToolError as e:
         duration = time.time() - start_time
         return CommandResult(
             command=cmd_str,
@@ -179,29 +172,7 @@ def run_command(
             stderr="",
             cwd=cwd,
             duration_sec=duration,
-            error=f"Команда не найдена: {e.filename if hasattr(e, 'filename') else command}"
-        )
-    except PermissionError as e:
-        duration = time.time() - start_time
-        return CommandResult(
-            command=cmd_str,
-            returncode=-1,
-            stdout="",
-            stderr="",
-            cwd=cwd,
-            duration_sec=duration,
-            error=f"Нет прав на выполнение: {e}"
-        )
-    except OSError as e:
-        duration = time.time() - start_time
-        return CommandResult(
-            command=cmd_str,
-            returncode=-1,
-            stdout="",
-            stderr="",
-            cwd=cwd,
-            duration_sec=duration,
-            error=f"Ошибка ОС: {e}"
+            error=f"command not found: {command}" if "failed to start command" in str(e) else f"OS error: {e}",
         )
 
 

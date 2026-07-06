@@ -147,6 +147,22 @@ def expand_command(command: str, root: Path, prompt_file: Path, session: int) ->
         .replace("{ROOT}", str(root))
         .replace("{SESSION}", str(session))
     )
+def agent_environment() -> dict[str, str]:
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    return env
+
+
+def run_agent_command(command: str, root: Path) -> int:
+    completed = subprocess.run(
+        command,
+        cwd=root,
+        shell=True,
+        env=agent_environment(),
+    )
+    return completed.returncode
+
 
 
 def parse_args() -> argparse.Namespace:
@@ -195,11 +211,11 @@ def main() -> int:
     active_prompt_path.write_text(prompt, encoding="utf-8")
 
     if args.print_prompt:
-        print(prompt)
+        print(prompt, flush=True)
 
     if args.dry_run:
-        print(f"Собран промпт для сессии {session}: {active_prompt_path}")
-        print("Dry-run не увеличивает счётчик сессий и не запускает агента.")
+        print(f"Собран промпт для сессии {session}: {active_prompt_path}", flush=True)
+        print("Dry-run не увеличивает счётчик сессий и не запускает агента.", flush=True)
         return 0
 
     counter_path.write_text(f"{session + 1}\n", encoding="utf-8")
@@ -216,8 +232,8 @@ def main() -> int:
         )
 
     if not args.agent_command.strip():
-        print(f"Собран промпт для сессии {session}: {active_prompt_path}")
-        print("Для запуска агента задайте AI_AGENT_COMMAND или --agent-command.")
+        print(f"Собран промпт для сессии {session}: {active_prompt_path}", flush=True)
+        print("Для запуска агента задайте AI_AGENT_COMMAND или --agent-command.", flush=True)
         return 0
 
     expanded_command = expand_command(
@@ -227,11 +243,10 @@ def main() -> int:
         session=session,
     )
 
-    print(f"Запускаю сессию {session}...")
-    print(expanded_command)
+    print(f"Запускаю сессию {session}...", flush=True)
+    print(expanded_command, flush=True)
 
-    completed = subprocess.run(expanded_command, cwd=root, shell=True)
-    return completed.returncode
+    return run_agent_command(expanded_command, root)
 
 
 if __name__ == "__main__":

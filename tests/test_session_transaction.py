@@ -176,7 +176,7 @@ def test_run_transaction_uses_default_agent_command(tmp_path):
 
     assert commit == "abc123"
     commands = [command for command, _ in runner.commands]
-    agent_commands = [command for command in commands if "run_mini_agent.py" in " ".join(command)]
+    agent_commands = [command for command in commands if "run_agent.py" in " ".join(command)]
     assert agent_commands
 
 
@@ -223,6 +223,16 @@ def test_default_runner_wraps_subprocess_result(monkeypatch, tmp_path):
 
 
 
+
+def test_command_failure_details_keeps_tail_for_long_output():
+    result = session_transaction.CommandResult(1, "\n".join(str(i) for i in range(50)), "")
+
+    details = session_transaction.command_failure_details(result, max_lines=3)
+
+    assert "47" in details
+    assert "49" in details
+    assert "earlier output lines omitted" in details
+    assert "0\n" not in details
 
 def test_run_checked_reports_failure_details(tmp_path):
     def runner(args, cwd):
@@ -450,10 +460,10 @@ def test_load_dotenv_sets_missing_values_without_overriding(tmp_path, monkeypatc
     assert session_transaction.os.environ["AI_BASE_URL"] == "https://example/v1"
 
 
-def test_default_agent_command_uses_uv_mini_wrapper():
+def test_default_agent_command_uses_local_agent():
     command = session_transaction.default_agent_command()
 
-    assert "uv run python scripts/run_mini_agent.py" in command
+    assert "uv run python scripts/run_agent.py" in command
     assert "{ROOT}" in command
     assert "{PROMPT_FILE}" in command
 

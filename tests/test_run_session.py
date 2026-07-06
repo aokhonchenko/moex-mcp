@@ -1,4 +1,4 @@
-﻿import subprocess
+import subprocess
 from pathlib import Path
 
 
@@ -124,8 +124,8 @@ def test_main_runs_expanded_agent_command(tmp_path, monkeypatch):
     write_minimal_experiment(tmp_path)
     calls = []
 
-    def fake_run(command, cwd, shell):
-        calls.append((command, cwd, shell))
+    def fake_run(command, cwd, shell, env):
+        calls.append((command, cwd, shell, env))
         return subprocess.CompletedProcess(command, 13)
 
     monkeypatch.setattr(run_session, "ROOT_OVERRIDE", tmp_path, raising=False)
@@ -140,12 +140,14 @@ def test_main_runs_expanded_agent_command(tmp_path, monkeypatch):
 
     assert result == 13
     assert len(calls) == 1
-    command, cwd, shell = calls[0]
+    command, cwd, shell, env = calls[0]
     assert str(tmp_path) in command
     assert str(tmp_path / "state" / "active_prompt.md") in command
     assert " 7" in command
     assert cwd == tmp_path
     assert shell is True
+    assert env["PYTHONUNBUFFERED"] == "1"
+    assert env["PYTHONIOENCODING"] == "utf-8"
 
 
 

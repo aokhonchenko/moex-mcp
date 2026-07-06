@@ -38,6 +38,17 @@ def diagnostic(message: str) -> None:
     print(f"[session] {message}", flush=True)
 
 
+def command_failure_details(result: CommandResult, max_lines: int = 40) -> str:
+    details = (result.stderr or result.stdout).strip()
+    if not details:
+        return ""
+    lines = details.splitlines()
+    if len(lines) <= max_lines:
+        return details
+    tail = "\n".join(lines[-max_lines:])
+    omitted = len(lines) - max_lines
+    return f"... {omitted} earlier output lines omitted; tail follows ...\n{tail}"
+
 def run_checked(
     runner: CommandRunner,
     args: Sequence[str],
@@ -46,7 +57,7 @@ def run_checked(
 ) -> CommandResult:
     result = runner(args, cwd)
     if result.returncode != 0:
-        details = (result.stderr or result.stdout).strip()
+        details = command_failure_details(result)
         if details:
             raise TransactionError(f"{action}: {details}")
         raise TransactionError(f"{action}: command failed with exit code {result.returncode}")
@@ -220,8 +231,8 @@ def run_inner_session(
     args = [sys.executable, str(script), "--agent-command", agent_command]
     result = runner(args, worktree)
     if result.returncode != 0:
-        details = (result.stderr or result.stdout).strip()
-        raise TransactionError(f"agent session failed: {details}")
+        details = command_failure_details(result)
+        raise TransactionError(f"agent session failed: {details or 'see streamed output above'}")
 
 
 def run_checks(
@@ -231,8 +242,8 @@ def run_checks(
 ) -> None:
     result = runner(check_command, worktree)
     if result.returncode != 0:
-        details = (result.stderr or result.stdout).strip()
-        raise TransactionError(f"checks failed: {details}")
+        details = command_failure_details(result)
+        raise TransactionError(f"checks failed: {details or 'see streamed output above'}")
 
 
 def ensure_required_session_files(worktree: Path) -> None:
@@ -301,7 +312,7 @@ def apply_session_commit(
 
 
 def default_agent_command() -> str:
-    return 'uv run python scripts/run_mini_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"'
+    return 'uv run python scripts/run_agent.py --root "{ROOT}" --prompt-file "{PROMPT_FILE}"'
 
 def run_transaction(
     root: Path,
@@ -397,7 +408,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--agent-command",
         default=os.environ.get("AI_AGENT_COMMAND", ""),
-        help="Agent command passed to scripts/run_session.py inside the worktree. Defaults to uv-run mini-swe-agent wrapper.",
+        help="Agent command passed to scripts/run_session.py inside the worktree. Defaults to the local ai-lives agent.",
     )
     parser.add_argument(
         "--runs-dir",

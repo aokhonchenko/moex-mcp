@@ -3,9 +3,8 @@ name = "ai-lives"
 version = "0.1.0"
 description = "Managed autonomous AI experiment scaffold"
 requires-python = ">=3.11"
-dependencies = [
-    "mini-swe-agent>=2.4.4",
-]
+dependencies = []
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=scripts --cov-report=term-missing --cov-fail-under=90"

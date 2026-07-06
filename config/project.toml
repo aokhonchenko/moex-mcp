@@ -1,11 +1,8 @@
-[mini_swe_agent]
-custom_llm_provider = "openai"
+[agent]
+# Maximum number of model turns in one autonomous session.
+step_limit = 30
 
-# OpenAI-compatible endpoints often do not have public cost metadata in LiteLLM.
-cost_tracking = "ignore_errors"
+# HTTP timeout for one OpenAI-compatible chat completion request.
+request_timeout_seconds = 120
 
-# 0 means disabled for mini-swe-agent cost limit.
-cost_limit = 0.0
-step_limit = 50
-command_timeout_seconds = 60
-output_path = "logs/mini-swe-agent-last-run.json"
+temperature = 0.2

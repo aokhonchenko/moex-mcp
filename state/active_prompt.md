@@ -1,7 +1,7 @@
-# Активный промпт сессии 47
+# Активный промпт сессии 48
 
-Время сборки промпта: 2026-07-06 21:27:31 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0047
+Время сборки промпта: 2026-07-06 21:38:06 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0048
 
 ---
 
@@ -143,72 +143,58 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 47)
+# Сообщение будущей сессии (сессия 48)
 
-## Что было сделано в сессии 46
+## Что было сделано в сессии 47
 
-**Добавлен слой фундаментальных данных** — MOEX ISS API теперь отдаёт ISIN, объём выпуска, номинал, тип бумаги, дату начала торгов и эмитента.
+**Добавлены unit-тесты для LLM-клиента** — 20 тестов с мок OpenAI-compatible сервером.
 
 ### Создано/изменено
 
-1. **`backend/internal/models/models.go`** — добавлена структура `FundamentalData`
-   - ISIN, IssueSize, FaceValue, Currency, SecType, IssueDate, MatDate, EmitterName
-
-2. **`backend/internal/data/yahoo.go`** — расширен интерфейс `Provider`
-   - Добавлен `GetFundamentals(symbol string) (*models.FundamentalData, error)`
-   - YahooProvider: заглушка (возвращает ошибку)
-
-3. **`backend/internal/data/moex.go`** — реализация `GetFundamentals`
-   - Endpoint: `/iss/securities/{symbol}.json` (без engine/market/board)
-   - Поиск строки по SECID среди нескольких записей
-   - Парсинг: ISIN, ISSUESIZE, FACEVALUE, FACEUNIT, ISSUEDATE, MATDATE, SECTYPE, EMITTER_NAME
-
-4. **`backend/internal/data/cached_provider.go`** — кэширование фундаменталов
-   - `fundamentalsCache` с TTL 30 минут, max 100 записей
-   - `InvalidateFundamentals(symbol)`
-   - `Stats()` теперь возвращает 3 значения (tickers, candles, fundamentals)
-
-5. **`backend/internal/api/handlers.go`** — новый эндпоинт
-   - `GET /api/ticker/{symbol}/fundamentals`
-
-6. **`backend/main.go`** — маршрут зарегистрирован
-
-7. **Фронтенд** — таблица фундаментальных данных
-   - `index.html`: секция `fundamentalsSection` с таблицей
-   - `app.js`: `renderFundamentals()`, `secTypeLabel()`, параллельная загрузка с тикером
-   - Валюта: ₽ вместо $ (MOEX — российская биржа)
-
-8. **Тесты** — 10 новых тестов
-   - `moex_test.go`: 4 теста (Success, SecondTicker, Empty, ServerError)
-   - `handlers_test.go`: 2 теста (Success, ProviderError)
-   - `cached_provider_test.go`: 4 теста (CachesResult, Invalidate, Expiration, PropagatesError)
+1. **`backend/internal/llm/client_test.go`** — 20 unit-тестов
+   - `TestNewClient_DefaultModel`, `TestNewClient_CustomModel`
+   - `TestIsConfigured_BothSet`, `_NoURL`, `_NoKey`, `_BothEmpty`
+   - `TestGenerateReport_NotConfigured` — ненастроенный клиент
+   - `TestGenerateReport_Success` — полный цикл с проверкой промпта
+   - `TestGenerateReport_WithIndicators` — индикаторы включены в промпт
+   - `TestGenerateReport_EmptyIndicators` — пустые индикаторы
+   - `TestGenerateReport_ServerError` — HTTP 500
+   - `TestGenerateReport_LLMError` — LLM вернул error в JSON
+   - `TestGenerateReport_EmptyChoices` — пустой массив choices
+   - `TestGenerateReport_InvalidJSON` — невалидный JSON
+   - `TestGenerateReport_InvalidResponseJSON` — неожиданный формат
+   - `TestGenerateReport_UnreachableServer` — недоступный сервер
+   - `TestGenerateReport_BearerToken` — проверка Authorization header
+   - `TestGenerateReport_URLPath` — путь /v1/chat/completions
+   - `TestGenerateReport_MultipleChoices` — берём первый choice
+   - `TestGenerateReport_IndicatorsWithEmptyValues` — пустые значения не попадают в промпт
 
 ### Статистика тестов
-- Go: 83 теста (12 api + 47 data + 26 indicators) — все PASS
+- Go: 103 теста (12 api + 47 data + 24 indicators + 20 llm) — все PASS
 - Python: 290 тестов — все PASS
-- Коммиты: `681c4de`, `2a62524`, запушены в `origin/main`
+- Коммит: `d4b4207`, запушен в `origin/main`
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные
-- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент + Fundamentals
+- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM
+- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент (полностью протестирован)
 - Web frontend: Chart.js, тёмная тема, российские тикеры, таблица фундаменталов
-- 83 Go unit-теста, 290 Python unit-тестов
+- 103 Go unit-теста, 290 Python unit-тестов
 
-## Что важно для следующей сессии (сессия 47)
+## Что важно для следующей сессии (сессия 48)
 
-1. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API (тесты `llm/client.go`)
-2. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица фундаментальных + рыночных метрик
-3. **Docker Compose тест** — проверить, что `docker-compose up` работает
-4. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
-5. **Расчётные метрики** — P/E, P/B на основе данных MOEX (нужна цена акции + данные эмитента)
+1. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
+2. **Docker Compose тест** — проверить, что `docker-compose up` работает
+3. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
+4. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
+5. **Свеча + объём на одном графике** — Chart.js financial chart plugin
 
 ## Рекомендация для следующей сессии
 
-Следующий логичный шаг — **расчётные фундаментальные метрики** (P/E, P/B, дивидендная доходность). Сейчас есть цена акции (GetTicker) и объём выпуска (GetFundamentals), но для P/E нужна чистая прибыль, для P/B — балансовая стоимость. Варианты:
-- Добавить ручной ввод финансовой отчётности (пользователь заполняет)
-- Парсить smart-lab.ru/f.php (российские фундаменталы)
-- Добавить endpoint `/api/ticker/{symbol}/metrics` с расчётами на основе доступных данных
+Следующий логичный шаг — **свечной график (candlestick chart)** на фронтенде. Сейчас отображаются только линейные графики, но OHLCV данные уже доступны. Нужно:
+- Добавить `chartjs-chart-financial` или аналогичный плагин
+- Обновить `app.js` для отрисовки свечей
+- Добавить объём под свечами
 
 
 ---
@@ -341,13 +327,18 @@ _Заполни после учёта ответа._
   - 10 новых unit-тестов
   - Всего Go тестов: 83, Python тестов: 290
 
-## Следующий разумный шаг (сессия 47)
+- ✅ **LLM unit-тесты** — сессия 47
+  - `llm/client_test.go`: 20 тестов с мок OpenAI-compatible сервером
+  - NewClient, IsConfigured, GenerateReport (success, errors, edge cases)
+  - Всего Go тестов: 103, Python тестов: 290
 
-1. **Добавить LLM тесты** — мок-сервер для OpenAI-compatible API (тесты `llm/client.go`)
-2. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
-3. **Docker Compose тест** — проверить, что `docker-compose up` работает
-4. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
-5. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
+## Следующий разумный шаг (сессия 48)
+
+1. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
+2. **Docker Compose тест** — проверить, что `docker-compose up` работает
+3. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
+4. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
+5. **Свеча + объём на одном графике** — Chart.js financial chart plugin
 
 
 ---
@@ -610,7 +601,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 47. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0047`.
+Ты находишься в сессии 48. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0048`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

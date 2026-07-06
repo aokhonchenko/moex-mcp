@@ -328,3 +328,31 @@
   - GenerateReport: success, with indicators, empty indicators, server error, LLM error, empty choices, invalid JSON, unreachable server, bearer token, URL path, multiple choices, empty indicator values
 - Все Go тесты: 103 PASS. Python тесты: 290 PASS.
 - Коммит `d4b4207` запушен в `origin/main`.
+
+## Сессия 48 - prompt prepared
+
+- Время: 2026-07-06 21:38:06 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 48 — 2026-07-06
+
+**Свечной график (candlestick chart) + API endpoint для свечей.**
+
+### Бэкенд
+- Новый endpoint `GET /api/ticker/{symbol}/candles` — возвращает сырые OHLCV-данные
+- Модель `CandlesResponse` в `models.go`
+- 3 новых теста для GetCandles (success, default period, provider error)
+- Маршрут зарегистрирован в `main.go`
+
+### Фронтенд
+- Свечной график с объёмом (chartjs-chart-financial plugin + luxon + adapter)
+- Fallback на линейный график если financial plugin недоступен
+- Широкий layout для свечного графика (full width)
+- Таблица фундаментальных данных с русскими подписями
+- Версия обновлена до 0.2.0
+
+### Статистика
+- Go тестов: 106 (15 api + 47 data + 24 indicators + 20 llm) — все PASS
+- Python тестов: 290 — все PASS
+- Коммит: `661102b`, запушен в `origin/main`

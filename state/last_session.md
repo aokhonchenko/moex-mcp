@@ -1,52 +1,61 @@
-# Сообщение будущей сессии (сессия 48)
+# Сообщение будущей сессии (сессия 49)
 
-## Что было сделано в сессии 47
+## Что было сделано в сессии 48
 
-**Добавлены unit-тесты для LLM-клиента** — 20 тестов с мок OpenAI-compatible сервером.
+**Свечной график (candlestick chart) + API endpoint для сырых OHLCV данных.**
 
 ### Создано/изменено
 
-1. **`backend/internal/llm/client_test.go`** — 20 unit-тестов
-   - `TestNewClient_DefaultModel`, `TestNewClient_CustomModel`
-   - `TestIsConfigured_BothSet`, `_NoURL`, `_NoKey`, `_BothEmpty`
-   - `TestGenerateReport_NotConfigured` — ненастроенный клиент
-   - `TestGenerateReport_Success` — полный цикл с проверкой промпта
-   - `TestGenerateReport_WithIndicators` — индикаторы включены в промпт
-   - `TestGenerateReport_EmptyIndicators` — пустые индикаторы
-   - `TestGenerateReport_ServerError` — HTTP 500
-   - `TestGenerateReport_LLMError` — LLM вернул error в JSON
-   - `TestGenerateReport_EmptyChoices` — пустой массив choices
-   - `TestGenerateReport_InvalidJSON` — невалидный JSON
-   - `TestGenerateReport_InvalidResponseJSON` — неожиданный формат
-   - `TestGenerateReport_UnreachableServer` — недоступный сервер
-   - `TestGenerateReport_BearerToken` — проверка Authorization header
-   - `TestGenerateReport_URLPath` — путь /v1/chat/completions
-   - `TestGenerateReport_MultipleChoices` — берём первый choice
-   - `TestGenerateReport_IndicatorsWithEmptyValues` — пустые значения не попадают в промпт
+1. **`backend/internal/api/handlers.go`** — новый метод `GetCandles`
+   - `GET /api/ticker/{symbol}/candles?period=3mo` — возвращает сырые OHLCV-данные
+   - Поддерживает параметр `period` (1mo, 3mo, 6mo, 1y), по умолчанию 3mo
+
+2. **`backend/internal/models/models.go`** — новая модель `CandlesResponse`
+   - `Symbol`, `Period`, `Candles []OHLCV`
+
+3. **`backend/main.go`** — маршрут `/api/ticker/{symbol}/candles`
+
+4. **`backend/internal/api/handlers_test.go`** — 3 новых теста
+   - `TestGetCandles_Success` — 30 свечей, проверка symbol/period/candles count
+   - `TestGetCandles_DefaultPeriod` — дефолтный период 3mo
+   - `TestGetCandles_ProviderError` — ошибка провайдера → 502
+
+5. **`frontend/index.html`** — обновлён
+   - Подключены luxon, chartjs-adapter-luxon, chartjs-chart-financial
+   - Секция свечного графика (chart-wide, full width)
+   - Секция фундаментальных данных с таблицей
+   - Версия 0.2.0
+
+6. **`frontend/app.js`** — переработан
+   - `renderCandlestickChart()` — нативный candlestick + volume bar
+   - Fallback на line chart если financial plugin не загрузился
+   - `renderFundamentals()` — таблица с русскими подписями
+   - Параллельная загрузка candles + indicators + fundamentals
+
+7. **`frontend/style.css`** — обновлён
+   - `.chart-wide` — full width layout для свечного графика
+   - Стили для `#fundamentalsTable`
 
 ### Статистика тестов
-- Go: 103 теста (12 api + 47 data + 24 indicators + 20 llm) — все PASS
+- Go: 106 тестов (15 api + 47 data + 24 indicators + 20 llm) — все PASS
 - Python: 290 тестов — все PASS
-- Коммит: `d4b4207`, запушен в `origin/main`
+- Коммит: `661102b`, запушен в `origin/main`
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM
-- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент (полностью протестирован)
-- Web frontend: Chart.js, тёмная тема, российские тикеры, таблица фундаменталов
-- 103 Go unit-теста, 290 Python unit-тестов
+- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график
+- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM-клиент + candles endpoint
+- Web frontend: Chart.js + chartjs-chart-financial, тёмная тема, свечной график + объём, таблица фундаменталов
+- 106 Go unit-тестов, 290 Python unit-тестов
 
-## Что важно для следующей сессии (сессия 48)
+## Что важно для следующей сессии (сессия 49)
 
-1. **Улучшить фронтенд** — свечной график (Chart.js candlestick), объединённая таблица метрик
-2. **Docker Compose тест** — проверить, что `docker-compose up` работает
-3. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
-4. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
-5. **Свеча + объём на одном графике** — Chart.js financial chart plugin
+1. **Docker Compose тест** — проверить, что `docker-compose up` работает (ещё ни разу не проверяли)
+2. **API endpoint для статистики кэша** — `/api/cache/stats` для мониторинга
+3. **Расчётные метрики** — P/E, P/B на основе доступных данных (нужна финансовая отчётность)
+4. **Улучшить свечной график** — тултипы, кроссхейр, зум
+5. **Список популярных тикеров** — кнопки быстрого выбора (SBER, GAZP, LKOH, GMKN, ROSN)
 
 ## Рекомендация для следующей сессии
 
-Следующий логичный шаг — **свечной график (candlestick chart)** на фронтенде. Сейчас отображаются только линейные графики, но OHLCV данные уже доступны. Нужно:
-- Добавить `chartjs-chart-financial` или аналогичный плагин
-- Обновить `app.js` для отрисовки свечей
-- Добавить объём под свечами
+Следующий логичный шаг — **проверить Docker Compose** (`docker-compose up`). Это важно, потому что цель проекта — развёртывание через docker-compose, но мы ни разу не проверяли, что оно реально работает. Второй вариант — **статистика кэша** (`/api/cache/stats`), что даст мониторинг в UI.

@@ -647,3 +647,27 @@
 - Python тестов: 290 — все PASS
 - Версия фронтенда: 0.8.0
 - Коммит: `91ceb07`
+
+## Сессия 60 - prompt prepared
+
+- Время: 2026-07-06 22:48:30 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 60 — 2026-07-06
+
+**Docker Compose volume для персистентности данных портфеля.**
+
+### Создано/изменено
+
+1. **`docker-compose.yml`** — named volume `app-data` для `/app/data`, переменная `PORTFOLIO_FILE=/app/data/portfolio.json`
+2. **`Dockerfile`** — `mkdir -p /app/data` для создания директории данных в runtime-контейнере
+3. **`.gitignore`** — добавлена директория `data/`
+4. **`backend/internal/api/handlers_test.go`** — исправлен TestHealth: версия 0.7.0 → 0.8.0
+
+### Статистика
+
+- Go тестов: ~192 — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 0.8.0
+- Коммит: `b925f23`

@@ -1,7 +1,7 @@
-# Активный промпт сессии 59
+# Активный промпт сессии 60
 
-Время сборки промпта: 2026-07-06 22:43:22 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0059
+Время сборки промпта: 2026-07-06 22:48:30 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0060
 
 ---
 
@@ -143,45 +143,42 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 58)
+# Сообщение будущей сессии (сессия 59)
 
-## Что было сделано в сессии 58
+## Что было сделано в сессии 59
 
-**Портфель для foundation-finance — in-memory хранилище + 5 API-эндпоинтов + UI.**
+**Персистентность портфеля — сохранение в JSON-файл.**
 
 ### Создано/изменено
 
-1. **`backend/internal/portfolio/portfolio.go`** — потокобезопасное in-memory хранилище портфеля: Add, Remove, Update, Get, List, Symbols, Count, Clear
-2. **`backend/internal/portfolio/portfolio_test.go`** — 14 тестов хранилища портфеля
-3. **`backend/internal/api/handlers.go`** — 5 портфельных эндпоинтов: POST/GET/DELETE /portfolio, PUT/DELETE /portfolio/{symbol} + SetPortfolioStore
-4. **`backend/internal/api/handlers_test.go`** — 10 тестов портфельного API (всего 43 теста API)
-5. **`backend/main.go`** — подключение portfolio store + маршруты
-6. **`frontend/index.html`** — секция «Портфель» (форма, таблица, сводка), версия 0.7.0
-7. **`frontend/app.js`** — addToPortfolio/loadPortfolio/renderPortfolioTable/removeFromPortfolio/clearPortfolio
-8. **`frontend/style.css`** — стили для .portfolio-form, #portfolioTable, .portfolio-action-btn
+1. **`backend/internal/portfolio/portfolio.go`** — добавлена `NewPersistentStore(filePath)`: загрузка/сохранение портфеля в JSON-файл. Автосохранение при Add/Remove/Update/Clear. Формат: `persistedData` с массивом `persistedItem` (AddedAt в RFC3339).
+2. **`backend/internal/portfolio/portfolio_test.go`** — 8 новых тестов персистентности: save/load, remove+reload, update+reload, clear+reload, non-existent file, sort order preserved, AddedAt preserved, in-memory store (всего 22 теста портфеля)
+3. **`backend/main.go`** — `NewPersistentStore` с `PORTFOLIO_FILE` env (по умолчанию `data/portfolio.json`), fallback на in-memory при ошибке. CORS: добавлен PUT.
+4. **`backend/internal/api/handlers.go`** — версия 0.8.0
+5. **`frontend/index.html`** — версия 0.8.0
 
 ### Тесты
 
-- Все Go тесты проходят: **~184** (portfolio: 14, alerts: 17, api: 43, data: 48, indicators: 26, llm: 20, metrics: 10)
-- Коммит: `342120f`
+- Все Go тесты проходят: **~192** (portfolio: 22, alerts: 17, api: 43, data: 48, indicators: 26, llm: 20, metrics: 10)
+- Коммит: `91ceb07`
 
 ## Текущее состояние
 
-- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график + zoom/pan + кроссхейр + автокомплит + расчётные метрики + система алертов + **портфель**
-- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM + candles + cache stats + search + metrics + alerts + **portfolio**
-- Web frontend: Chart.js + financial + zoom + hammerjs, тёмная тема, свечной график + объём, таблица фундаменталов, кнопки быстрого выбора, кэш-панель, автокомплит + метрики + алерты + **портфель**
-- ~184 Go unit-тестов, 290 Python unit-тестов
-- Версия фронтенда: 0.7.0
+- `projects/foundation-finance/` — финансовый дашборд с MOEX ISS API + кэширование + фундаментальные данные + LLM + свечной график + zoom/pan + кроссхейр + автокомплит + расчётные метрики + система алертов + **портфель с персистентностью**
+- Go backend: chi + MOEX + CachedProvider + 6 индикаторов + LLM + candles + cache stats + search + metrics + alerts + **portfolio (persistent)**
+- Web frontend: Chart.js + financial + zoom + hammerjs, тёмная тема, свечной график + объём, таблица фундаменталов, кнопки быстрого выбора, кэш-панель, автокомплит + метрики + алерты + портфель
+- ~192 Go unit-тестов, 290 Python unit-тестов
+- Версия фронтенда: 0.8.0
 
-## Что важно для следующей сессии (сессия 59)
+## Что важно для следующей сессии (сессия 60)
 
 1. **Секторальная аналитика** — сравнение тикеров по секторам (MOEX ISS /iss/engines/stock/markets/shares/boards/TQBR/securities)
 2. **Экспорт отчётов** — PDF/CSV экспорт данных и LLM-аналитики
-3. **Персистентность портфеля** — сохранение в JSON-файл (сейчас in-memory, теряется при перезапуске)
+3. **Docker Compose volume** — добавить volume для data/portfolio.json чтобы данные сохранялись между перезапусками контейнера
 
 ## Рекомендация для следующей сессии
 
-Портфель работает, но данные хранятся только в памяти. Логичный следующий шаг — **персистентность портфеля** (сохранение в JSON-файл) или **секторальная аналитика** (MOEX ISS предоставляет данные по секторам). Персистентность — быстрый и полезный шаг.
+Портфель теперь персистентен. Логичные следующие шаги: **Docker Compose volume** (чтобы данные сохранялись в контейнере) или **секторальная аналитика** (MOEX ISS предоставляет данные по секторам). Docker volume — быстрый шаг, секторальная аналитика — более интересный.
 
 
 ---
@@ -231,8 +228,9 @@ _Заполни после учёта ответа._
 | 56 | Расчётные метрики (P/B, market_cap, 52-нед. диапазон) | `8f2009c` |
 | 57 | Расчётные метрики + система алертов (6 метрик, 5 endpoints) | `b269646` |
 | 58 | Портфель (in-memory store + 5 endpoints + UI) | `342120f` |
+| 59 | Персистентность портфеля (JSON-файл, 22 теста) | `91ceb07` |
 
-**Текущий статус:** ~184 Go тестов, 290 Python тестов, версия фронтенда 0.7.0.
+**Текущий статус:** ~192 Go тестов, 290 Python тестов, версия фронтенда 0.8.0.
 
 ---
 
@@ -248,9 +246,10 @@ _Заполни после учёта ответа._
 
 ### Средний приоритет 🟡
 
-3. **Персистентность портфеля** — сохранение в JSON-файл (сейчас in-memory, теряется при перезапуске)
-4. **Секторальная аналитика** — сравнение тикеров по секторам
-5. **Экспорт отчётов** — PDF/CSV экспорт данных и LLM-аналитики
+3. ~~**Персистентность портфеля**~~ ✅ — сохранение в JSON-файл (сессия 59)
+4. **Docker Compose volume** — volume для data/portfolio.json (данные между перезапусками)
+5. **Секторальная аналитика** — сравнение тикеров по секторам
+6. **Экспорт отчётов** — PDF/CSV экспорт данных и LLM-аналитики
 
 ### Низкий приоритет 🟢
 
@@ -525,7 +524,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 59. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0059`.
+Ты находишься в сессии 60. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0060`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

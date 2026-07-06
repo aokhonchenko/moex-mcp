@@ -542,3 +542,55 @@
 - Go тестов: ~127 — все PASS
 - Python тестов: 290 — все PASS
 - Коммит: `8f2009c`
+
+## Сессия 57 - prompt prepared
+
+- Время: 2026-07-06 22:30:13 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 57 — 2026-07-06
+
+**Система алертов для foundation-finance** — уведомления при достижении пороговых значений.
+
+### Создано/изменено
+
+1. **`backend/internal/alerts/alerts.go`** — новый пакет: Store (потокобезопасное хранилище), Alert/AlertEvent модели, 6 метрик (price, RSI, MACD, volume, P/B, market_cap), 2 условия (above/below), CRUD + Check + Reset
+2. **`backend/internal/alerts/alerts_test.go`** — 17 тестов (create, list, get, delete, check price/RSI/MACD/PB/volume/market_cap, wrong symbol, triggered-once, reset, concurrent access)
+3. **`backend/internal/api/handlers.go`** — 5 новых endpoints: POST /alerts, GET /alerts, DELETE /alerts/{id}, POST /alerts/{id}/reset, POST /alerts/check/{symbol} + SetAlertStore()
+4. **`backend/internal/api/handlers_test.go`** — 10 новых тестов для алерт-API (create success/no store/missing symbol, list/filter, delete/not found, reset, check success/no store)
+5. **`backend/main.go`** — подключение alerts.Store + 5 маршрутов
+6. **`frontend/index.html`** — секция «Алерты» (форма создания, таблица, статистика, проверка) + исправлен баг с отсутствующим metricsSection
+7. **`frontend/app.js`** — createAlert, loadAlerts, deleteAlert, resetAlert, checkAlerts, renderAlertsTable
+8. **`frontend/style.css`** — стили для алертов (.alerts-form, .alerts-stats, .alerts-events, .alert-active, .alert-triggered, .alert-action-btn) + метрики (.metrics-grid, .metric-item)
+
+### Статистика
+
+- Go тестов: 144 (alerts: 17, api: 33, data: 48, indicators: 26, llm: 20, metrics: 10) — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 0.6.0
+- Коммит: `5a39887`
+
+## Сессия 57 — 2026-07-06
+
+**Расчётные метрики + система алертов для foundation-finance** — два шага в одной сессии.
+
+### Создано/изменено
+
+1. **`backend/internal/metrics/calculator.go`** — калькулятор расчётных метрик (P/B, market_cap, 52-нед. high/low)
+2. **`backend/internal/metrics/calculator_test.go`** — 10 тестов калькулятора
+3. **`backend/internal/alerts/alerts.go`** — потокобезопасное хранилище алертов: 6 метрик (price, RSI, MACD, volume, P/B, market_cap), 2 условия (above/below), CRUD + Check + Reset
+4. **`backend/internal/alerts/alerts_test.go`** — 17 тестов алертов
+5. **`backend/internal/api/handlers.go`** — MetricsCalculator интерфейс + 5 алерт-эндпоинтов
+6. **`backend/internal/api/handlers_test.go`** — 4 теста GetMetrics + 10 тестов алерт-API
+7. **`backend/main.go`** — подключение metrics + alerts + маршруты
+8. **`frontend/index.html`** — секции «Расчётные метрики» и «Алерты»
+9. **`frontend/app.js`** — renderMetrics + алерт-функции
+10. **`frontend/style.css`** — стили для метрик и алертов
+
+### Статистика
+
+- Go тестов: ~144 (alerts: 17, api: 33, data: 48, indicators: 26, llm: 20, metrics: 10) — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 0.6.0
+- Коммит: `b269646`

@@ -1025,3 +1025,36 @@
 ### Следующий шаг
 
 Интеграция moex-mcp с foundation-finance — замена прямых MOEX ISS вызовов на HTTP-клиент к moex-mcp.
+
+## Сессия 73 - prompt prepared
+
+- Время: 2026-07-07 09:54:52 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 73 — 2026-07-07
+
+**Интеграция moex-mcp с foundation-finance** — замена прямых запросов к MOEX ISS на HTTP-клиент к moex-mcp.
+
+### moex-mcp (коммит `41e2b7c`)
+
+1. `internal/moex/client.go` — добавлен `GetSectors()` (группировка по SECTORID, 12 секторов)
+2. `internal/httpserver/server.go` — `GET /api/sectors` endpoint, версия 0.3.0
+3. `internal/httpserver/server_test.go` — `TestSectors` (mock Financial + Oil and Gas)
+4. **29 Go тестов** PASS (11 httpserver + 10 mcp + 8 moex)
+
+### foundation-finance (коммит `b996063`)
+
+1. `internal/data/mcp_provider.go` — HTTP-клиент к moex-mcp (5 методов: GetTicker, GetOHLCV, GetFundamentals, SearchSecurities, GetSectors)
+2. `internal/data/mcp_provider_test.go` — 20 тестов (все сценарии + interface checks + CachedProvider integration)
+3. `backend/main.go` — два режима через `MCP_PROVIDER_URL` (moex-mcp или прямые MOEX ISS)
+4. `docker-compose.yml` — два сервиса: moex-mcp (:8081) + app (:8080), depends_on с healthcheck
+5. `.env.example` — документация MCP_PROVIDER_URL
+6. `README.md` — обновлена архитектура, стек, документация
+7. **~255 Go тестов** PASS (включая 20 новых MCPProvider)
+
+### Следующие шаги
+
+- Docker Compose тест (build + up + healthcheck)
+- Расширение moex-mcp (индексы IMOEX/RTSI, дивиденды, стакан)
+- Кэширование в moex-mcp

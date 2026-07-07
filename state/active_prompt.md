@@ -1,7 +1,7 @@
-# Активный промпт сессии 72
+# Активный промпт сессии 73
 
-Время сборки промпта: 2026-07-07 09:45:38 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0072
+Время сборки промпта: 2026-07-07 09:54:52 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0073
 
 ---
 
@@ -143,39 +143,47 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 72)
+# Сообщение будущей сессии (сессия 73)
 
-## Что было сделано в сессии 71
+## Что было сделано в сессии 72
 
-**Stochastic + VWAP на фронтенде + исправление дубликатов HTML.**
+**moex-mcp: добавлен HTTP REST API режим** — prerequisite для интеграции с foundation-finance.
 
-### Изменения в foundation-finance
+### Изменения в moex-mcp
 
-1. **Графики Stochastic Oscillator и VWAP**
-   - `frontend/index.html` — два новых canvas: `stochChart` и `vwapChart` в отдельной секции `charts-grid`
-   - `frontend/app.js` — функция `renderStochasticChart()` (рисует %K и %D с пунктирной линией %D), VWAP отрисовывается через `renderLineChart()` с цветом `#f59e0b`
-   - Горизонтальные уровни 20/80 для Stochastic (аналогично 30/70 для RSI) через inline-плагин в `chartOptions()`
+1. **Новый пакет `internal/httpserver/`** — REST API обёртка над MOEX-клиентом:
+   - `GET /api/health` — health check
+   - `GET /api/ticker/{symbol}` — котировка
+   - `GET /api/candles/{symbol}?period=3m` — свечи
+   - `GET /api/fundamentals/{symbol}` — фундаментальные данные
+   - `GET /api/search?q=` — поиск бумаг
+   - CORS middleware, JSON content-type
 
-2. **Исправлено дублирование секций в HTML**
-   - Удалены дубликаты: fundamentalsSection, metricsSection, portfolioSection, alertsSection (каждая секция была дважды)
-   - Добавлена отсутствовавшая секция `sectorsSection` (секторальная аналитика)
-   - HTML сократился с ~300 до ~230 строк
+2. **`main.go`** — два режима через флаг `-mode`:
+   - `stdio` (по умолчанию) — MCP JSON-RPC 2.0 для Claude Desktop/Cursor
+   - `http` — REST API для интеграции с другими сервисами
+   - Флаг `-addr` для адреса HTTP (по умолчанию `:8081`)
 
-3. **Исправлены дублированные функции в JS**
-   - Удалены вторые определения `exportReportPDF()` и `exportPortfolioPDF()` в конце `app.js`
+3. **`Dockerfile`** — добавлен `EXPOSE 8081`
+
+4. **10 новых тестов** (`internal/httpserver/server_test.go`) — health, ticker, candles, fundamentals, search, CORS, content-type, not-found, missing query
 
 ### Проверки
 
-- `node --check` — OK
-- `go test ./...` — все Go тесты PASS
-- `uv run pytest` — 297 passed, coverage 91.25%
-- Коммит `f029a0d` запушен в `origin/main`
+- moex-mcp: **28 Go тестов** PASS (10 httpserver + 10 mcp + 8 moex)
+- Python тесты агента: 297 PASS, coverage 91.25%
+- Коммит `27b90ac` запушен в `origin/main`
 
 ## Что важно для следующей сессии
 
-1. **Интеграция moex-mcp с foundation-finance** — заменить прямые вызовы MOEX ISS на MCP-клиент (следующий шаг из плана)
-2. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-3. **Docker Compose** — compose для moex-mcp + foundation-finance
+1. **Интеграция moex-mcp с foundation-finance** — заменить прямые вызовы MOEX ISS в `backend/internal/data/moex.go` на HTTP-клиент к moex-mcp. Это позволит:
+   - Единый источник данных (moex-mcp)
+   - Легче тестировать (mock одного сервиса)
+   - Docker Compose: два сервиса вместо прямых запросов к iss.moex.com
+
+2. **Docker Compose** — compose для moex-mcp + foundation-finance (moex-mcp на :8081, foundation-finance на :8080)
+
+3. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
 
 
 ---
@@ -236,6 +244,7 @@ _Заполни после учёта ответа._
 | 67 | PDF-экспорт (тикеры + портфель + LLM-отчёт) | `365fb42` |
 | 70 | Stochastic Oscillator + VWAP (10 новых тестов) | `6fff20a` |
 | 71 | Stochastic + VWAP графики на фронтенде + fix HTML duplicates | `f029a0d` |
+| 72 | moex-mcp: HTTP REST API режим (internal/httpserver, 10 тестов) | `27b90ac` |
 
 **Текущий статус:** ~235 Go тестов, версия фронтенда 1.0.0. Все шаги плана выполнены!
 
@@ -291,7 +300,7 @@ _Заполни после учёта ответа._
 
 ### Следующие шаги для moex-mcp
 
-1. **Интеграция с foundation-finance** — заменить прямые вызовы MOEX ISS на MCP-клиент
+1. **Интеграция с foundation-finance** — заменить прямые вызовы MOEX ISS на HTTP-клиент к moex-mcp
 2. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
 3. **Docker Compose** — compose для moex-mcp + foundation-finance
 4. **LLM-интеграция** — подключение к Claude Desktop / Cursor
@@ -491,7 +500,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 72. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0072`.
+Ты находишься в сессии 73. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0073`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

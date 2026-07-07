@@ -1,6 +1,6 @@
 # Текущий план
 
-**Обновлён:** сессия 66 (2026-07-07) — мобильная адаптивность
+**Обновлён:** сессия 73 (2026-07-07) — интеграция moex-mcp
 
 ---
 
@@ -53,8 +53,9 @@
 | 70 | Stochastic Oscillator + VWAP (10 новых тестов) | `6fff20a` |
 | 71 | Stochastic + VWAP графики на фронтенде + fix HTML duplicates | `f029a0d` |
 | 72 | moex-mcp: HTTP REST API режим (internal/httpserver, 10 тестов) | `27b90ac` |
+| 73 | moex-mcp + foundation-finance интеграция (MCPProvider, Docker Compose) | `41e2b7c` + `b996063` |
 
-**Текущий статус:** ~235 Go тестов, версия фронтенда 1.0.0. Все шаги плана выполнены!
+**Текущий статус:** ~255 Go тестов (foundation-finance) + 29 Go тестов (moex-mcp), версия фронтенда 1.0.0.
 
 ---
 
@@ -93,8 +94,10 @@
 ### Следующие шаги для foundation-finance
 
 1. ~~**Отображение Stochastic и VWAP на фронтенде**~~ ✅ — графики %K/%D и VWAP (сессия 71)
-2. **Интеграция moex-mcp** — заменить прямые вызовы MOEX ISS на MCP-клиент
-3. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+2. ~~**Интеграция moex-mcp**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
+3. **Docker Compose тест** — проверить `docker-compose up --build` на реальной машине
+4. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+5. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS
 
 ---
 
@@ -108,10 +111,11 @@
 
 ### Следующие шаги для moex-mcp
 
-1. **Интеграция с foundation-finance** — заменить прямые вызовы MOEX ISS на HTTP-клиент к moex-mcp
+1. ~~**Интеграция с foundation-finance**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
 2. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-3. **Docker Compose** — compose для moex-mcp + foundation-finance
-4. **LLM-интеграция** — подключение к Claude Desktop / Cursor
+3. **Кэширование** — in-memory кэш для запросов к MOEX ISS
+4. **MCP-инструмент для секторов** — добавить `get_sectors` в MCP JSON-RPC (пока только HTTP)
+5. **LLM-интеграция** — подключение к Claude Desktop / Cursor
 
 ---
 

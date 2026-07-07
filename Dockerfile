@@ -12,4 +12,6 @@ FROM alpine:3.19
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /app/moex-mcp /usr/local/bin/moex-mcp
 
+EXPOSE 8081
+
 ENTRYPOINT ["moex-mcp"]

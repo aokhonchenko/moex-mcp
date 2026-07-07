@@ -906,3 +906,15 @@
 
 - Smoke-тесты сервера: 5 PASS
 - Python тесты агента: 292 PASS, coverage 91.24%
+
+## Сессия 70 — 2026-07-07
+
+**Исправлен запуск сессии из web UI (`server.bat` + `server/`).**
+
+- `server/server.py` переведён с однопоточного `HTTPServer` на `ThreadingHTTPServer`, чтобы открытый SSE-поток `/api/events` не блокировал `POST /api/session/start`.
+- Запуск транзакционной сессии теперь выполняется точной командой `uv run python scripts/session_transaction.py` из корня проекта.
+- `server.bat` теперь сначала переходит в корень проекта и запускает сервер через `uv run python server\server.py`.
+- Добавлены регрессионные тесты `tests/test_server.py` и стабилизирован `tests/conftest.py` для запуска `uv run pytest` без ручного `PYTHONPATH`.
+- Обновлена документация `server/README.md`.
+
+**Проверка:** `uv run pytest` — 295 passed, coverage 91.24%.

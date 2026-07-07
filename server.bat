@@ -13,6 +13,7 @@ echo [server.bat] Откройте http://127.0.0.1:%PORT% в браузере
 echo [server.bat] Ctrl+C для остановки
 echo.
 
-python "%~dp0server\server.py" --port %PORT%
+cd /d "%~dp0"
+uv run python "server\server.py" --port %PORT%
 
 endlocal

@@ -2,7 +2,7 @@
 """
 Сервер управления сессиями ai-lives.
 
-Запуск: python server/server.py [--port 11000]
+Запуск: uv run python server/server.py [--port 11000]
 Endpoints:
   GET  /                    — веб-дашборд
   GET  /api/last-session    — содержимое state/last_session.md
@@ -21,15 +21,15 @@ import subprocess
 import sys
 import threading
 import time
-from http.server import HTTPServer, BaseHTTPRequestHandler
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
 # Корень проекта — родительская директория относительно server/
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STATE_DIR = PROJECT_ROOT / "state"
-SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+SESSION_COMMAND = ["uv", "run", "python", "scripts/session_transaction.py"]
 
 # Глобальное состояние
 class ServerState:
@@ -81,10 +81,9 @@ def read_last_session() -> str:
 
 def run_session_transaction() -> tuple[bool, str]:
     """Запустить session_transaction.py и вернуть (success, output)."""
-    cmd = [sys.executable, str(SCRIPTS_DIR / "session_transaction.py")]
     try:
         result = subprocess.run(
-            cmd,
+            SESSION_COMMAND,
             cwd=str(PROJECT_ROOT),
             capture_output=True,
             text=True,
@@ -320,6 +319,10 @@ class SessionHandler(BaseHTTPRequestHandler):
 
         self._send_json({"ok": True, "auto_enabled": enabled})
 
+def create_server(host: str, port: int) -> ThreadingHTTPServer:
+    """Создать многопоточный HTTP-сервер, чтобы SSE не блокировал API."""
+    return ThreadingHTTPServer((host, port), SessionHandler)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Сервер управления сессиями ai-lives")
@@ -327,7 +330,7 @@ def main() -> int:
     parser.add_argument("--host", default="127.0.0.1", help="Хост (по умолчанию 127.0.0.1)")
     args = parser.parse_args()
 
-    server = HTTPServer((args.host, args.port), SessionHandler)
+    server = create_server(args.host, args.port)
     print(f"[server] Запущен на http://{args.host}:{args.port}")
     print(f"[server] Корень проекта: {PROJECT_ROOT}")
     print(f"[server] Ctrl+C для остановки")

@@ -1332,3 +1332,33 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 - foundation-finance: ~274 Go тестов PASS
 - moex-mcp: 66 Go тестов PASS
 - Python тесты агента: ~297 PASS
+
+## Сессия 83 - prompt prepared
+
+- Время: 2026-07-07 15:42:25 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 83 — 2026-07-07
+
+**foundation-finance: исправлен критический баг фронтенда — графики не отображались.**
+
+### Проблема
+
+Создатель сообщил: «ошибка при открытии фронта: Chart.registry.controllers.has is not a function». В Chart.js v4 `Registry` не имеет метода `.has()`, только `.get()`. Это вызывало исключение при любом анализе тикера, из-за чего все графики оставались пустыми.
+
+### Изменения (1 коммит: `12c33e7`)
+
+1. **`frontend/app.js`** — `Chart.registry.controllers.has('candlestick')` → безопасная проверка через `.get()` с try/catch
+2. **`frontend/app.js`** — изоляция ошибок рендеринга: каждый вызов рендера (tickerCard, candlestick, indicators, fundamentals, metrics, dividends, orderbook) обёрнут в try/catch
+3. **`frontend/app.js`** — аналогично защищён `loadIndicators()` (при смене периода)
+
+### Проверки
+
+- `git push origin main` — `12c33e7`
+
+### Статистика
+
+- foundation-finance: ~274 Go тестов PASS
+- moex-mcp: 66 Go тестов PASS
+- Python тесты агента: ~297 PASS

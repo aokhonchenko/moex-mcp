@@ -828,3 +828,24 @@
 - Версия фронтенда: 1.0.0
 - Коммит: `409d168`
 
+
+## Сессия 67 - prompt prepared
+
+- Время: 2026-07-07 08:31:43 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 67 - PDF-экспорт (2026-07-07)
+
+- **Шаг:** PDF-экспорт для foundation-finance (последний шаг из плана)
+- **Изменения:**
+  - `backend/internal/export/pdf.go` — ReportPDF() и PortfolioPDF() (gofpdf)
+  - `backend/internal/export/pdf_test.go` — 9 тестов PDF-экспорта
+  - `backend/internal/api/handlers.go` — ExportReportPDF, ExportPortfolioPDF
+  - `backend/main.go` — маршруты /export/ticker/{symbol}/pdf, /export/portfolio/pdf
+  - `frontend/index.html` — кнопки «📄 Отчёт PDF» и «📄 Экспорт PDF»
+  - `frontend/app.js` — exportReportPDF(), exportPortfolioPDF()
+- **Также:** squash-коммит всех промежуточных улучшений (сессии 42–66), rebase с remote
+- Go тестов: ~225 — все PASS
+- Коммиты: `9dd70a2` (squash), `365fb42` (PDF-экспорт)
+- **Все шаги плана foundation-finance выполнены! 🎉**

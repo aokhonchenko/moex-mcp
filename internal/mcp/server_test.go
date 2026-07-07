@@ -347,3 +347,32 @@ func TestToolCallIndex(t *testing.T) {
 		t.Fatal("expected non-empty text")
 	}
 }
+
+func TestToolCallSectors(t *testing.T) {
+	s, srv := newTestServer(t)
+	defer srv.Close()
+
+	req := makeRequest("tools/call", map[string]interface{}{
+		"name":      "moex_sectors",
+		"arguments": map[string]interface{}{},
+	})
+	resp := s.HandleRequest(req)
+
+	if resp == nil {
+		t.Fatal("expected response")
+	}
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %s", resp.Error.Message)
+	}
+
+	result := resp.Result.(map[string]interface{})
+	if result["isError"] != nil {
+		t.Fatal("expected success, got error")
+	}
+
+	content := result["content"].([]map[string]interface{})
+	text := content[0]["text"].(string)
+	if text == "" {
+		t.Fatal("expected non-empty text")
+	}
+}

@@ -56,6 +56,21 @@ func mockMOEXServer() *httptest.Server {
 				fmt.Fprint(w, `{"securities":{"columns":["SECID","SHORTNAME","SECTYPE","ISIN"],"data":[]}}`)
 			}
 
+		// Sectors: /iss/engines/stock/markets/shares/boards/TQBR/securities.json
+		case r.URL.Path == "/iss/engines/stock/markets/shares/boards/TQBR/securities.json":
+			fmt.Fprint(w, `{
+				"securities":{"columns":["SECID","SHORTNAME","SECTYPE","SECTORID"],"data":[
+					["SBER","Сбербанк","1","Financial"],
+					["GAZP","Газпром","1","Oil and Gas"],
+					["LKOH","Лукойл","1","Oil and Gas"]
+				]},
+				"marketdata":{"columns":["SECID","LAST","CHANGE","LASTCHANGEPRCNT","VALTODAY"],"data":[
+					["SBER",300.5,2.52,0.8456,5800000000],
+					["GAZP",180.0,-1.5,-0.8264,3200000000],
+					["LKOH",6500.0,50.0,0.7752,2100000000]
+				]}
+			}`)
+
 		default:
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, `{"error":"not found"}`)
@@ -313,5 +328,55 @@ func TestContentType(t *testing.T) {
 	ct := resp.Header.Get("Content-Type")
 	if ct != "application/json; charset=utf-8" {
 		t.Errorf("expected application/json; charset=utf-8, got %s", ct)
+	}
+}
+
+func TestSectors(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/sectors")
+	if err != nil {
+		t.Fatalf("sectors request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var sectors []moex.SectorGroup
+	json.NewDecoder(resp.Body).Decode(&sectors)
+
+	if len(sectors) != 2 {
+		t.Fatalf("expected 2 sectors, got %d", len(sectors))
+	}
+
+	// Проверяем что есть Financial и Oil and Gas
+	sectorMap := make(map[string]moex.SectorGroup)
+	for _, s := range sectors {
+		sectorMap[s.SectorID] = s
+	}
+
+	fin, ok := sectorMap["Financial"]
+	if !ok {
+		t.Fatal("expected Financial sector")
+	}
+	if fin.Count != 1 {
+		t.Errorf("expected 1 item in Financial, got %d", fin.Count)
+	}
+	if fin.SectorName != "Финансовый сектор" {
+		t.Errorf("expected Финансовый сектор, got %s", fin.SectorName)
+	}
+
+	oil, ok := sectorMap["Oil and Gas"]
+	if !ok {
+		t.Fatal("expected Oil and Gas sector")
+	}
+	if oil.Count != 2 {
+		t.Errorf("expected 2 items in Oil and Gas, got %d", oil.Count)
 	}
 }

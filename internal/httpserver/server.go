@@ -30,6 +30,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/candles/", s.handleCandles)
 	mux.HandleFunc("/api/fundamentals/", s.handleFundamentals)
 	mux.HandleFunc("/api/search", s.handleSearch)
+	mux.HandleFunc("/api/sectors", s.handleSectors)
 
 	return withCORS(withJSON(mux))
 }
@@ -38,7 +39,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{
 		"status":  "ok",
 		"service": "moex-mcp",
-		"version": "0.2.0",
+		"version": "0.3.0",
 	})
 }
 
@@ -108,6 +109,17 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	data, err := s.client.SearchSecurities(query)
 	if err != nil {
 		s.logger.Printf("search error: %v", err)
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, data)
+}
+
+func (s *Server) handleSectors(w http.ResponseWriter, r *http.Request) {
+	data, err := s.client.GetSectors()
+	if err != nil {
+		s.logger.Printf("sectors error: %v", err)
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
 	}

@@ -28,14 +28,14 @@ func NewClient(board string) *Client {
 
 // TickerData — рыночная котировка.
 type TickerData struct {
-	Symbol         string  `json:"symbol"`
-	Name           string  `json:"name"`
-	Price          float64 `json:"price"`
-	Change         float64 `json:"change"`
-	ChangePercent  float64 `json:"change_percent"`
-	Volume         int64   `json:"volume"`
-	MarketCap      int64   `json:"market_cap"`
-	UpdatedAt      string  `json:"updated_at"`
+	Symbol        string  `json:"symbol"`
+	Name          string  `json:"name"`
+	Price         float64 `json:"price"`
+	Change        float64 `json:"change"`
+	ChangePercent float64 `json:"change_percent"`
+	Volume        int64   `json:"volume"`
+	MarketCap     int64   `json:"market_cap"`
+	UpdatedAt     string  `json:"updated_at"`
 }
 
 // OHLCV — свеча.
@@ -101,6 +101,22 @@ type issResponse struct {
 		Columns []string        `json:"columns"`
 		Data    [][]interface{} `json:"data"`
 	} `json:"candles"`
+}
+
+// sectorNames — маппинг SECTORID MOEX на читаемые названия секторов.
+var sectorNames = map[string]string{
+	"Financial":    "Финансовый сектор",
+	"Oil and Gas":  "Нефтегазовый сектор",
+	"Consumer":     "Потребительский сектор",
+	"Electric":     "Электроэнергетика",
+	"Metals":       "Металлургия",
+	"Telecom":      "Телекоммуникации",
+	"Chemicals":    "Химическая промышленность",
+	"Construction": "Строительство",
+	"Transport":    "Транспорт",
+	"Technology":   "Технологии",
+	"Real Estate":  "Недвижимость",
+	"Other":        "Прочие",
 }
 
 // GetTicker получает текущую котировку.
@@ -259,6 +275,93 @@ func (c *Client) SearchSecurities(query string) ([]SearchResult, error) {
 	}
 
 	return results, nil
+}
+
+// GetSectors возвращает секторальную аналитику — группировку бумаг по секторам MOEX.
+func (c *Client) GetSectors() ([]SectorGroup, error) {
+	url := fmt.Sprintf(
+		"%s/iss/engines/stock/markets/shares/boards/%s/securities.json?iss.meta=off&iss.only=securities,marketdata",
+		c.BaseURL, c.board,
+	)
+
+	var resp issResponse
+	if err := c.doGet(url, &resp); err != nil {
+		return nil, err
+	}
+
+	// Собираем marketdata в map по SECID
+	mdBySymbol := make(map[string]map[string]interface{})
+	for _, row := range resp.Marketdata.Data {
+		m := columnsToMap(resp.Marketdata.Columns, row)
+		secid := getString(m, "SECID")
+		if secid != "" {
+			mdBySymbol[secid] = m
+		}
+	}
+
+	// Группируем бумаги по секторам
+	sectorMap := make(map[string]*SectorGroup)
+
+	for _, row := range resp.Securities.Data {
+		m := columnsToMap(resp.Securities.Columns, row)
+		secid := getString(m, "SECID")
+		if secid == "" {
+			continue
+		}
+		secType := getString(m, "SECTYPE")
+		if secType != "1" && secType != "2" {
+			continue // только акции и паи
+		}
+
+		sectorID := getString(m, "SECTORID")
+		if sectorID == "" {
+			sectorID = "Other"
+		}
+
+		group, ok := sectorMap[sectorID]
+		if !ok {
+			name := sectorID
+			if n, exists := sectorNames[sectorID]; exists {
+				name = n
+			}
+			group = &SectorGroup{
+				SectorID:   sectorID,
+				SectorName: name,
+				Items:      make([]SectorInfo, 0),
+			}
+			sectorMap[sectorID] = group
+		}
+
+		info := SectorInfo{
+			Symbol: secid,
+			Name:   getString(m, "SHORTNAME"),
+		}
+
+		if md, ok := mdBySymbol[secid]; ok {
+			info.Price = getFloat(md, "LAST")
+			info.Change = getFloat(md, "CHANGE")
+			info.ChangePct = getFloat(md, "LASTCHANGEPRCNT")
+			info.Volume = getInt64(md, "VALTODAY")
+		}
+
+		group.Items = append(group.Items, info)
+		group.Count++
+	}
+
+	// Считаем среднее изменение по секторам
+	result := make([]SectorGroup, 0, len(sectorMap))
+	for _, group := range sectorMap {
+		if group.Count > 0 {
+			var sumChange float64
+			for _, item := range group.Items {
+				sumChange += item.ChangePct
+			}
+			group.AvgChange = sumChange / float64(group.Count)
+		}
+		result = append(result, *group)
+	}
+
+	return result, nil
 }
 
 // doGet выполняет GET-запрос и декодирует JSON.

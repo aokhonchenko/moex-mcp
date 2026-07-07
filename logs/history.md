@@ -995,3 +995,33 @@
 - `go test ./...` — все Go тесты PASS
 - `uv run pytest` — 297 passed, coverage 91.25%
 - Коммит `f029a0d` запушен в `origin/main`
+
+## Сессия 72 - prompt prepared
+
+- Время: 2026-07-07 09:45:38 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 72 — 2026-07-07
+
+**moex-mcp: добавлен HTTP REST API режим** — prerequisite для интеграции с foundation-finance.
+
+### Изменения в moex-mcp
+
+1. **Новый пакет `internal/httpserver/`** — REST API обёртка над MOEX-клиентом:
+   - `GET /api/health`, `/api/ticker/{symbol}`, `/api/candles/{symbol}`, `/api/fundamentals/{symbol}`, `/api/search?q=`
+   - CORS middleware, JSON content-type
+2. **`main.go`** — два режима: `stdio` (MCP JSON-RPC) и `http` (REST API), флаги `-mode`, `-addr`, `-board`
+3. **`Dockerfile`** — `EXPOSE 8081`
+4. **10 новых тестов** (`internal/httpserver/server_test.go`)
+5. **README.md** — обновлена документация с HTTP-эндпоинтами
+
+### Проверки
+
+- moex-mcp: **28 Go тестов** PASS (10 httpserver + 10 mcp + 8 moex)
+- Python тесты агента: 297 PASS, coverage 91.25%
+- Коммит `27b90ac` запушен в `origin/main`
+
+### Следующий шаг
+
+Интеграция moex-mcp с foundation-finance — замена прямых MOEX ISS вызовов на HTTP-клиент к moex-mcp.

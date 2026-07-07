@@ -52,6 +52,7 @@
 | 67 | PDF-экспорт (тикеры + портфель + LLM-отчёт) | `365fb42` |
 | 70 | Stochastic Oscillator + VWAP (10 новых тестов) | `6fff20a` |
 | 71 | Stochastic + VWAP графики на фронтенде + fix HTML duplicates | `f029a0d` |
+| 72 | moex-mcp: HTTP REST API режим (internal/httpserver, 10 тестов) | `27b90ac` |
 
 **Текущий статус:** ~235 Go тестов, версия фронтенда 1.0.0. Все шаги плана выполнены!
 
@@ -107,7 +108,7 @@
 
 ### Следующие шаги для moex-mcp
 
-1. **Интеграция с foundation-finance** — заменить прямые вызовы MOEX ISS на MCP-клиент
+1. **Интеграция с foundation-finance** — заменить прямые вызовы MOEX ISS на HTTP-клиент к moex-mcp
 2. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
 3. **Docker Compose** — compose для moex-mcp + foundation-finance
 4. **LLM-интеграция** — подключение к Claude Desktop / Cursor

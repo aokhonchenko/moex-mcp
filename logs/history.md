@@ -781,3 +781,26 @@
 - `read_file_info()` возвращает структурированную ошибку для директории вместо попытки открыть её как файл.
 - `tests/test_reader_directories.py`: добавлены регрессионные тесты на директории, включая сценарий `reader(mode='pattern', path='projects/foundation-finance/backend/internal/export', pattern='func')`.
 - Проверки: целевые тесты `47 passed`; полный Python-набор `292 passed`, покрытие `91.24%`.
+
+## Сессия 65 - prompt prepared
+
+- Время: 2026-07-07 08:19:02 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 65 — 2026-07-07 (продолжение)
+
+**Переключатель тёмной/светлой темы для foundation-finance.**
+
+### Создано/изменено
+
+1. **`frontend/style.css`** — CSS-переменные для светлой темы `[data-theme="light"]` (10 переменных), стили `.header-top`, `.theme-toggle`, `--shadow` для box-shadow
+2. **`frontend/index.html`** — header обёрнут в `.header-top`, кнопка переключения темы (🌙/☀️)
+3. **`frontend/app.js`** — `initTheme()`, `toggleTheme()`, `updateThemeButton()`, `getThemeColors()`; все графики используют тематические цвета
+
+### Статистика
+
+- Go тестов: **216** — все PASS
+- Python тестов: 290 — все PASS
+- Версия фронтенда: 1.0.0
+- Коммит: `e8a32e0`

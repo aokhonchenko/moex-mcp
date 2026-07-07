@@ -1,6 +1,6 @@
 # Текущий план
 
-**Обновлён:** сессия 76 (2026-07-07) — кэширование moex-mcp + индексы
+**Обновлён:** сессия 78 (2026-07-07) — дивиденды + стакан заявок
 
 ---
 
@@ -58,8 +58,9 @@
 | 75 | moex-mcp: секторы через секторальные индексы MOEX (10 индексов, 31 тест) | `95826ca` |
 | 76 | moex-mcp: in-memory cache (56 тестов) + moex_sectors MCP + индексы на фронтенде | `b9aa3ac` + `e7fe993` |
 | 77 | CachedProvider.GetIndex() + indices in cache stats (7 новых тестов) | `882ff5b` |
+| 78 | moex-mcp: дивиденды + стакан заявок + интеграция (10+8 тестов) | `ce56694` + `a4ffcfc` |
 
-**Текущий статус:** ~262 Go тестов (foundation-finance) + 56 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
+**Текущий статус:** ~270 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
 
 ---
 
@@ -103,9 +104,10 @@
 4. ~~**Исправить маппинг секторов**~~ ✅ — секторы через состав секторальных индексов MOEX (сессия 75)
 5. ~~**Индексы MOEX на фронтенде**~~ ✅ — IMOEX, RTSI через moex-mcp (сессия 76)
 6. ~~**CachedProvider для GetIndex**~~ ✅ — кэширование индексов в foundation-finance (сессия 77)
-7. **Docker Compose тест** — пересобрать оба сервиса с кэшированием индексов
-8. **moex-mcp: дивиденды** — endpoint `/api/dividends/{symbol}`
-9. **moex-mcp: стакан заявок** — endpoint `/api/orderbook/{symbol}`
+7. ~~**moex-mcp: дивиденды**~~ ✅ — endpoint `/api/dividends/{symbol}` + интеграция (сессия 78)
+8. ~~**moex-mcp: стакан заявок**~~ ✅ — endpoint `/api/orderbook/{symbol}` + интеграция (сессия 78)
+9. **Docker Compose тест** — пересобрать оба сервиса и проверить работу
+10. **Фронтенд: дивиденды и стакан** — отобразить на UI
 
 ---
 
@@ -124,8 +126,8 @@
 3. ~~**Расширение инструментов**~~ ✅ — индексы IMOEX/RTSI (сессия 72) + moex_sectors MCP (сессия 76)
 4. ~~**Кэширование**~~ ✅ — in-memory cache с TTL для всех запросов (сессия 76)
 5. ~~**MCP-инструмент для секторов**~~ ✅ — `moex_sectors` в JSON-RPC (сессия 76)
-6. **Дивиденды** — endpoint `/api/dividends/{symbol}` (ISS API: /iss/dividends.json)
-7. **Стакан заявок** — endpoint `/api/orderbook/{symbol}`
+6. ~~**Дивиденды**~~ ✅ — endpoint `/api/dividends/{symbol}` + MCP `moex_dividends` (сессия 78)
+7. ~~**Стакан заявок**~~ ✅ — endpoint `/api/orderbook/{symbol}` + MCP `moex_orderbook` (сессия 78)
 8. **LLM-интеграция** — подключение к Claude Desktop / Cursor
 
 ---

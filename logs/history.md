@@ -1178,3 +1178,38 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 
 - foundation-finance Go тесты: ~262 — все PASS
 - Python тесты агента: ~297 PASS
+
+## Сессия 78 - prompt prepared
+
+- Время: 2026-07-07 12:24:19 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 78 — 2026-07-07
+
+**moex-mcp: дивиденды + стакан заявок + интеграция с foundation-finance.**
+
+### moex-mcp (1 коммит: `ce56694`)
+
+1. **GetDividends(symbol)** — `/iss/securities/{symbol}/dividends.json`, кэш 1 час
+2. **GetOrderBook(symbol)** — `/iss/.../orderbook.json`, кэш 10 сек, группировка по цене
+3. **HTTP**: `/api/dividends/{symbol}`, `/api/orderbook/{symbol}`
+4. **MCP**: `moex_dividends`, `moex_orderbook` (8 инструментов)
+5. **Fix**: дублированный `return` в `GetFundamentals`
+6. **10 новых тестов** — всего 66 Go тестов
+
+### foundation-finance (1 коммит: `a4ffcfc`)
+
+1. Модели: `DividendData`, `OrderBookEntry`, `OrderBookData`
+2. `MCPProvider`: `GetDividends()`, `GetOrderBook()`
+3. `CachedProvider`: `dividendsCache` (1ч), `orderbookCache` (10с)
+4. `Stats()` → 7 значений (добавлены dividends, orderbook)
+5. Handlers: `/api/dividends/{symbol}`, `/api/orderbook/{symbol}`
+6. 8 новых тестов кэширования
+7. Все тесты проходят
+
+### Статистика
+
+- moex-mcp: 66 Go тестов PASS
+- foundation-finance: ~270 Go тестов PASS
+- Python тесты агента: ~297 PASS

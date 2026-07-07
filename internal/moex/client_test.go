@@ -118,6 +118,21 @@ func mockMOEXServer() *httptest.Server {
 		json.NewEncoder(w).Encode(resp)
 	})
 
+	// /iss/engines/stock/markets/index/securities/IMOEX.json
+	mux.HandleFunc("/iss/engines/stock/markets/index/securities/IMOEX.json", func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"securities": map[string]interface{}{
+				"columns": []string{"SECID", "SHORTNAME", "PREVLEGALCLOSEPRICE"},
+				"data":    [][]interface{}{{"IMOEX", "Индекс Мосбиржи", 2800.5}},
+			},
+			"marketdata": map[string]interface{}{
+				"columns": []string{"SECID", "LAST", "CHANGE", "LASTCHANGEPRCNT", "HIGH", "LOW", "OPEN"},
+				"data":    [][]interface{}{{"IMOEX", 2815.3, 14.8, 0.53, 2820.0, 2790.0, 2800.5}},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
 	return httptest.NewServer(mux)
 }
 
@@ -353,5 +368,61 @@ func TestNewClientCustomBoard(t *testing.T) {
 	c := NewClient("TQBS")
 	if c.board != "TQBS" {
 		t.Errorf("expected TQBS, got %s", c.board)
+	}
+}
+
+func TestGetIndex(t *testing.T) {
+	srv := mockMOEXServer()
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	idx, err := c.GetIndex("IMOEX")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if idx.Symbol != "IMOEX" {
+		t.Errorf("expected IMOEX, got %s", idx.Symbol)
+	}
+	if idx.Name != "Индекс Мосбиржи" {
+		t.Errorf("expected 'Индекс Мосбиржи', got %s", idx.Name)
+	}
+	if idx.Value != 2815.3 {
+		t.Errorf("expected value 2815.3, got %f", idx.Value)
+	}
+	if idx.Change != 14.8 {
+		t.Errorf("expected change 14.8, got %f", idx.Change)
+	}
+	if idx.ChangePercent != 0.53 {
+		t.Errorf("expected change_percent 0.53, got %f", idx.ChangePercent)
+	}
+	if idx.High != 2820.0 {
+		t.Errorf("expected high 2820.0, got %f", idx.High)
+	}
+	if idx.Low != 2790.0 {
+		t.Errorf("expected low 2790.0, got %f", idx.Low)
+	}
+	if idx.Open != 2800.5 {
+		t.Errorf("expected open 2800.5, got %f", idx.Open)
+	}
+}
+
+func TestGetIndexNotFound(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"securities":  map[string]interface{}{"columns": []string{}, "data": [][]interface{}{}},
+			"marketdata":  map[string]interface{}{"columns": []string{}, "data": [][]interface{}{}},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	_, err := c.GetIndex("UNKNOWN")
+	if err == nil {
+		t.Fatal("expected error for missing index")
 	}
 }

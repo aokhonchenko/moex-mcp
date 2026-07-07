@@ -56,6 +56,19 @@ func newTestServer(t *testing.T) (*Server, *httptest.Server) {
 		})
 	})
 
+	mux.HandleFunc("/iss/engines/stock/markets/index/securities/IMOEX.json", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"securities": map[string]interface{}{
+				"columns": []string{"SECID", "SHORTNAME", "PREVLEGALCLOSEPRICE"},
+				"data":    [][]interface{}{{"IMOEX", "Индекс Мосбиржи", 2800.5}},
+			},
+			"marketdata": map[string]interface{}{
+				"columns": []string{"SECID", "LAST", "CHANGE", "LASTCHANGEPRCNT", "HIGH", "LOW", "OPEN"},
+				"data":    [][]interface{}{{"IMOEX", 2815.3, 14.8, 0.53, 2820.0, 2790.0, 2800.5}},
+			},
+		})
+	})
+
 	srv := httptest.NewServer(mux)
 
 	client := moex.NewClient("")
@@ -118,8 +131,8 @@ func TestToolsList(t *testing.T) {
 	result := resp.Result.(map[string]interface{})
 	tools := result["tools"].([]map[string]interface{})
 
-	if len(tools) != 4 {
-		t.Fatalf("expected 4 tools, got %d", len(tools))
+	if len(tools) != 5 {
+		t.Fatalf("expected 5 tools, got %d", len(tools))
 	}
 
 	names := make(map[string]bool)
@@ -127,7 +140,7 @@ func TestToolsList(t *testing.T) {
 		names[tool["name"].(string)] = true
 	}
 
-	for _, expected := range []string{"moex_ticker", "moex_candles", "moex_fundamentals", "moex_search"} {
+	for _, expected := range []string{"moex_ticker", "moex_candles", "moex_fundamentals", "moex_search", "moex_index"} {
 		if !names[expected] {
 			t.Errorf("missing tool: %s", expected)
 		}
@@ -282,5 +295,31 @@ func TestToolCallSearch(t *testing.T) {
 	}
 	if resp.Error != nil {
 		t.Fatalf("unexpected error: %s", resp.Error.Message)
+	}
+}
+
+func TestToolCallIndex(t *testing.T) {
+	s, srv := newTestServer(t)
+	defer srv.Close()
+
+	req := makeRequest("tools/call", map[string]interface{}{
+		"name":      "moex_index",
+		"arguments": map[string]interface{}{"symbol": "IMOEX"},
+	})
+	resp := s.HandleRequest(req)
+
+	if resp == nil {
+		t.Fatal("expected response")
+	}
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %s", resp.Error.Message)
+	}
+
+	result := resp.Result.(map[string]interface{})
+	content := result["content"].([]map[string]interface{})
+	text := content[0]["text"].(string)
+
+	if text == "" {
+		t.Fatal("expected non-empty text")
 	}
 }

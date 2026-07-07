@@ -31,6 +31,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/fundamentals/", s.handleFundamentals)
 	mux.HandleFunc("/api/search", s.handleSearch)
 	mux.HandleFunc("/api/sectors", s.handleSectors)
+	mux.HandleFunc("/api/index/", s.handleIndex)
 
 	return withCORS(withJSON(mux))
 }
@@ -120,6 +121,23 @@ func (s *Server) handleSectors(w http.ResponseWriter, r *http.Request) {
 	data, err := s.client.GetSectors()
 	if err != nil {
 		s.logger.Printf("sectors error: %v", err)
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, data)
+}
+
+func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
+	symbol := extractPathParam(r.URL.Path, "/api/index/")
+	if symbol == "" {
+		writeError(w, http.StatusBadRequest, "symbol is required")
+		return
+	}
+
+	data, err := s.client.GetIndex(symbol)
+	if err != nil {
+		s.logger.Printf("index error: %v", err)
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
 	}

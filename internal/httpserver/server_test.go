@@ -88,6 +88,13 @@ func mockMOEXServer() *httptest.Server {
 				]}
 			}`)
 
+		// Index: /iss/engines/stock/markets/index/securities/IMOEX.json
+		case r.URL.Path == "/iss/engines/stock/markets/index/securities/IMOEX.json":
+			fmt.Fprint(w, `{
+				"securities":{"columns":["SECID","SHORTNAME","PREVLEGALCLOSEPRICE"],"data":[["IMOEX","Индекс Мосбиржи",2800.5]]},
+				"marketdata":{"columns":["SECID","LAST","CHANGE","LASTCHANGEPRCNT","HIGH","LOW","OPEN"],"data":[["IMOEX",2815.3,14.8,0.53,2820.0,2790.0,2800.5]]}
+			}`)
+
 		default:
 			w.WriteHeader(http.StatusNotFound)
 			fmt.Fprint(w, `{"error":"not found"}`)
@@ -392,5 +399,57 @@ func TestSectors(t *testing.T) {
 	}
 	if oil.Count != 2 {
 		t.Errorf("expected 2 items in Нефтегазовый сектор, got %d", oil.Count)
+	}
+}
+
+func TestIndex(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/index/IMOEX")
+	if err != nil {
+		t.Fatalf("index request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var idx moex.IndexData
+	json.NewDecoder(resp.Body).Decode(&idx)
+
+	if idx.Symbol != "IMOEX" {
+		t.Errorf("expected symbol IMOEX, got %s", idx.Symbol)
+	}
+	if idx.Value != 2815.3 {
+		t.Errorf("expected value 2815.3, got %f", idx.Value)
+	}
+	if idx.Change != 14.8 {
+		t.Errorf("expected change 14.8, got %f", idx.Change)
+	}
+	if idx.High != 2820.0 {
+		t.Errorf("expected high 2820.0, got %f", idx.High)
+	}
+}
+
+func TestIndexEmpty(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/index/")
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}
 }

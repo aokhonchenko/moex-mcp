@@ -1,4 +1,5 @@
 
+ 
 package moex
 
 import (
@@ -93,6 +94,19 @@ type SectorInfo struct {
 	Change    float64 `json:"change"`
 	ChangePct float64 `json:"change_pct"`
 	Volume    int64   `json:"volume"`
+}
+
+// IndexData — данные по индексу MOEX.
+type IndexData struct {
+	Symbol        string  `json:"symbol"`
+	Name          string  `json:"name"`
+	Value         float64 `json:"value"`
+	Change        float64 `json:"change"`
+	ChangePercent float64 `json:"change_percent"`
+	High          float64 `json:"high"`
+	Low           float64 `json:"low"`
+	Open          float64 `json:"open"`
+	UpdatedAt     string  `json:"updated_at"`
 }
 
 // issResponse — обобщённый ответ ISS.
@@ -416,6 +430,46 @@ func (c *Client) GetSectors() ([]SectorGroup, error) {
 	}
 
 	return result, nil
+}
+
+// GetIndex получает данные по индексу MOEX (IMOEX, RTSI и др.).
+// Использует эндпоинт /iss/engines/stock/markets/index/securities/{symbol}.json
+func (c *Client) GetIndex(symbol string) (*IndexData, error) {
+	url := fmt.Sprintf(
+		"%s/iss/engines/stock/markets/index/securities/%s.json?iss.meta=off",
+		c.BaseURL, symbol,
+	)
+
+	var resp issResponse
+	if err := c.doGet(url, &resp); err != nil {
+		return nil, err
+	}
+
+	if len(resp.Securities.Data) == 0 {
+		return nil, fmt.Errorf("нет данных для индекса %s", symbol)
+	}
+
+	sec := columnsToMap(resp.Securities.Columns, resp.Securities.Data[0])
+
+	idx := &IndexData{
+		Symbol:    symbol,
+		Name:      getString(sec, "SHORTNAME"),
+		UpdatedAt: time.Now().Format(time.RFC3339),
+	}
+
+	if len(resp.Marketdata.Data) > 0 {
+		md := columnsToMap(resp.Marketdata.Columns, resp.Marketdata.Data[0])
+		idx.Value = getFloat(md, "LAST")
+		idx.Change = getFloat(md, "CHANGE")
+		idx.ChangePercent = getFloat(md, "LASTCHANGEPRCNT")
+		idx.High = getFloat(md, "HIGH")
+		idx.Low = getFloat(md, "LOW")
+		idx.Open = getFloat(md, "OPEN")
+	} else {
+		idx.Value = getFloat(sec, "PREVLEGALCLOSEPRICE")
+	}
+
+	return idx, nil
 }
 
 // doGet выполняет GET-запрос и декодирует JSON.

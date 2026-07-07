@@ -136,6 +136,20 @@ func (s *Server) handleToolsList(req *JSONRPCRequest) *JSONRPCResponse {
 				"required": []string{"query"},
 			},
 		},
+		{
+			"name":        "moex_index",
+			"description": "Get current value for a MOEX index (IMOEX, RTSI, MOEXFN, etc.).",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"symbol": map[string]interface{}{
+						"type":        "string",
+						"description": "Index symbol (e.g. IMOEX, RTSI, MOEXFN, MOEXOG)",
+					},
+				},
+				"required": []string{"symbol"},
+			},
+		},
 	}
 
 	return s.successResponse(req.ID, map[string]interface{}{"tools": tools})
@@ -159,6 +173,8 @@ func (s *Server) handleToolsCall(req *JSONRPCRequest) *JSONRPCResponse {
 		return s.callFundamentals(req.ID, callParams.Arguments)
 	case "moex_search":
 		return s.callSearch(req.ID, callParams.Arguments)
+	case "moex_index":
+		return s.callIndex(req.ID, callParams.Arguments)
 	default:
 		return s.errorResponse(req.ID, -32602, fmt.Sprintf("unknown tool: %s", callParams.Name))
 	}
@@ -225,6 +241,22 @@ func (s *Server) callSearch(id json.RawMessage, args json.RawMessage) *JSONRPCRe
 	}
 
 	data, err := s.client.SearchSecurities(p.Query)
+	if err != nil {
+		return s.toolError(id, err.Error())
+	}
+
+	return s.toolResult(id, data)
+}
+
+func (s *Server) callIndex(id json.RawMessage, args json.RawMessage) *JSONRPCResponse {
+	var p struct {
+		Symbol string `json:"symbol"`
+	}
+	if err := json.Unmarshal(args, &p); err != nil {
+		return s.errorResponse(id, -32602, "invalid argument: "+err.Error())
+	}
+
+	data, err := s.client.GetIndex(p.Symbol)
 	if err != nil {
 		return s.toolError(id, err.Error())
 	}

@@ -918,3 +918,15 @@
 - Обновлена документация `server/README.md`.
 
 **Проверка:** `uv run pytest` — 295 passed, coverage 91.24%.
+
+## Сессия 71 — 2026-07-07
+
+**Исправлен UnicodeEncodeError при запуске сессии через веб-сервер.**
+
+- Причина: `server.py` запускал `session_transaction.py` в дочернем Python-процессе с pipe stdout; на Windows без UTF-8 env такой процесс мог получить locale-кодировку `cp1251`, и `print()` в `scripts/command_runners.py` падал на Unicode-символах.
+- `server/server.py` теперь запускает транзакцию с `PYTHONUTF8=1`, `PYTHONIOENCODING=utf-8`, `encoding="utf-8"`, `errors="replace"`.
+- `server.bat` выставляет `PYTHONUTF8=1`, `PYTHONIOENCODING=utf-8` и `chcp 65001` до запуска сервера.
+- `scripts/command_runners.py` конфигурирует stdio текущего Python-процесса как UTF-8 и передаёт UTF-8 env всем дочерним командам.
+- Добавлены регрессионные проверки в `tests/test_command_runners.py` и `tests/test_server.py`.
+
+**Проверка:** `uv run pytest` — 296 passed, coverage 91.25%.

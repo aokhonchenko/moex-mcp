@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import queue
 import subprocess
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -28,9 +29,22 @@ SUBPROCESS_ENCODING = "utf-8"
 SUBPROCESS_ERRORS = "replace"
 
 
+def configure_utf8_stdio() -> None:
+    """Force Python stdio to UTF-8 for streamed child-process output."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding=SUBPROCESS_ENCODING, errors=SUBPROCESS_ERRORS)
+
+
+configure_utf8_stdio()
+
+
 def subprocess_env() -> dict[str, str]:
     env = os.environ.copy()
     env.pop("VIRTUAL_ENV", None)
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = SUBPROCESS_ENCODING
     return env
 
 

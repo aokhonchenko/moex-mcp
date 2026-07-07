@@ -31,6 +31,13 @@ STATE_DIR = PROJECT_ROOT / "state"
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 SESSION_COMMAND = ["uv", "run", "python", "scripts/session_transaction.py"]
 
+
+def utf8_subprocess_env() -> dict[str, str]:
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"
+    env["PYTHONIOENCODING"] = "utf-8"
+    return env
+
 # Глобальное состояние
 class ServerState:
     def __init__(self) -> None:
@@ -87,6 +94,9 @@ def run_session_transaction() -> tuple[bool, str]:
             cwd=str(PROJECT_ROOT),
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=utf8_subprocess_env(),
             timeout=600,  # 10 минут на сессию
         )
         output = result.stdout + result.stderr

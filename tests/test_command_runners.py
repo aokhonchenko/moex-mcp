@@ -5,6 +5,20 @@ import pytest
 from scripts import command_runners
 
 
+def test_configure_utf8_stdio_reconfigures_available_streams(monkeypatch):
+    calls = []
+
+    class FakeStream:
+        def reconfigure(self, encoding, errors):
+            calls.append((encoding, errors))
+
+    monkeypatch.setattr(command_runners.sys, "stdout", FakeStream())
+    monkeypatch.setattr(command_runners.sys, "stderr", FakeStream())
+
+    command_runners.configure_utf8_stdio()
+
+    assert calls == [("utf-8", "replace"), ("utf-8", "replace")]
+
 def test_streaming_runner_streams_output_and_sanitizes_env(monkeypatch, capsys, tmp_path):
     calls = []
 
@@ -45,6 +59,8 @@ def test_streaming_runner_streams_output_and_sanitizes_env(monkeypatch, capsys, 
     assert args == ["cmd", "arg"]
     assert cwd == tmp_path
     assert "VIRTUAL_ENV" not in env
+    assert env["PYTHONUTF8"] == "1"
+    assert env["PYTHONIOENCODING"] == "utf-8"
     assert text is True
     assert encoding == "utf-8"
     assert errors == "replace"
@@ -76,6 +92,8 @@ def test_default_runner_uses_utf8_with_replacement(monkeypatch, tmp_path):
     assert text is True
     assert encoding == "utf-8"
     assert errors == "replace"
+    assert env["PYTHONUTF8"] == "1"
+    assert env["PYTHONIOENCODING"] == "utf-8"
     assert capture_output is True
 
 

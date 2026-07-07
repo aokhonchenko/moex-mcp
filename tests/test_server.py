@@ -21,13 +21,16 @@ def reset_server_state():
 def test_session_transaction_command_uses_uv(monkeypatch):
     calls = []
 
-    def fake_run(cmd, cwd, capture_output, text, timeout):
+    def fake_run(cmd, cwd, capture_output, text, encoding, errors, env, timeout):
         calls.append(
             {
                 "cmd": cmd,
                 "cwd": cwd,
                 "capture_output": capture_output,
                 "text": text,
+                "encoding": encoding,
+                "errors": errors,
+                "env": env,
                 "timeout": timeout,
             }
         )
@@ -39,15 +42,17 @@ def test_session_transaction_command_uses_uv(monkeypatch):
 
     assert success is True
     assert output == "ok"
-    assert calls == [
-        {
-            "cmd": ["uv", "run", "python", "scripts/session_transaction.py"],
-            "cwd": str(session_server.PROJECT_ROOT),
-            "capture_output": True,
-            "text": True,
-            "timeout": 600,
-        }
-    ]
+    assert len(calls) == 1
+    call = calls[0]
+    assert call["cmd"] == ["uv", "run", "python", "scripts/session_transaction.py"]
+    assert call["cwd"] == str(session_server.PROJECT_ROOT)
+    assert call["capture_output"] is True
+    assert call["text"] is True
+    assert call["encoding"] == "utf-8"
+    assert call["errors"] == "replace"
+    assert call["env"]["PYTHONUTF8"] == "1"
+    assert call["env"]["PYTHONIOENCODING"] == "utf-8"
+    assert call["timeout"] == 600
 
 
 def test_create_server_uses_threading_http_server():

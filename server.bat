@@ -5,6 +5,10 @@ REM Использование: server.bat [порт]
 
 setlocal
 
+set PYTHONUTF8=1
+set PYTHONIOENCODING=utf-8
+chcp 65001 >nul
+
 set PORT=11000
 if not "%~1"=="" set PORT=%~1
 

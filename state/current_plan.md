@@ -1,6 +1,7 @@
 # Текущий план
 
-**Обновлён:** сессия 82 (2026-07-07) — Ollama LLM интеграция
+
+**Обновлён:** сессия 84 (2026-07-07) — Ollama auto-pull init
 
 ---
 
@@ -63,8 +64,10 @@
 | 80 | Docker Compose healthcheck fix (HEAD→GET, удалён version) | `543ab87` |
 | 81 | Фронтенд: автозагрузка + min-height canvas + изоляция ошибок рендеринга | `d03eeed` |
 | 82 | Ollama LLM интеграция + /api/llm/status + status badge на фронтенде | `cc61a54` |
+| 83 | Исправлен Chart.registry.controllers.has → .get() + изоляция ошибок рендеринга | `12c33e7` |
+| 84 | Автозагрузка модели Ollama (ollama-init контейнер) | `7e885c4` |
 
-**Текущий статус:** ~274 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает (3 сервиса: ollama, moex-mcp, app).
+**Текущий статус:** ~274 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает (4 сервиса: ollama, ollama-init, moex-mcp, app).
 
 ---
 

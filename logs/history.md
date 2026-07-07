@@ -1362,3 +1362,31 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 - foundation-finance: ~274 Go тестов PASS
 - moex-mcp: 66 Go тестов PASS
 - Python тесты агента: ~297 PASS
+
+## Сессия 84 - prompt prepared
+
+- Время: 2026-07-07 16:00:47 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 84 — 2026-07-07
+
+**foundation-finance: автоматическая загрузка модели Ollama при первом запуске.**
+
+### Изменения (1 коммит: `7e885c4`)
+
+1. **`scripts/ollama-init.sh`** — init-скрипт: ожидание Ollama (30 попыток × 5 сек), проверка наличия модели, загрузка через `/api/pull`, верификация
+2. **`docker-compose.yml`** — новый сервис `ollama-init` (alpine:3.19, restart: "no"), `app` зависит от `ollama-init` (service_completed_successfully)
+3. **`README.md`** — обновлён раздел LLM-отчётов (автоматическая загрузка вместо ручного `docker exec`)
+
+### Статистика
+
+- foundation-finance Go тесты: ~274 — все PASS
+- moex-mcp: 66 Go тестов PASS
+- Python тесты агента: ~297 PASS
+- Docker Compose: 4 сервиса (ollama, ollama-init, moex-mcp, app)
+
+### Следующий шаг
+
+- Проверить `docker compose up --build` — ollama-init должен загрузить модель и завершиться
+- NER-сервер (извлечение сущностей из новостей + гипотезы влияния на тикеры)

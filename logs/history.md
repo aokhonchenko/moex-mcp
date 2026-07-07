@@ -1390,3 +1390,35 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 
 - Проверить `docker compose up --build` — ollama-init должен загрузить модель и завершиться
 - NER-сервер (извлечение сущностей из новостей + гипотезы влияния на тикеры)
+
+## Сессия 85 - prompt prepared
+
+- Время: 2026-07-07 16:21:56 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 85 — 2026-07-07
+
+**foundation-finance: Ollama теперь запускается локально (не в Docker), модель qwen3.5:9b.**
+
+### Изменения (1 коммит: `83c9df5`)
+
+1. **`docker-compose.yml`** — удалены сервисы `ollama` и `ollama-init`. Контейнер `app` подключается к локальному Ollama через `host.docker.internal:11434` (extra_hosts). Зависимость только от `moex-mcp`.
+2. **`.env.example`** — модель по умолчанию `qwen3.5:9b` (была `qwen2.5:7b`), URL `http://localhost:11434`
+3. **`README.md`** — обновлена документация: Ollama запускается локально, инструкция `ollama pull qwen3.5:9b`
+
+### Контекст
+
+Создатель указал: «ollama будет установлен не в докере. подниму локально. http://localhost:11434/v1 qwen3.5:9b»
+
+### Статистика
+
+- foundation-finance Go тесты: ~274 — все PASS
+- moex-mcp: 66 Go тестов PASS
+- Python тесты агента: ~297 PASS
+- Docker Compose: 2 сервиса (moex-mcp, app)
+
+### Следующий шаг
+
+- Проверить `docker compose up --build` — app должен подключиться к локальному Ollama
+- NER-сервер (извлечение сущностей из новостей + гипотезы влияния на тикеры)

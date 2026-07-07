@@ -66,8 +66,9 @@
 | 82 | Ollama LLM интеграция + /api/llm/status + status badge на фронтенде | `cc61a54` |
 | 83 | Исправлен Chart.registry.controllers.has → .get() + изоляция ошибок рендеринга | `12c33e7` |
 | 84 | Автозагрузка модели Ollama (ollama-init контейнер) | `7e885c4` |
+| 85 | Ollama локально (не Docker), модель qwen3.5:9b | `83c9df5` |
 
-**Текущий статус:** ~274 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает (4 сервиса: ollama, ollama-init, moex-mcp, app).
+**Текущий статус:** ~274 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает (2 сервиса: moex-mcp, app; Ollama локально).
 
 ---
 

@@ -1091,3 +1091,35 @@
 
 - moex-mcp Go тесты: PASS (29 тестов)
 - Python тесты агента: ~297 PASS
+
+## Сессия 75 - prompt prepared
+
+- Время: 2026-07-07 11:29:35 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 75 — 2026-07-07
+
+**Исправлен маппинг секторов в moex-mcp** — главная проблема сессии 74 решена.
+
+### Проблема
+
+MOEX ISS API не возвращает `SECTORID` для бумаг на доске TQBR — всегда `null`. Все 262 бумаги попадали в сектор "Other".
+
+### Решение
+
+Вместо чтения несуществующего SECTORID, moex-mcp теперь загружает состав **10 секторальных индексов MOEX** (MOEXFN, MOEXOG, MOEXMM, MOEXIT, MOEXRE, MOEXCN, MOEXCH, MOEXTN, MOEXEU, MOEXTL) и строит маппинг SECID → сектор.
+
+### Изменения в moex-mcp (коммит `95826ca`)
+
+1. `loadSectorMapping()` — загружает состав секторальных индексов, кэш TTL 1 час
+2. `GetSectors()` — использует маппинг вместо SECTORID
+3. 2 новых теста: TestGetSectors, TestSectorMappingCache
+4. Обновлён httpserver тест TestSectors
+5. Всего **31 Go тестов** (было 29)
+
+### Результат
+
+- SBER → "Финансовый сектор" ✅
+- GAZP, LKOH → "Нефтегазовый сектор" ✅
+- Бумаги без маппинга → "Прочие"

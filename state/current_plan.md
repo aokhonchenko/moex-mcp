@@ -55,6 +55,7 @@
 | 72 | moex-mcp: HTTP REST API режим (internal/httpserver, 10 тестов) | `27b90ac` |
 | 73 | moex-mcp + foundation-finance интеграция (MCPProvider, Docker Compose) | `41e2b7c` + `b996063` |
 | 74 | Docker Compose тест + moex-mcp Dockerfile fix (Go 1.22 + wget) | `b194b45` |
+| 75 | moex-mcp: секторы через секторальные индексы MOEX (10 индексов, 31 тест) | `95826ca` |
 
 **Текущий статус:** ~255 Go тестов (foundation-finance) + 29 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
 
@@ -97,9 +98,9 @@
 1. ~~**Отображение Stochastic и VWAP на фронтенде**~~ ✅ — графики %K/%D и VWAP (сессия 71)
 2. ~~**Интеграция moex-mcp**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
 1. ~~**Docker Compose тест**~~ ✅ — `docker compose up --build` работает (сессия 74)
-2. **Исправить маппинг секторов** — все бумаги в "Other", нужно отладить GetSectors() в moex-mcp
-3. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-4. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS
+1. ~~**Исправить маппинг секторов**~~ ✅ — секторы через состав секторальных индексов MOEX (сессия 75, коммит `95826ca`)
+2. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+3. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS
 
 ---
 
@@ -114,10 +115,11 @@
 ### Следующие шаги для moex-mcp
 
 1. ~~**Интеграция с foundation-finance**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
-2. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-3. **Кэширование** — in-memory кэш для запросов к MOEX ISS
-4. **MCP-инструмент для секторов** — добавить `get_sectors` в MCP JSON-RPC (пока только HTTP)
-5. **LLM-интеграция** — подключение к Claude Desktop / Cursor
+2. ~~**Исправление секторов**~~ ✅ — через состав секторальных индексов MOEX (сессия 75)
+3. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+4. **Кэширование** — in-memory кэш для запросов к MOEX ISS
+5. **MCP-инструмент для секторов** — добавить `get_sectors` в MCP JSON-RPC (пока только HTTP)
+6. **LLM-интеграция** — подключение к Claude Desktop / Cursor
 
 ---
 

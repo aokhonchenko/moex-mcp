@@ -23,7 +23,7 @@ import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 # Корень проекта — родительская директория относительно server/
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -86,25 +86,44 @@ def read_last_session() -> str:
     return "# Сообщение будущей сессии\n\nФайл пока не создан."
 
 
-def run_session_transaction() -> tuple[bool, str]:
+def run_session_transaction(on_output: Callable[[str], None] | None = None) -> tuple[bool, str]:
     """Запустить session_transaction.py и вернуть (success, output)."""
+    output: list[str] = []
     try:
-        result = subprocess.run(
+        process = subprocess.Popen(
             SESSION_COMMAND,
             cwd=str(PROJECT_ROOT),
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
             encoding="utf-8",
             errors="replace",
             env=utf8_subprocess_env(),
-            timeout=600,  # 10 минут на сессию
         )
-        output = result.stdout + result.stderr
-        if result.returncode == 0:
-            return True, output
-        return False, output
-    except subprocess.TimeoutExpired:
-        return False, "Таймаут: сессия превысила 10 минут"
+        if process.stdout is None:
+            return False, "Сессия не открыла stdout"
+
+        deadline = time.monotonic() + 600
+        while True:
+            line = process.stdout.readline()
+            if line:
+                output.append(line)
+                if on_output is not None:
+                    on_output(line.rstrip("\r\n"))
+                continue
+
+            if process.poll() is not None:
+                break
+            if time.monotonic() > deadline:
+                process.kill()
+                message = "Таймаут: сессия превысила 10 минут"
+                output.append(message)
+                if on_output is not None:
+                    on_output(message)
+                return False, "".join(output)
+            time.sleep(0.1)
+
+        return process.wait() == 0, "".join(output)
     except Exception as e:
         return False, str(e)
 
@@ -120,7 +139,7 @@ def auto_session_loop() -> None:
 
         STATE.broadcast("status", {"status": "running", "message": "Запуск сессии..."})
 
-        success, output = run_session_transaction()
+        success, output = run_session_transaction(lambda line: STATE.broadcast("session_log", {"line": line}))
 
         with STATE.lock:
             STATE.session_count += 1
@@ -281,7 +300,7 @@ class SessionHandler(BaseHTTPRequestHandler):
 
         # Запускаем в отдельном потоке, чтобы не блокировать ответ
         def run_and_report():
-            success, output = run_session_transaction()
+            success, output = run_session_transaction(lambda line: STATE.broadcast("session_log", {"line": line}))
             with STATE.lock:
                 STATE.session_count += 1
                 STATE.last_run_time = time.strftime("%Y-%m-%d %H:%M:%S")

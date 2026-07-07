@@ -179,20 +179,55 @@
         .last-session {
             background: var(--bg);
             border-radius: var(--radius);
-            padding: 16px;
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-            font-size: 13px;
-            line-height: 1.6;
-            max-height: 500px;
-            overflow-y: auto;
-            white-space: pre-wrap;
+            padding: 18px 20px;
+            font-size: 14px;
+            line-height: 1.65;
+            overflow: visible;
             word-wrap: break-word;
         }
 
-        .last-session::-webkit-scrollbar { width: 6px; }
-        .last-session::-webkit-scrollbar-track { background: transparent; }
-        .last-session::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .last-session h1,
+        .last-session h2,
+        .last-session h3 {
+            color: var(--text);
+            line-height: 1.25;
+            margin: 18px 0 10px;
+            text-transform: none;
+            letter-spacing: 0;
+        }
 
+        .last-session h1:first-child,
+        .last-session h2:first-child,
+        .last-session h3:first-child { margin-top: 0; }
+        .last-session h1 { font-size: 22px; }
+        .last-session h2 { font-size: 18px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+        .last-session h3 { font-size: 15px; color: var(--text-muted); }
+        .last-session p { margin: 10px 0; }
+        .last-session ul,
+        .last-session ol { margin: 10px 0 10px 22px; }
+        .last-session li { margin: 4px 0; }
+        .last-session strong { color: var(--text); font-weight: 700; }
+        .last-session code {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 0.92em;
+        }
+        .last-session pre {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 12px;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+        .last-session pre code {
+            background: transparent;
+            border: 0;
+            padding: 0;
+        }
         .log-area {
             background: var(--bg);
             border-radius: var(--radius);
@@ -209,6 +244,7 @@
         .log-entry.error { color: var(--red); }
         .log-entry.success { color: var(--green); }
         .log-entry.info { color: var(--accent); }
+        .log-entry.session { color: var(--text-muted); }
 
         .toggle-container {
             display: flex;
@@ -342,12 +378,112 @@
             entry.textContent = `[${time}] ${text}`;
             logArea.appendChild(entry);
             logArea.scrollTop = logArea.scrollHeight;
-            // Оставляем последние 100 записей
-            while (logArea.children.length > 100) {
+            // Оставляем последние 1000 записей
+            while (logArea.children.length > 1000) {
                 logArea.removeChild(logArea.firstChild);
             }
         }
 
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderInlineMarkdown(text) {
+            return escapeHtml(text)
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+        }
+
+        function renderMarkdown(markdown) {
+            const lines = markdown.replace(/\r\n/g, '\n').split('\n');
+            const html = [];
+            let paragraph = [];
+            let listType = null;
+            let inCode = false;
+            let codeLines = [];
+
+            function flushParagraph() {
+                if (paragraph.length === 0) return;
+                html.push(`<p>${renderInlineMarkdown(paragraph.join(' '))}</p>`);
+                paragraph = [];
+            }
+
+            function closeList() {
+                if (!listType) return;
+                html.push(`</${listType}>`);
+                listType = null;
+            }
+
+            for (const rawLine of lines) {
+                const line = rawLine.trimEnd();
+
+                if (line.startsWith('```')) {
+                    if (inCode) {
+                        html.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+                        codeLines = [];
+                        inCode = false;
+                    } else {
+                        flushParagraph();
+                        closeList();
+                        inCode = true;
+                    }
+                    continue;
+                }
+
+                if (inCode) {
+                    codeLines.push(rawLine);
+                    continue;
+                }
+
+                if (line.trim() === '') {
+                    flushParagraph();
+                    closeList();
+                    continue;
+                }
+
+                const heading = /^(#{1,3})\s+(.+)$/.exec(line);
+                if (heading) {
+                    flushParagraph();
+                    closeList();
+                    const level = heading[1].length;
+                    html.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
+                    continue;
+                }
+
+                const unordered = /^[-*]\s+(.+)$/.exec(line.trim());
+                const ordered = /^\d+\.\s+(.+)$/.exec(line.trim());
+                if (unordered || ordered) {
+                    flushParagraph();
+                    const nextType = unordered ? 'ul' : 'ol';
+                    if (listType !== nextType) {
+                        closeList();
+                        html.push(`<${nextType}>`);
+                        listType = nextType;
+                    }
+                    html.push(`<li>${renderInlineMarkdown((unordered || ordered)[1])}</li>`);
+                    continue;
+                }
+
+                closeList();
+                paragraph.push(line.trim());
+            }
+
+            if (inCode) {
+                html.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+            }
+            flushParagraph();
+            closeList();
+            return html.join('');
+        }
+
+        function setLastSessionMarkdown(markdown) {
+            document.getElementById('lastSession').innerHTML = renderMarkdown(markdown);
+        }
         function updateStatus(data) {
             const badge = document.getElementById('statusBadge');
             const statusText = document.getElementById('statusText');
@@ -420,6 +556,12 @@
                 }
             });
 
+            eventSource.addEventListener('session_log', (e) => {
+                const data = JSON.parse(e.data);
+                if (data.line !== undefined && data.line !== '') {
+                    addLog(data.line, 'session');
+                }
+            });
             eventSource.addEventListener('session_done', (e) => {
                 const data = JSON.parse(e.data);
                 if (data.success) {
@@ -428,7 +570,7 @@
                     addLog(`Сессия #${data.count} завершена с ошибкой: ${data.error}`, 'error');
                 }
                 if (data.last_session) {
-                    document.getElementById('lastSession').textContent = data.last_session;
+                    setLastSessionMarkdown(data.last_session);
                 }
                 updateStatus({
                     status: autoEnabled ? 'auto' : 'idle',
@@ -474,7 +616,7 @@
             try {
                 const resp = await fetch('/api/last-session');
                 const data = await resp.json();
-                document.getElementById('lastSession').textContent = data.content;
+                setLastSessionMarkdown(data.content);
             } catch (e) {
                 document.getElementById('lastSession').textContent = 'Ошибка загрузки: ' + e.message;
             }

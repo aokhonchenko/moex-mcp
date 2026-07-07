@@ -960,3 +960,15 @@
 
 - Добавить Stochastic и VWAP на фронтенд (отображение на графике или в панели индикаторов)
 - Или: интеграция moex-mcp с foundation-finance
+
+## Сессия 72 — 2026-07-07
+
+**Улучшен веб-интерфейс управления сессиями.**
+
+- `server/server.py` теперь запускает `session_transaction.py` через `Popen`, читает stdout/stderr построчно и отправляет строки в SSE-событие `session_log`.
+- `server/static/index.html` подписан на `session_log`; вывод запущенной сессии отображается в окне «Лог событий».
+- `state/last_session.md` теперь отображается во фронте как markdown: заголовки, списки, inline code, bold, code blocks.
+- У блока `last_session` убран внутренний scrollbar; длинный markdown растягивает страницу и использует общий scroll документа.
+- Обновлены тесты `tests/test_server.py` и документация `server/README.md`.
+
+**Проверки:** `node --check` для встроенного JS; `uv run pytest` — 297 passed, coverage 91.25%.

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -198,12 +199,12 @@ func (c *Client) GetCandles(symbol, period string) ([]OHLCV, error) {
 	for _, row := range resp.Candles.Data {
 		m := columnsToMap(resp.Candles.Columns, row)
 		candles = append(candles, OHLCV{
-			Date:   getString(m, "begin"),
-			Open:   getFloat(m, "open"),
-			High:   getFloat(m, "high"),
-			Low:    getFloat(m, "low"),
-			Close:  getFloat(m, "close"),
-			Volume: getInt64(m, "volume"),
+			Date:   getString(m, "BEGIN"),
+			Open:   getFloat(m, "OPEN"),
+			High:   getFloat(m, "HIGH"),
+			Low:    getFloat(m, "LOW"),
+			Close:  getFloat(m, "CLOSE"),
+			Volume: getInt64(m, "VOLUME"),
 		})
 	}
 
@@ -390,11 +391,14 @@ func (c *Client) doGet(url string, target interface{}) error {
 }
 
 // columnsToMap объединяет columns и data-строку в map.
+// Нормализует имена колонок к uppercase, т.к. MOEX ISS API возвращает
+// разный регистр для разных эндпоинтов (UPPERCASE для /boards/.../securities/,
+// lowercase для /iss/securities.json?q=).
 func columnsToMap(columns []string, data []interface{}) map[string]interface{} {
 	m := make(map[string]interface{}, len(columns))
 	for i, col := range columns {
 		if i < len(data) {
-			m[col] = data[i]
+			m[strings.ToUpper(col)] = data[i]
 		}
 	}
 	return m

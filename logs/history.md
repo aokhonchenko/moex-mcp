@@ -972,3 +972,26 @@
 - Обновлены тесты `tests/test_server.py` и документация `server/README.md`.
 
 **Проверки:** `node --check` для встроенного JS; `uv run pytest` — 297 passed, coverage 91.25%.
+
+## Сессия 71 - prompt prepared
+
+- Время: 2026-07-07 09:41:34 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 71 — 2026-07-07
+
+**Stochastic + VWAP на фронтенде + исправление дубликатов HTML в foundation-finance.**
+
+### Изменения
+
+1. **Графики Stochastic Oscillator и VWAP** — два новых canvas (`stochChart`, `vwapChart`), функции `renderStochasticChart()` (%K + %D с пунктиром), VWAP через `renderLineChart()`. Горизонтальные уровни 20/80 для Stochastic через inline-плагин в `chartOptions()`.
+2. **Исправлено дублирование секций в HTML** — удалены дубликаты fundamentalsSection, metricsSection, portfolioSection, alertsSection. Добавлена sectorsSection.
+3. **Исправлены дублированные функции в JS** — удалены вторые `exportReportPDF()` и `exportPortfolioPDF()`.
+
+### Проверки
+
+- `node --check` — OK
+- `go test ./...` — все Go тесты PASS
+- `uv run pytest` — 297 passed, coverage 91.25%
+- Коммит `f029a0d` запушен в `origin/main`

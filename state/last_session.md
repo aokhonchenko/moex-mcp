@@ -1,34 +1,33 @@
-# Сообщение будущей сессии (сессия 73)
+# Сообщение будущей сессии (сессия 72)
 
-## Что было сделано в сессии 72
+## Что было сделано в сессии 71
 
-Улучшен веб-интерфейс `server/` по двум требованиям создателя.
+**Stochastic + VWAP на фронтенде + исправление дубликатов HTML.**
 
-### Изменения
+### Изменения в foundation-finance
 
-1. **Лог запущенной сессии во фронте**
-   - `server/server.py` теперь запускает `session_transaction.py` через `subprocess.Popen`.
-   - stdout/stderr транзакции читаются построчно.
-   - Каждая строка отправляется клиентам как SSE-событие `session_log`.
-   - `server/static/index.html` подписан на `session_log` и добавляет строки в окно «Лог событий».
+1. **Графики Stochastic Oscillator и VWAP**
+   - `frontend/index.html` — два новых canvas: `stochChart` и `vwapChart` в отдельной секции `charts-grid`
+   - `frontend/app.js` — функция `renderStochasticChart()` (рисует %K и %D с пунктирной линией %D), VWAP отрисовывается через `renderLineChart()` с цветом `#f59e0b`
+   - Горизонтальные уровни 20/80 для Stochastic (аналогично 30/70 для RSI) через inline-плагин в `chartOptions()`
 
-2. **Markdown для `state/last_session.md`**
-   - Plain text заменён на клиентский markdown-renderer.
-   - Поддержаны заголовки `#`, `##`, `###`, списки, `inline code`, `**bold**`, code fences.
-   - HTML экранируется перед рендером.
-   - Внутренний scrollbar у блока `last_session` убран; длинный контент растягивает страницу.
+2. **Исправлено дублирование секций в HTML**
+   - Удалены дубликаты: fundamentalsSection, metricsSection, portfolioSection, alertsSection (каждая секция была дважды)
+   - Добавлена отсутствовавшая секция `sectorsSection` (секторальная аналитика)
+   - HTML сократился с ~300 до ~230 строк
 
-3. **Тесты и документация**
-   - `tests/test_server.py` проверяет потоковый запуск, наличие `session_log` во фронте и отсутствие старого scrollbar CSS.
-   - `server/README.md` обновлён под live logs и markdown-просмотр.
+3. **Исправлены дублированные функции в JS**
+   - Удалены вторые определения `exportReportPDF()` и `exportPortfolioPDF()` в конце `app.js`
 
 ### Проверки
 
-- `node --check` для встроенного JS — OK.
-- `uv run pytest` — 297 passed, coverage 91.25%.
+- `node --check` — OK
+- `go test ./...` — все Go тесты PASS
+- `uv run pytest` — 297 passed, coverage 91.25%
+- Коммит `f029a0d` запушен в `origin/main`
 
 ## Что важно для следующей сессии
 
-1. Перезапустить `server.bat`, чтобы фронт загрузил новый `index.html` и серверный streaming-runner.
-2. Нажать «Запустить сессию» и проверить, что строки транзакции появляются в «Лог событий» во время выполнения, а не только после завершения.
-3. При необходимости добавить отдельную кнопку очистки лога или сохранение последних логов на диск.
+1. **Интеграция moex-mcp с foundation-finance** — заменить прямые вызовы MOEX ISS на MCP-клиент (следующий шаг из плана)
+2. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+3. **Docker Compose** — compose для moex-mcp + foundation-finance

@@ -1058,3 +1058,36 @@
 - Docker Compose тест (build + up + healthcheck)
 - Расширение moex-mcp (индексы IMOEX/RTSI, дивиденды, стакан)
 - Кэширование в moex-mcp
+
+## Сессия 74 - prompt prepared
+
+- Время: 2026-07-07 10:11:52 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 74 — 2026-07-07
+
+**Docker Compose тест** — первая полная проверка стека moex-mcp + foundation-finance.
+
+### Что сделано
+
+1. **Клонирован moex-mcp** в `projects/moex-mcp/` (коммит `6f9398c` — фикс uppercase колонок)
+2. **Синхронизирован foundation-finance** — `git reset --hard origin/main` (коммит `b996063`)
+3. **Исправлен moex-mcp Dockerfile** (коммит `b194b45`):
+   - Go 1.21 → 1.22 (соответствие go.mod)
+   - Добавлен `wget` в alpine-образ (нужен для healthcheck)
+4. **Docker Compose тест** — `docker compose build` + `docker compose up -d`:
+   - moex-mcp: healthcheck OK, v0.3.0
+   - foundation-finance: healthcheck OK, v1.0.0
+   - `GET /api/ticker/SBER` → 296.78₽ (данные через moex-mcp)
+   - Свечи: 88 записей daily
+   - Секторы: endpoint работает, но все бумаги в "Other" (SECTORID не маппится)
+
+### Обнаруженная проблема
+
+- Секторы: все 262 бумаги попадают в сектор "Other" — `sector_id: ""`. Нужно отладить `GetSectors()` в moex-mcp.
+
+### Статистика
+
+- moex-mcp Go тесты: PASS (29 тестов)
+- Python тесты агента: ~297 PASS

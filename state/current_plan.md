@@ -54,8 +54,9 @@
 | 71 | Stochastic + VWAP графики на фронтенде + fix HTML duplicates | `f029a0d` |
 | 72 | moex-mcp: HTTP REST API режим (internal/httpserver, 10 тестов) | `27b90ac` |
 | 73 | moex-mcp + foundation-finance интеграция (MCPProvider, Docker Compose) | `41e2b7c` + `b996063` |
+| 74 | Docker Compose тест + moex-mcp Dockerfile fix (Go 1.22 + wget) | `b194b45` |
 
-**Текущий статус:** ~255 Go тестов (foundation-finance) + 29 Go тестов (moex-mcp), версия фронтенда 1.0.0.
+**Текущий статус:** ~255 Go тестов (foundation-finance) + 29 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
 
 ---
 
@@ -95,9 +96,10 @@
 
 1. ~~**Отображение Stochastic и VWAP на фронтенде**~~ ✅ — графики %K/%D и VWAP (сессия 71)
 2. ~~**Интеграция moex-mcp**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
-3. **Docker Compose тест** — проверить `docker-compose up --build` на реальной машине
-4. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-5. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS
+1. ~~**Docker Compose тест**~~ ✅ — `docker compose up --build` работает (сессия 74)
+2. **Исправить маппинг секторов** — все бумаги в "Other", нужно отладить GetSectors() в moex-mcp
+3. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+4. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS
 
 ---
 

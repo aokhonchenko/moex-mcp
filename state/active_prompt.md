@@ -1,7 +1,7 @@
-# Активный промпт сессии 73
+# Активный промпт сессии 74
 
-Время сборки промпта: 2026-07-07 09:54:52 +0300
-Корень эксперимента: C:\_dev\own\pet\runs\session-0073
+Время сборки промпта: 2026-07-07 10:11:52 +0300
+Корень эксперимента: C:\_dev\own\pet\runs\session-0074
 
 ---
 
@@ -143,47 +143,73 @@ _Заполни после учёта ответа._
 
 # state/last_session.md
 
-# Сообщение будущей сессии (сессия 73)
+# Сообщение будущей сессии (сессия 74)
 
-## Что было сделано в сессии 72
+## Что было сделано в сессии 73
 
-**moex-mcp: добавлен HTTP REST API режим** — prerequisite для интеграции с foundation-finance.
+**Интеграция moex-mcp с foundation-finance** — замена прямых запросов к MOEX ISS на HTTP-клиент к moex-mcp.
 
 ### Изменения в moex-mcp
 
-1. **Новый пакет `internal/httpserver/`** — REST API обёртка над MOEX-клиентом:
-   - `GET /api/health` — health check
-   - `GET /api/ticker/{symbol}` — котировка
-   - `GET /api/candles/{symbol}?period=3m` — свечи
-   - `GET /api/fundamentals/{symbol}` — фундаментальные данные
-   - `GET /api/search?q=` — поиск бумаг
-   - CORS middleware, JSON content-type
+1. **`internal/moex/client.go`** — добавлен метод `GetSectors()`:
+   - Запрос `/iss/engines/stock/markets/shares/boards/TQBR/securities.json`
+   - Группировка бумаг по SECTORID
+   - Маппинг секторов на русские названия (12 секторов)
+   - Расчёт среднего изменения по сектору
 
-2. **`main.go`** — два режима через флаг `-mode`:
-   - `stdio` (по умолчанию) — MCP JSON-RPC 2.0 для Claude Desktop/Cursor
-   - `http` — REST API для интеграции с другими сервисами
-   - Флаг `-addr` для адреса HTTP (по умолчанию `:8081`)
+2. **`internal/httpserver/server.go`** — добавлен endpoint `GET /api/sectors`
 
-3. **`Dockerfile`** — добавлен `EXPOSE 8081`
+3. **`internal/httpserver/server_test.go`** — тест `TestSectors` (mock + проверка Financial/Oil and Gas)
 
-4. **10 новых тестов** (`internal/httpserver/server_test.go`) — health, ticker, candles, fundamentals, search, CORS, content-type, not-found, missing query
+4. **Версия** обновлена до 0.3.0
+
+### Изменения в foundation-finance
+
+1. **Новый пакет `internal/data/mcp_provider.go`** — HTTP-клиент к moex-mcp:
+   - `GetTicker` → `GET /api/ticker/{symbol}`
+   - `GetOHLCV` → `GET /api/candles/{symbol}?period=`
+   - `GetFundamentals` → `GET /api/fundamentals/{symbol}`
+   - `SearchSecurities` → `GET /api/search?q=`
+   - `GetSectors` → `GET /api/sectors`
+   - Реализует интерфейсы `Provider`, `SectorProvider`, `Searcher`
+
+2. **`internal/data/mcp_provider_test.go`** — 20 тестов:
+   - GetTicker, GetTicker_Error, GetOHLCV, GetFundamentals
+   - SearchSecurities, SearchSecurities_Empty, GetSectors
+   - ConnectionError, ImplementsProviderInterface, ImplementsSectorProvider, ImplementsSearcher
+   - WithCachedProvider, CandlesJSONDecode, HTTPError, InvalidJSON
+   - SectorInfoMapping, NewMCPProvider, SearchJSONDecode, FullIntegration, TickerJSONUnmarshal
+
+3. **`backend/main.go`** — два режима через `MCP_PROVIDER_URL`:
+   - Если задан → `NewMCPProvider(mcpURL)` (moex-mcp HTTP API)
+   - Если не задан → `NewMOEXProvider("")` (прямые запросы к MOEX ISS)
+
+4. **`docker-compose.yml`** — два сервиса:
+   - `moex-mcp` — сборка из `../moex-mcp`, порт 8081, healthcheck
+   - `app` — foundation-finance, `MCP_PROVIDER_URL=http://moex-mcp:8081`, `depends_on: moex-mcp`
+
+5. **`.env.example`** — добавлена документация `MCP_PROVIDER_URL`
+
+6. **`README.md`** — обновлена архитектура, стек, документация по запуску
 
 ### Проверки
 
-- moex-mcp: **28 Go тестов** PASS (10 httpserver + 10 mcp + 8 moex)
-- Python тесты агента: 297 PASS, coverage 91.25%
-- Коммит `27b90ac` запушен в `origin/main`
+- moex-mcp: **29 Go тестов** PASS (11 httpserver + 10 mcp + 8 moex)
+- foundation-finance: **~255 Go тестов** PASS (включая 20 новых MCPProvider)
+- Коммит moex-mcp: `41e2b7c` запушен в `origin/main`
+- Коммит foundation-finance: `b996063` запушен в `origin/main`
 
 ## Что важно для следующей сессии
 
-1. **Интеграция moex-mcp с foundation-finance** — заменить прямые вызовы MOEX ISS в `backend/internal/data/moex.go` на HTTP-клиент к moex-mcp. Это позволит:
-   - Единый источник данных (moex-mcp)
-   - Легче тестировать (mock одного сервиса)
-   - Docker Compose: два сервиса вместо прямых запросов к iss.moex.com
+1. **Docker Compose тест** — проверить что `docker-compose up --build` реально работает (moex-mcp + foundation-finance). Нужен Docker на машине.
 
-2. **Docker Compose** — compose для moex-mcp + foundation-finance (moex-mcp на :8081, foundation-finance на :8080)
+2. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
 
-3. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+3. **moex-mcp: MCP-инструмент для секторов** — добавить `get_sectors` в MCP JSON-RPC (пока только HTTP endpoint)
+
+4. **Фронтенд: отображение источника данных** — показывать в UI используется moex-mcp или прямые запросы
+
+5. **Кэширование в moex-mcp** — сейчас moex-mcp делает прямые запросы к ISS при каждом вызове; можно добавить in-memory кэш
 
 
 ---
@@ -192,7 +218,7 @@ _Заполни после учёта ответа._
 
 # Текущий план
 
-**Обновлён:** сессия 66 (2026-07-07) — мобильная адаптивность
+**Обновлён:** сессия 73 (2026-07-07) — интеграция moex-mcp
 
 ---
 
@@ -245,8 +271,9 @@ _Заполни после учёта ответа._
 | 70 | Stochastic Oscillator + VWAP (10 новых тестов) | `6fff20a` |
 | 71 | Stochastic + VWAP графики на фронтенде + fix HTML duplicates | `f029a0d` |
 | 72 | moex-mcp: HTTP REST API режим (internal/httpserver, 10 тестов) | `27b90ac` |
+| 73 | moex-mcp + foundation-finance интеграция (MCPProvider, Docker Compose) | `41e2b7c` + `b996063` |
 
-**Текущий статус:** ~235 Go тестов, версия фронтенда 1.0.0. Все шаги плана выполнены!
+**Текущий статус:** ~255 Go тестов (foundation-finance) + 29 Go тестов (moex-mcp), версия фронтенда 1.0.0.
 
 ---
 
@@ -285,8 +312,10 @@ _Заполни после учёта ответа._
 ### Следующие шаги для foundation-finance
 
 1. ~~**Отображение Stochastic и VWAP на фронтенде**~~ ✅ — графики %K/%D и VWAP (сессия 71)
-2. **Интеграция moex-mcp** — заменить прямые вызовы MOEX ISS на MCP-клиент
-3. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+2. ~~**Интеграция moex-mcp**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
+3. **Docker Compose тест** — проверить `docker-compose up --build` на реальной машине
+4. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+5. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS
 
 ---
 
@@ -300,10 +329,11 @@ _Заполни после учёта ответа._
 
 ### Следующие шаги для moex-mcp
 
-1. **Интеграция с foundation-finance** — заменить прямые вызовы MOEX ISS на HTTP-клиент к moex-mcp
+1. ~~**Интеграция с foundation-finance**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
 2. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-3. **Docker Compose** — compose для moex-mcp + foundation-finance
-4. **LLM-интеграция** — подключение к Claude Desktop / Cursor
+3. **Кэширование** — in-memory кэш для запросов к MOEX ISS
+4. **MCP-инструмент для секторов** — добавить `get_sectors` в MCP JSON-RPC (пока только HTTP)
+5. **LLM-интеграция** — подключение к Claude Desktop / Cursor
 
 ---
 
@@ -500,7 +530,7 @@ _Что учтено из ответа создателя. Если вопрос
 
 # Инструкция на эту сессию
 
-Ты находишься в сессии 73. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0073`.
+Ты находишься в сессии 74. Работай в корне эксперимента: `C:\_dev\own\pet\runs\session-0074`.
 
 Сделай один осмысленный шаг в направлении `GLOBAL_TARGET.md`. Все пользовательские артефакты пиши на русском языке.
 

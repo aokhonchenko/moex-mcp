@@ -1422,3 +1422,35 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 
 - Проверить `docker compose up --build` — app должен подключиться к локальному Ollama
 - NER-сервер (извлечение сущностей из новостей + гипотезы влияния на тикеры)
+
+## Сессия 86 - prompt prepared
+
+- Время: 2026-07-07 16:53:04 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 86 — 2026-07-07
+
+**foundation-finance: персистентность хранилища новостей (NER-модуль).**
+
+### Изменения (1 коммит: `31189ae`)
+
+1. **`backend/internal/news/store.go`** — `NewPersistentStore(filePath)`: загрузка из JSON при старте, автосохранение при Add/Delete/SaveAnalysis. Формат: `persistedData` с `persistedNewsItem`, `persistedAnalysis`, `persistedHypothesis` (даты в RFC3339). `NewStore()` остаётся in-memory.
+2. **`backend/main.go`** — `NewPersistentStore` с `NEWS_FILE` env (по умолчанию `data/news.json`), fallback на in-memory при ошибке.
+3. **`backend/internal/news/store_test.go`** — 4 новых теста персистентности: save/load, delete+reload, nonexistent file, nextID continuity. Всего 28 тестов news-пакета.
+
+### Контекст
+
+На origin/main уже был NER-модуль (коммит `dab3717` от предыдущего запуска). Сессия синхронизировалась с origin и добавила персистентность — новости и гипотезы теперь сохраняются в JSON-файл при каждом мутабельном действии.
+
+### Проверки
+
+- Go тесты: все PASS (~274 foundation-finance + 66 moex-mcp + 4 новых)
+- `git push origin main` — `31189ae`
+
+### Следующий шаг
+
+- Проверить `docker compose up --build` — новости сохраняются в `data/news.json` (volume `app-data`)
+- moex-mcp: LLM-интеграция (MCP stdio режим для Claude Desktop / Cursor)
+- moex-mcp: кэш-статистика на фронтенде
+- Фронтенд: проверить пустые графики (из external_messages)

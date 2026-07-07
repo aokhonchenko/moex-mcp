@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/aokhonchenko/moex-mcp/internal/cache"
 )
 
 // Client — HTTP-клиент для MOEX ISS API.
@@ -20,6 +22,9 @@ type Client struct {
 	sectorMapping     map[string]string
 	sectorMappingTime time.Time
 	sectorMappingTTL  time.Duration
+
+	// In-memory кэш для запросов к ISS API
+	dataCache *cache.Cache
 }
 
 // NewClient создаёт клиент MOEX ISS.
@@ -32,6 +37,7 @@ func NewClient(board string) *Client {
 		board:            board,
 		BaseURL:          "https://iss.moex.com",
 		sectorMappingTTL: 1 * time.Hour,
+		dataCache:        cache.New(5 * time.Minute),
 	}
 }
 
@@ -184,6 +190,11 @@ func (c *Client) loadSectorMapping() (map[string]string, error) {
 
 // GetTicker получает текущую котировку.
 func (c *Client) GetTicker(symbol string) (*TickerData, error) {
+	cacheKey := fmt.Sprintf("ticker:%s", symbol)
+	if cached, ok := c.dataCache.Get(cacheKey); ok {
+		return cached.(*TickerData), nil
+	}
+
 	url := fmt.Sprintf(
 		"%s/iss/engines/stock/markets/shares/boards/%s/securities/%s.json?iss.meta=off",
 		c.BaseURL, c.board, symbol,
@@ -221,11 +232,19 @@ func (c *Client) GetTicker(symbol string) (*TickerData, error) {
 	}
 
 	t.MarketCap = getInt64(sec, "ISSUESIZE")
+
+	// Кэшируем на 1 минуту (котировки быстро меняются)
+	c.dataCache.SetWithTTL(cacheKey, t, 1*time.Minute)
 	return t, nil
 }
 
 // GetCandles получает исторические свечи.
 func (c *Client) GetCandles(symbol, period string) ([]OHLCV, error) {
+	cacheKey := fmt.Sprintf("candles:%s:%s", symbol, period)
+	if cached, ok := c.dataCache.Get(cacheKey); ok {
+		return cached.([]OHLCV), nil
+	}
+
 	till := time.Now()
 	var from time.Time
 
@@ -270,11 +289,18 @@ func (c *Client) GetCandles(symbol, period string) ([]OHLCV, error) {
 		})
 	}
 
+	// Кэшируем на 5 минут (исторические данные не меняются быстро)
+	c.dataCache.Set(cacheKey, candles)
 	return candles, nil
 }
 
 // GetFundamentals получает фундаментальные данные.
 func (c *Client) GetFundamentals(symbol string) (*FundamentalData, error) {
+	cacheKey := fmt.Sprintf("fundamentals:%s", symbol)
+	if cached, ok := c.dataCache.Get(cacheKey); ok {
+		return cached.(*FundamentalData), nil
+	}
+
 	url := fmt.Sprintf("%s/iss/securities/%s.json?iss.meta=off", c.BaseURL, symbol)
 
 	var resp issResponse
@@ -298,7 +324,7 @@ func (c *Client) GetFundamentals(symbol string) (*FundamentalData, error) {
 		secMap = columnsToMap(resp.Securities.Columns, resp.Securities.Data[0])
 	}
 
-	return &FundamentalData{
+	result := &FundamentalData{
 		Symbol:      symbol,
 		ISIN:        getString(secMap, "ISIN"),
 		IssueSize:   getInt64(secMap, "ISSUESIZE"),
@@ -307,7 +333,12 @@ func (c *Client) GetFundamentals(symbol string) (*FundamentalData, error) {
 		IssueDate:   getString(secMap, "ISSUEDATE"),
 		SecType:     getString(secMap, "SECTYPE"),
 		EmitterName: getString(secMap, "EMITTER_NAME"),
-	}, nil
+	}
+
+	// Кэшируем на 1 час (фундаментальные данные меняются редко)
+	c.dataCache.SetWithTTL(cacheKey, result, 1*time.Hour)
+	return result, nil
+	return result, nil
 }
 
 // SearchSecurities ищет бумаги по запросу.
@@ -435,6 +466,11 @@ func (c *Client) GetSectors() ([]SectorGroup, error) {
 // GetIndex получает данные по индексу MOEX (IMOEX, RTSI и др.).
 // Использует эндпоинт /iss/engines/stock/markets/index/securities/{symbol}.json
 func (c *Client) GetIndex(symbol string) (*IndexData, error) {
+	cacheKey := fmt.Sprintf("index:%s", symbol)
+	if cached, ok := c.dataCache.Get(cacheKey); ok {
+		return cached.(*IndexData), nil
+	}
+
 	url := fmt.Sprintf(
 		"%s/iss/engines/stock/markets/index/securities/%s.json?iss.meta=off",
 		c.BaseURL, symbol,
@@ -469,7 +505,19 @@ func (c *Client) GetIndex(symbol string) (*IndexData, error) {
 		idx.Value = getFloat(sec, "PREVLEGALCLOSEPRICE")
 	}
 
+	// Кэшируем на 1 минуту (индексы обновляются в реальном времени)
+	c.dataCache.SetWithTTL(cacheKey, idx, 1*time.Minute)
 	return idx, nil
+}
+
+// CacheStats возвращает статистику кэша данных.
+func (c *Client) CacheStats() cache.Stats {
+	return c.dataCache.Stats()
+}
+
+// ClearCache очищает кэш данных.
+func (c *Client) ClearCache() {
+	c.dataCache.Clear()
 }
 
 // doGet выполняет GET-запрос и декодирует JSON.

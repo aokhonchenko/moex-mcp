@@ -150,6 +150,14 @@ func (s *Server) handleToolsList(req *JSONRPCRequest) *JSONRPCResponse {
 				"required": []string{"symbol"},
 			},
 		},
+		{
+			"name":        "moex_sectors",
+			"description": "Get sector analytics — group MOEX stocks by sector with average change.",
+			"inputSchema": map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
+			},
+		},
 	}
 
 	return s.successResponse(req.ID, map[string]interface{}{"tools": tools})
@@ -175,6 +183,8 @@ func (s *Server) handleToolsCall(req *JSONRPCRequest) *JSONRPCResponse {
 		return s.callSearch(req.ID, callParams.Arguments)
 	case "moex_index":
 		return s.callIndex(req.ID, callParams.Arguments)
+	case "moex_sectors":
+		return s.callSectors(req.ID)
 	default:
 		return s.errorResponse(req.ID, -32602, fmt.Sprintf("unknown tool: %s", callParams.Name))
 	}
@@ -257,6 +267,15 @@ func (s *Server) callIndex(id json.RawMessage, args json.RawMessage) *JSONRPCRes
 	}
 
 	data, err := s.client.GetIndex(p.Symbol)
+	if err != nil {
+		return s.toolError(id, err.Error())
+	}
+
+	return s.toolResult(id, data)
+}
+
+func (s *Server) callSectors(id json.RawMessage) *JSONRPCResponse {
+	data, err := s.client.GetSectors()
 	if err != nil {
 		return s.toolError(id, err.Error())
 	}

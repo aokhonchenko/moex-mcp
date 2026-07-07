@@ -426,3 +426,177 @@ func TestGetIndexNotFound(t *testing.T) {
 		t.Fatal("expected error for missing index")
 	}
 }
+
+func TestTickerCache(t *testing.T) {
+	callCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		resp := map[string]interface{}{
+			"securities": map[string]interface{}{
+				"columns": []string{"SECID", "SHORTNAME", "PREVLEGALCLOSEPRICE", "ISSUESIZE"},
+				"data":    [][]interface{}{{"SBER", "Сбербанк", 250.5, 22586908915}},
+			},
+			"marketdata": map[string]interface{}{
+				"columns": []string{"SECID", "LAST", "CHANGE", "LASTCHANGEPRCNT", "VALTODAY"},
+				"data":    [][]interface{}{{"SBER", 255.3, 4.8, 1.92, 15000000000}},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	// Первый вызов — идёт к серверу
+	_, err := c.GetTicker("SBER")
+	if err != nil {
+		t.Fatalf("first call error: %v", err)
+	}
+
+	// Второй вызов — должен быть из кэша
+	_, err = c.GetTicker("SBER")
+	if err != nil {
+		t.Fatalf("second call error: %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("expected 1 HTTP call (cached), got %d", callCount)
+	}
+}
+
+func TestCandlesCache(t *testing.T) {
+	callCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		resp := map[string]interface{}{
+			"candles": map[string]interface{}{
+				"columns": []string{"open", "close", "high", "low", "volume", "begin"},
+				"data": [][]interface{}{
+					{250.0, 255.0, 258.0, 248.0, 1000000, "2026-07-01 00:00:00"},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	_, err := c.GetCandles("SBER", "3m")
+	if err != nil {
+		t.Fatalf("first call error: %v", err)
+	}
+
+	_, err = c.GetCandles("SBER", "3m")
+	if err != nil {
+		t.Fatalf("second call error: %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("expected 1 HTTP call (cached), got %d", callCount)
+	}
+}
+
+func TestFundamentalsCache(t *testing.T) {
+	callCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		resp := map[string]interface{}{
+			"securities": map[string]interface{}{
+				"columns": []string{"SECID", "ISIN", "ISSUESIZE", "FACEVALUE", "FACEUNIT", "ISSUEDATE", "SECTYPE", "EMITTER_NAME"},
+				"data":    [][]interface{}{{"SBER", "RU0009029540", 22586908915.0, 3.0, "SUR", "2007-07-20", "1", "ПАО Сбербанк"}},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	_, err := c.GetFundamentals("SBER")
+	if err != nil {
+		t.Fatalf("first call error: %v", err)
+	}
+
+	_, err = c.GetFundamentals("SBER")
+	if err != nil {
+		t.Fatalf("second call error: %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("expected 1 HTTP call (cached), got %d", callCount)
+	}
+}
+
+func TestIndexCache(t *testing.T) {
+	callCount := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		resp := map[string]interface{}{
+			"securities": map[string]interface{}{
+				"columns": []string{"SECID", "SHORTNAME", "PREVLEGALCLOSEPRICE"},
+				"data":    [][]interface{}{{"IMOEX", "Индекс Мосбиржи", 2800.5}},
+			},
+			"marketdata": map[string]interface{}{
+				"columns": []string{"SECID", "LAST", "CHANGE", "LASTCHANGEPRCNT", "HIGH", "LOW", "OPEN"},
+				"data":    [][]interface{}{{"IMOEX", 2815.3, 14.8, 0.53, 2820.0, 2790.0, 2800.5}},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	_, err := c.GetIndex("IMOEX")
+	if err != nil {
+		t.Fatalf("first call error: %v", err)
+	}
+
+	_, err = c.GetIndex("IMOEX")
+	if err != nil {
+		t.Fatalf("second call error: %v", err)
+	}
+
+	if callCount != 1 {
+		t.Errorf("expected 1 HTTP call (cached), got %d", callCount)
+	}
+}
+
+func TestCacheStats(t *testing.T) {
+	c := NewClient("")
+	c.BaseURL = "http://unused"
+
+	// Используем кэш напрямую
+	c.dataCache.Set("test", "value")
+	c.dataCache.Get("test")
+	c.dataCache.Get("missing")
+
+	stats := c.CacheStats()
+	if stats.Size != 1 {
+		t.Errorf("expected size 1, got %d", stats.Size)
+	}
+	if stats.Hits != 1 {
+		t.Errorf("expected hits 1, got %d", stats.Hits)
+	}
+	if stats.Misses != 1 {
+		t.Errorf("expected misses 1, got %d", stats.Misses)
+	}
+}
+
+func TestClearCache(t *testing.T) {
+	c := NewClient("")
+	c.BaseURL = "http://unused"
+
+	c.dataCache.Set("test", "value")
+	c.ClearCache()
+
+	stats := c.CacheStats()
+	if stats.Size != 0 {
+		t.Errorf("expected size 0 after clear, got %d", stats.Size)
+	}
+}

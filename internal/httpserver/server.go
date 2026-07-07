@@ -32,6 +32,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/search", s.handleSearch)
 	mux.HandleFunc("/api/sectors", s.handleSectors)
 	mux.HandleFunc("/api/index/", s.handleIndex)
+	mux.HandleFunc("/api/cache/stats", s.handleCacheStats)
+	mux.HandleFunc("/api/cache/clear", s.handleCacheClear)
 
 	return withCORS(withJSON(mux))
 }
@@ -143,6 +145,20 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, data)
+}
+
+func (s *Server) handleCacheStats(w http.ResponseWriter, r *http.Request) {
+	stats := s.client.CacheStats()
+	writeJSON(w, http.StatusOK, stats)
+}
+
+func (s *Server) handleCacheClear(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost && r.Method != http.MethodDelete {
+		writeError(w, http.StatusMethodNotAllowed, "use POST or DELETE to clear cache")
+		return
+	}
+	s.client.ClearCache()
+	writeJSON(w, http.StatusOK, map[string]string{"status": "cache cleared"})
 }
 
 // --- helpers ---

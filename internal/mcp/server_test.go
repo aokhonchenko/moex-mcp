@@ -69,6 +69,30 @@ func newTestServer(t *testing.T) (*Server, *httptest.Server) {
 		})
 	})
 
+	// Sectors mock
+	mux.HandleFunc("/iss/engines/stock/markets/shares/boards/TQBR/securities.json", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"securities": map[string]interface{}{
+				"columns": []string{"SECID", "SHORTNAME", "SECTYPE", "SECTORID"},
+				"data":    [][]interface{}{{"SBER", "Сбербанк", "1", nil}},
+			},
+			"marketdata": map[string]interface{}{
+				"columns": []string{"SECID", "LAST", "CHANGE", "LASTCHANGEPRCNT", "VALTODAY"},
+				"data":    [][]interface{}{{"SBER", 295.0, -3.0, -1.0, 3000000000}},
+			},
+		})
+	})
+
+	// Sector index analytics: MOEXFN
+	mux.HandleFunc("/iss/statistics/engines/stock/markets/index/analytics/MOEXFN.json", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"analytics": map[string]interface{}{
+				"columns": []string{"indexid", "tradedate", "ticker", "shortnames", "secids", "weight"},
+				"data":    [][]interface{}{{"MOEXFN", "2026-07-06", "SBER", "Сбербанк", "SBER", 13.08}},
+			},
+		})
+	})
+
 	srv := httptest.NewServer(mux)
 
 	client := moex.NewClient("")
@@ -131,8 +155,8 @@ func TestToolsList(t *testing.T) {
 	result := resp.Result.(map[string]interface{})
 	tools := result["tools"].([]map[string]interface{})
 
-	if len(tools) != 5 {
-		t.Fatalf("expected 5 tools, got %d", len(tools))
+	if len(tools) != 6 {
+		t.Fatalf("expected 6 tools, got %d", len(tools))
 	}
 
 	names := make(map[string]bool)
@@ -140,7 +164,7 @@ func TestToolsList(t *testing.T) {
 		names[tool["name"].(string)] = true
 	}
 
-	for _, expected := range []string{"moex_ticker", "moex_candles", "moex_fundamentals", "moex_search", "moex_index"} {
+	for _, expected := range []string{"moex_ticker", "moex_candles", "moex_fundamentals", "moex_search", "moex_index", "moex_sectors"} {
 		if !names[expected] {
 			t.Errorf("missing tool: %s", expected)
 		}

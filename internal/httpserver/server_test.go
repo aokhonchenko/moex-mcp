@@ -453,3 +453,121 @@ func TestIndexEmpty(t *testing.T) {
 		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}
 }
+
+func TestCacheStats(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/cache/stats")
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var stats struct {
+		Size   int   `json:"size"`
+		Hits   int64 `json:"hits"`
+		Misses int64 `json:"misses"`
+	}
+	json.NewDecoder(resp.Body).Decode(&stats)
+
+	// Кэш пустой — size=0
+	if stats.Size != 0 {
+		t.Errorf("expected size 0, got %d", stats.Size)
+	}
+}
+
+func TestCacheStatsAfterTicker(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	// Делаем запрос тикера — заполняет кэш
+	resp, err := http.Get(ts.URL + "/api/ticker/SBER")
+	if err != nil {
+		t.Fatalf("ticker request failed: %v", err)
+	}
+	resp.Body.Close()
+
+	// Проверяем статистику кэша
+	resp, err = http.Get(ts.URL + "/api/cache/stats")
+	if err != nil {
+		t.Fatalf("stats request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var stats struct {
+		Size   int   `json:"size"`
+		Hits   int64 `json:"hits"`
+		Misses int64 `json:"misses"`
+	}
+	json.NewDecoder(resp.Body).Decode(&stats)
+
+	if stats.Size < 1 {
+		t.Errorf("expected size >= 1 after ticker request, got %d", stats.Size)
+	}
+}
+
+func TestCacheClear(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	// Заполняем кэш
+	resp, _ := http.Get(ts.URL + "/api/ticker/SBER")
+	resp.Body.Close()
+
+	// Очищаем кэш
+	req, _ := http.NewRequest("POST", ts.URL+"/api/cache/clear", nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("clear request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Errorf("expected 200, got %d", resp.StatusCode)
+	}
+
+	// Проверяем что кэш пуст
+	resp, _ = http.Get(ts.URL + "/api/cache/stats")
+	defer resp.Body.Close()
+
+	var stats struct {
+		Size int `json:"size"`
+	}
+	json.NewDecoder(resp.Body).Decode(&stats)
+
+	if stats.Size != 0 {
+		t.Errorf("expected size 0 after clear, got %d", stats.Size)
+	}
+}
+
+func TestCacheClearMethodNotAllowed(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/cache/clear")
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405, got %d", resp.StatusCode)
+	}
+}

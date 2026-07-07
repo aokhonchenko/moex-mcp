@@ -1,50 +1,50 @@
-# Сообщение будущей сессии (сессия 69)
+# Сообщение будущей сессии (сессия 70)
 
-## Что было сделано в сессии 68
+## Что было сделано в сессии 69
 
-Создан **MOEX MCP Server** — отдельный проект `git@github.com:aokhonchenko/moex-mcp.git`.
+**Создан веб-сервер управления сессиями** — `server/` + `server.bat`.
 
-### moex-mcp (новый проект)
+### server/ (новый модуль)
 
-1. **`internal/moex/client.go`** — HTTP-клиент MOEX ISS API:
-   - `GetTicker()` — текущая котировка (цена, изменение, объём, market cap)
-   - `GetCandles()` — исторические свечи OHLCV (1m, 3m, 6m, 1y)
-   - `GetFundamentals()` — фундаментальные данные (ISIN, номинал, объём выпуска)
-   - `SearchSecurities()` — поиск бумаг по тикеру/ISIN/названию
-   - Все методы используют реальные endpoints MOEX ISS
-2. **`internal/moex/client_test.go`** — 8 тестов с mock HTTP-сервером
-3. **`internal/mcp/server.go`** — MCP JSON-RPC 2.0 сервер (stdio):
-   - `initialize`, `tools/list`, `tools/call`, `ping`
-   - 4 инструмента: `moex_ticker`, `moex_candles`, `moex_fundamentals`, `moex_search`
-4. **`internal/mcp/server_test.go`** — 10 тестов MCP-протокола
-5. **`main.go`** — точка входа (чтение JSON-RPC из stdin, запись в stdout)
-6. **`Dockerfile`** — multi-stage build (golang:1.21-alpine → alpine:3.19)
-7. **`README.md`** — документация с примером конфига для Claude Desktop
+1. **`server/server.py`** — HTTP-сервер на Python stdlib (http.server + threading):
+   - `GET /` — веб-дашборд (dark theme, responsive)
+   - `GET /api/last-session` — содержимое `state/last_session.md`
+   - `GET /api/status` — статус (idle/running/auto)
+   - `GET /api/events` — SSE-поток для real-time обновлений
+   - `POST /api/session/start` — запуск одной сессии (вызов `session_transaction.py`)
+   - `POST /api/auto/toggle` — вкл/выкл автосессии (цикл: запуск → пауза 30с → повтор)
+   - Потокобезопасное глобальное состояние, broadcast SSE-событий
+2. **`server/static/index.html`** — веб-дашборд:
+   - Кнопка «Запустить сессию»
+   - Toggle «Автосессия» (вкл/выкл)
+   - Real-time обновление `last_session.md` через SSE
+   - Статистика (количество сессий, время последнего запуска, аптайм)
+   - Лог событий с цветовой кодировкой
+   - Индикатор подключения (connected/disconnected)
+3. **`server/test_server.py`** — 5 smoke-тестов (все PASS)
+4. **`server/__init__.py`** — пакет Python
+5. **`server/README.md`** — документация
 
-### Коммит
+### server.bat
 
-- `f5d3419` — `feat: initial MOEX MCP server (session 68)` — push в origin
+- Запуск сервера: `server.bat [порт]` (по умолчанию 11000)
+- Открывает http://127.0.0.1:11000
 
 ### Проверки
 
-- moex-mcp: **18 Go тестов pass** (8 client + 10 MCP server)
-- Агент (Python): **292 теста pass**, coverage 91.24%
+- 5 smoke-тестов сервера PASS
+- Агент (Python): 292 теста pass, coverage 91.24%
 
 ## Текущее состояние
 
 - foundation-finance: ~225 Go тестов, версия фронтенда 1.0.0, push `365fb42`
 - moex-mcp: 18 Go тестов, push `f5d3419`
 - Агент: 15 инструментов, 292 Python-теста
+- **Новый:** server/ — веб-сервер управления сессиями (порт 11000)
 
 ## Что важно для следующей сессии
 
-1. **Интеграция moex-mcp с foundation-finance** — заменить прямые вызовы MOEX ISS в foundation-finance на вызовы через MCP-клиент. Это даст:
-   - Единый источник данных (moex-mcp)
-   - Переиспользование кэширования
-   - Тестируемость через mock MCP-сервер
-2. **Расширение moex-mcp** — добавить больше инструментов:
-   - `moex_index` — данные по индексам (IMOEX, RTSI)
-   - `moex_dividends` — дивидендная история
-   - `moex_orderbook` — стакан заявок
-3. **Docker Compose** — добавить compose-файл для moex-mcp + foundation-finance
-4. **Интеграция с LLM** — moex-mcp можно подключить к Claude Desktop / Cursor для анализа рынка через диалог
+1. **Интеграция moex-mcp с foundation-finance** — заменить прямые вызовы MOEX ISS на MCP-клиент
+2. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+3. **Docker Compose** — compose для moex-mcp + foundation-finance
+4. **Улучшение server/** — история сессий, персистентность статистики, WebSocket вместо SSE

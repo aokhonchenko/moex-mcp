@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ai-lives — Управление сессиями</title>
+    <style>
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --border: #30363d;
+            --text: #e6edf3;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --green: #3fb950;
+            --red: #f85149;
+            --yellow: #d29922;
+            --radius: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header h1 span {
+            color: var(--accent);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-badge .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-idle .dot { background: var(--text-muted); }
+        .status-idle { background: rgba(139,148,158,0.15); color: var(--text-muted); }
+        .status-running .dot { background: var(--yellow); animation: pulse 1s infinite; }
+        .status-running { background: rgba(210,153,34,0.15); color: var(--yellow); }
+        .status-auto .dot { background: var(--green); animation: pulse 1s infinite; }
+        .status-auto { background: rgba(63,185,80,0.15); color: var(--green); }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+        }
+
+        .card-full { grid-column: 1 / -1; }
+
+        .card h2 {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .btn-primary:hover { background: #4090e0; border-color: #4090e0; color: #fff; }
+
+        .btn-danger {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        .btn-danger:hover { background: rgba(248,81,73,0.15); }
+
+        .btn-success {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .btn-success:hover { background: rgba(63,185,80,0.15); }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: var(--radius);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .last-session {
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 16px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .last-session::-webkit-scrollbar { width: 6px; }
+        .last-session::-webkit-scrollbar-track { background: transparent; }
+        .last-session::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .log-area {
+            background: var(--bg);
+            border-radius: var(--radius);
+            padding: 12px;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            max-height: 200px;
+            overflow-y: auto;
+            color: var(--text-muted);
+        }
+
+        .log-entry { margin-bottom: 4px; }
+        .log-entry.error { color: var(--red); }
+        .log-entry.success { color: var(--green); }
+        .log-entry.info { color: var(--accent); }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toggle {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            background: var(--border);
+            border-radius: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle.active { background: var(--green); }
+
+        .toggle::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.2s;
+        }
+
+        .toggle.active::after { transform: translateX(22px); }
+
+        .toggle-label {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .connection-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .connection-indicator .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .connection-indicator.connected .dot { background: var(--green); }
+        .connection-indicator.disconnected .dot { background: var(--red); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span>ai-lives</span> — Управление сессиями</h1>
+        <div style="display:flex;align-items:center;gap:16px;">
+            <div id="connection" class="connection-indicator disconnected">
+                <span class="dot"></span>
+                <span>Отключено</span>
+            </div>
+            <div id="statusBadge" class="status-badge status-idle">
+                <span class="dot"></span>
+                <span id="statusText">Ожидание</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Управление -->
+        <div class="card">
+            <h2>Управление</h2>
+            <div class="controls" style="margin-bottom:16px;">
+                <button id="btnStart" class="btn btn-primary" onclick="startSession()">
+                    ▶ Запустить сессию
+                </button>
+            </div>
+            <div class="toggle-container">
+                <div id="autoToggle" class="toggle" onclick="toggleAuto()"></div>
+                <span class="toggle-label" id="autoLabel">Автосессия выключена</span>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div class="card">
+            <h2>Статистика</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="sessionCount">0</div>
+                    <div class="stat-label">Сессий</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="lastRunTime">—</div>
+                    <div class="stat-label">Последний запуск</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="uptimeValue">0:00</div>
+                    <div class="stat-label">Аптайм</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Лог -->
+        <div class="card card-full">
+            <h2>Лог событий</h2>
+            <div id="logArea" class="log-area">
+                <div class="log-entry info">Ожидание подключения к серверу...</div>
+            </div>
+        </div>
+
+        <!-- Последняя сессия -->
+        <div class="card card-full">
+            <h2>state/last_session.md</h2>
+            <div id="lastSession" class="last-session">Загрузка...</div>
+        </div>
+    </div>
+
+    <script>
+        let eventSource = null;
+        let startTime = Date.now();
+        let autoEnabled = false;
+
+        function addLog(text, type = '') {
+            const logArea = document.getElementById('logArea');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry' + (type ? ' ' + type : '');
+            const time = new Date().toLocaleTimeString('ru-RU');
+            entry.textContent = `[${time}] ${text}`;
+            logArea.appendChild(entry);
+            logArea.scrollTop = logArea.scrollHeight;
+            // Оставляем последние 100 записей
+            while (logArea.children.length > 100) {
+                logArea.removeChild(logArea.firstChild);
+            }
+        }
+
+        function updateStatus(data) {
+            const badge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            const btnStart = document.getElementById('btnStart');
+
+            badge.className = 'status-badge';
+
+            switch (data.status) {
+                case 'idle':
+                    badge.classList.add('status-idle');
+                    statusText.textContent = 'Ожидание';
+                    btnStart.disabled = false;
+                    break;
+                case 'running':
+                    badge.classList.add('status-running');
+                    statusText.textContent = 'Выполняется';
+                    btnStart.disabled = true;
+                    break;
+                case 'auto':
+                    badge.classList.add('status-auto');
+                    statusText.textContent = 'Автосессия';
+                    btnStart.disabled = true;
+                    break;
+            }
+
+            if (data.auto_enabled !== undefined) {
+                autoEnabled = data.auto_enabled;
+                updateAutoToggle();
+            }
+
+            if (data.session_count !== undefined) {
+                document.getElementById('sessionCount').textContent = data.session_count;
+            }
+
+            if (data.last_run_time) {
+                document.getElementById('lastRunTime').textContent = data.last_run_time.split(' ')[1] || data.last_run_time;
+            }
+        }
+
+        function updateAutoToggle() {
+            const toggle = document.getElementById('autoToggle');
+            const label = document.getElementById('autoLabel');
+            if (autoEnabled) {
+                toggle.classList.add('active');
+                label.textContent = 'Автосессия включена';
+            } else {
+                toggle.classList.remove('active');
+                label.textContent = 'Автосессия выключена';
+            }
+        }
+
+        function connectSSE() {
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            eventSource = new EventSource('/api/events');
+
+            eventSource.onopen = () => {
+                document.getElementById('connection').className = 'connection-indicator connected';
+                document.getElementById('connection').querySelector('span:last-child').textContent = 'Подключено';
+                addLog('Подключено к серверу', 'success');
+            };
+
+            eventSource.addEventListener('status', (e) => {
+                const data = JSON.parse(e.data);
+                updateStatus(data);
+                if (data.message) {
+                    addLog(data.message, 'info');
+                }
+            });
+
+            eventSource.addEventListener('session_done', (e) => {
+                const data = JSON.parse(e.data);
+                if (data.success) {
+                    addLog(`Сессия #${data.count} завершена успешно`, 'success');
+                } else {
+                    addLog(`Сессия #${data.count} завершена с ошибкой: ${data.error}`, 'error');
+                }
+                if (data.last_session) {
+                    document.getElementById('lastSession').textContent = data.last_session;
+                }
+                updateStatus({
+                    status: autoEnabled ? 'auto' : 'idle',
+                    session_count: data.count,
+                    last_run_time: data.time,
+                });
+            });
+
+            eventSource.onerror = () => {
+                document.getElementById('connection').className = 'connection-indicator disconnected';
+                document.getElementById('connection').querySelector('span:last-child').textContent = 'Отключено';
+                addLog('Соединение потеряно, переподключение...', 'error');
+            };
+        }
+
+        async function startSession() {
+            try {
+                const resp = await fetch('/api/session/start', { method: 'POST' });
+                const data = await resp.json();
+                if (data.ok) {
+                    addLog('Запрос на запуск сессии отправлен', 'info');
+                } else {
+                    addLog('Ошибка: ' + data.error, 'error');
+                }
+            } catch (e) {
+                addLog('Ошибка запроса: ' + e.message, 'error');
+            }
+        }
+
+        async function toggleAuto() {
+            try {
+                const resp = await fetch('/api/auto/toggle', { method: 'POST' });
+                const data = await resp.json();
+                if (data.ok) {
+                    addLog('Автосессия ' + (data.auto_enabled ? 'включена' : 'выключена'), 'info');
+                }
+            } catch (e) {
+                addLog('Ошибка запроса: ' + e.message, 'error');
+            }
+        }
+
+        async function loadLastSession() {
+            try {
+                const resp = await fetch('/api/last-session');
+                const data = await resp.json();
+                document.getElementById('lastSession').textContent = data.content;
+            } catch (e) {
+                document.getElementById('lastSession').textContent = 'Ошибка загрузки: ' + e.message;
+            }
+        }
+
+        // Обновление аптайма
+        setInterval(() => {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const min = Math.floor(elapsed / 60);
+            const sec = elapsed % 60;
+            document.getElementById('uptimeValue').textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+        }, 1000);
+
+        // Инициализация
+        loadLastSession();
+        connectSSE();
+    </script>
+</body>
+</html>

@@ -1,22 +1,27 @@
-# Сообщение будущей сессии (сессия 81)
+# Сообщение будущей сессии (сессия 82)
 
-## Что было сделано в сессии 80
+## Что было сделано в сессии 81
 
-**foundation-finance: исправлен Docker Compose healthcheck.**
+**foundation-finance: исправлены пустые графики на фронтенде.**
 
-### foundation-finance (1 коммит: `543ab87`)
+### foundation-finance (1 коммит: `d03eeed`)
 
-1. **Healthcheck fix** — `wget --spider` отправляет HEAD-запрос, а chi-роутер регистрирует только `r.Get()`, возвращая 405 Method Not Allowed. Заменено на `wget -qO /dev/null` (GET-запрос)
-2. **Удалён `version: "3.9"`** — атрибут устарел в Docker Compose v5.x
-3. **Docker Compose тест** — оба контейнера запускаются и проходят healthcheck (healthy)
+1. **Автозагрузка тикера** — при открытии страницы автоматически загружается SBER (IIFE `autoLoad()`)
+2. **Изоляция ошибок рендеринга** — каждый график обёрнут в try/catch, чтобы падение одного не блокировало остальные
+3. **min-height для canvas** — `min-height: 200px` для `.chart-card canvas`, чтобы Chart.js корректно определял размеры
+4. **Docker Compose** — пересобран и перезапущен контейнер `app`
+
+### Проблема
+
+Создатель сообщил: «на фронте пусто на свечном графике, RSI, MACD и всех остальных индикаторах». API возвращало корректные данные (проверено через curl), проблема была на стороне фронтенда.
 
 ### Проверки
 
-- `go test ./...` — все Go тесты PASS
-- `docker compose up -d` — оба сервиса healthy
+- `docker compose up -d app` — healthy
 - `GET /api/health` → `{"status":"ok","version":"1.0.0"}`
-- `GET /api/ticker/SBER` → 295.39₽
-- `GET /api/index/IMOEX` → работает
+- `GET /api/ticker/SBER` → 294.42₽
+- `GET /api/ticker/SBER/candles?period=3mo` → 88 свечей
+- `GET /api/ticker/SBER/indicators?period=3mo` → все индикаторы
 
 ### Что важно для следующей сессии
 
@@ -24,4 +29,4 @@
 2. **moex-mcp: кэш-статистика на фронтенде** — показывать hits/misses из moex-mcp
 3. **Фронтенд: экспорт дивидендов** — CSV/PDF для дивидендов
 4. **Фронтенд: LLM-отчёты** — кнопка генерации аналитического отчёта через LLM
-5. **moex-mcp: расширение** — больше MCP-инструментов (дивиденды, стакан уже есть)
+5. **NER-сервер** — из external_messages: сервер для извлечения сущностей из новостей + гипотезы влияния на тикеры

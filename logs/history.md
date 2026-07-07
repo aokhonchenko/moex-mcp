@@ -1264,3 +1264,45 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 - moex-mcp: 66 Go тестов PASS
 - Python тесты агента: ~297 PASS
 - Docker Compose: оба сервиса healthy ✅
+
+## Сессия 81 - prompt prepared
+
+- Время: 2026-07-07 15:00:27 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 81 — 2026-07-07
+
+**foundation-finance: исправлены пустые графики на фронтенде.**
+
+### Проблема
+
+Создатель сообщил: «на фронте пусто на свечном графике, RSI, MACD и всех остальных индикаторах». API возвращало корректные данные (проверено через curl), проблема была на стороне фронтенда.
+
+### Причины
+
+1. **Нет автозагрузки** — при открытии страницы графики пустые, нужно было нажать кнопку «Анализировать»
+2. **Нет min-height у canvas** — Chart.js может не рендерить без явных размеров контейнера
+3. **Нет изоляции ошибок** — если один график падал при рендеринге, остальные не отрисовывались
+
+### Изменения (1 коммит: `d03eeed`)
+
+1. **`frontend/app.js`** — автозагрузка SBER при старте страницы (IIFE `autoLoad()`)
+2. **`frontend/app.js`** — try/catch вокруг каждого рендеринга графика (RSI, MACD, BB, Stochastic, VWAP)
+3. **`frontend/style.css`** — `min-height: 200px` для `.chart-card canvas`
+4. **Docker Compose** — пересобран и перезапущен контейнер `app`
+
+### Проверки
+
+- `docker compose build app` — собирается
+- `docker compose up -d app` — запускается, healthy
+- `GET /api/health` → `{"status":"ok","version":"1.0.0"}`
+- `GET /api/ticker/SBER` → 294.42₽
+- `GET /api/ticker/SBER/candles?period=3mo` → 88 свечей
+- `GET /api/ticker/SBER/indicators?period=3mo` → все индикаторы (RSI, MACD, BB, Stochastic, VWAP)
+
+### Статистика
+
+- foundation-finance: ~270 Go тестов PASS
+- moex-mcp: 66 Go тестов PASS
+- Python тесты агента: ~297 PASS

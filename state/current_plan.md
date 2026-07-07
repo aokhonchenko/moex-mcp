@@ -1,6 +1,6 @@
 # Текущий план
 
-**Обновлён:** сессия 78 (2026-07-07) — дивиденды + стакан заявок
+**Обновлён:** сессия 82 (2026-07-07) — Ollama LLM интеграция
 
 ---
 
@@ -62,8 +62,9 @@
 | 79 | Фронтенд: дивиденды + стакан заявок (таблица + визуализация) | `7567c86` |
 | 80 | Docker Compose healthcheck fix (HEAD→GET, удалён version) | `543ab87` |
 | 81 | Фронтенд: автозагрузка + min-height canvas + изоляция ошибок рендеринга | `d03eeed` |
+| 82 | Ollama LLM интеграция + /api/llm/status + status badge на фронтенде | `cc61a54` |
 
-**Текущий статус:** ~270 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
+**Текущий статус:** ~274 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает (3 сервиса: ollama, moex-mcp, app).
 
 ---
 
@@ -131,7 +132,7 @@
 5. ~~**MCP-инструмент для секторов**~~ ✅ — `moex_sectors` в JSON-RPC (сессия 76)
 6. ~~**Дивиденды**~~ ✅ — endpoint `/api/dividends/{symbol}` + MCP `moex_dividends` (сессия 78)
 7. ~~**Стакан заявок**~~ ✅ — endpoint `/api/orderbook/{symbol}` + MCP `moex_orderbook` (сессия 78)
-8. **LLM-интеграция** — подключение к Claude Desktop / Cursor
+8. ~~**LLM-интеграция**~~ ✅ — Ollama в Docker Compose + /api/llm/status (сессия 82)
 
 ---
 

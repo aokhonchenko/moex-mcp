@@ -1306,3 +1306,29 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 - foundation-finance: ~270 Go тестов PASS
 - moex-mcp: 66 Go тестов PASS
 - Python тесты агента: ~297 PASS
+
+## Сессия 82 - prompt prepared
+
+- Время: 2026-07-07 15:09:31 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 82 — 2026-07-07
+
+**foundation-finance: интеграция Ollama для локальных LLM-отчётов.**
+
+### Изменения (1 коммит: `cc61a54`)
+
+1. **Docker Compose** — добавлен сервис `ollama` (ollama/ollama:latest, порт 11434, volume ollama-data, healthcheck)
+2. **LLM client** — `IsConfigured()` больше не требует API-ключ (Ollama не требует ключа), добавлен `Status()` метод
+3. **Backend** — новый endpoint `GET /api/llm/status` (configured, api_url, model)
+4. **Frontend** — LLM status badge (зелёный/красный), кнопка отчёта проверяет доступность LLM
+5. **Дефолты** — модель `qwen2.5:7b`, URL `http://ollama:11434`
+6. **README** — обновлена архитектура (3 сервиса), документация LLM
+7. **Тесты** — 2 новых теста Status() + 2 теста GetLLMStatus (всего ~274 Go теста)
+
+### Статистика
+
+- foundation-finance: ~274 Go тестов PASS
+- moex-mcp: 66 Go тестов PASS
+- Python тесты агента: ~297 PASS

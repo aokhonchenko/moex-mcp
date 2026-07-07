@@ -1,39 +1,45 @@
-# Сообщение будущей сессии (сессия 76)
+# Сообщение будущей сессии (сессия 77)
 
-## Что было сделано в сессии 75
+## Что было сделано в сессии 76
 
-**Исправлен маппинг секторов в moex-mcp** — главная проблема предыдущей сессии решена.
+**In-memory кэширование в moex-mcp + индексы MOEX на фронтенде foundation-finance.**
 
-### Проблема
+### moex-mcp (2 коммита: `b9aa3ac`, `f0cb1a6`)
 
-MOEX ISS API не возвращает `SECTORID` для бумаг на доске TQBR — всегда `null`. Все 262 бумаги попадали в сектор "Other".
+1. **Модуль `internal/cache/cache.go`** — потокобезопасный in-memory кэш с TTL:
+   - `Get/Set/SetWithTTL/Delete/Clear/Stats`
+   - Фоновая очистка просроченных записей (каждые 5 мин)
+   - 9 тестов (TestCacheSetGet, TestCacheExpiration, TestCacheConcurrent и др.)
 
-### Решение
+2. **Кэширование всех запросов к MOEX ISS:**
+   - `GetTicker` — TTL 1 минута (котировки)
+   - `GetCandles` — TTL 5 минут (исторические данные)
+   - `GetFundamentals` — TTL 1 час (фундаменталы)
+   - `GetIndex` — TTL 1 минута (индексы)
+   - `CacheStats()` / `ClearCache()` — публичные методы
 
-Вместо чтения несуществующего SECTORID из `/boards/TQBR/securities.json`, moex-mcp теперь загружает состав **секторальных индексов MOEX** и строит маппинг SECID → сектор.
+3. **HTTP endpoints для кэша:**
+   - `GET /api/cache/stats` — статистика (size, hits, misses)
+   - `POST /api/cache/clear` — очистка кэша
 
-### Изменения в moex-mcp (коммит `95826ca`)
+4. **MCP-инструмент `moex_sectors`** — добавлен в JSON-RPC (6 инструментов всего)
 
-1. **`loadSectorMapping()`** — загружает состав 10 секторальных индексов:
-   - MOEXFN (финансы), MOEXOG (нефтегаз), MOEXMM (металлы), MOEXIT (IT)
-   - MOEXRE (недвижимость), MOEXCN (потребительский), MOEXCH (химия)
-   - MOEXTN (транспорт), MOEXEU (электроэнергетика), MOEXTL (телеком)
-2. **Кэширование** — маппинг кэшируется на 1 час (TTL)
-3. **GetSectors()** — использует маппинг вместо SECTORID
-4. **2 новых теста** — TestGetSectors, TestSectorMappingCache
-5. **Обновлён httpserver тест** — TestSectors теперь проверяет реальные названия секторов
-6. **Всего 31 Go тестов** (было 29)
+5. **Всего 56 Go тестов** (было 35)
 
-### Результат
+### foundation-finance (1 коммит: `e7fe993`)
 
-- SBER → "Финансовый сектор" ✅
-- GAZP, LKOH → "Нефтегазовый сектор" ✅
-- Бумаги без маппинга → "Прочие" (вместо "Other")
+1. **IndexProvider** — интерфейс + `MCPProvider.GetIndex()` + тесты
+2. **API endpoint** — `GET /api/index/{symbol}` (IMOEX, RTSI)
+3. **Фронтенд** — виджет «Индексы MOEX» с карточками IMOEX и RTSI
+   - Значение, изменение (%), открытие, максимум, минимум
+   - Автозагрузка при старте дашборда
+4. **255 Go тестов** (foundation-finance)
 
 ## Что важно для следующей сессии
 
-1. **Docker Compose тест** — пересобрать moex-mcp и проверить секторы на реальных данных
-2. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-3. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS (сейчас каждый вызов идёт напрямую)
-4. **moex-mcp: MCP-инструмент для секторов** — добавить `get_sectors` в MCP JSON-RPC (пока только HTTP endpoint)
-5. **Фронтенд: отображение источника данных** — показывать в UI используется moex-mcp или прямые запросы
+1. **Docker Compose тест** — пересобрать оба сервиса и проверить работу с кэшем
+2. **Кэширование в CachedProvider для GetIndex** — сейчас CachedProvider не кэширует индексы
+3. **moex-mcp: дивиденды** — endpoint `/api/dividends/{symbol}` (ISS API: /iss/dividends.json)
+4. **moex-mcp: стакан заявок** — endpoint `/api/orderbook/{symbol}` (ISS API: /iss/engines/stock/markets/shares/boards/{board}/securities/{symbol}/orderbook.json)
+5. **Фронтенд: отображение источника данных** — показывать moex-mcp или прямые запросы
+6. **Фронтенд: кэш-статистика moex-mcp** — показывать hits/misses из moex-mcp

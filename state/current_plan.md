@@ -1,6 +1,6 @@
 # Текущий план
 
-**Обновлён:** сессия 73 (2026-07-07) — интеграция moex-mcp
+**Обновлён:** сессия 76 (2026-07-07) — кэширование moex-mcp + индексы
 
 ---
 
@@ -56,8 +56,9 @@
 | 73 | moex-mcp + foundation-finance интеграция (MCPProvider, Docker Compose) | `41e2b7c` + `b996063` |
 | 74 | Docker Compose тест + moex-mcp Dockerfile fix (Go 1.22 + wget) | `b194b45` |
 | 75 | moex-mcp: секторы через секторальные индексы MOEX (10 индексов, 31 тест) | `95826ca` |
+| 76 | moex-mcp: in-memory cache (56 тестов) + moex_sectors MCP + индексы на фронтенде | `b9aa3ac` + `e7fe993` |
 
-**Текущий статус:** ~255 Go тестов (foundation-finance) + 29 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
+**Текущий статус:** ~255 Go тестов (foundation-finance) + 56 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
 
 ---
 
@@ -97,10 +98,13 @@
 
 1. ~~**Отображение Stochastic и VWAP на фронтенде**~~ ✅ — графики %K/%D и VWAP (сессия 71)
 2. ~~**Интеграция moex-mcp**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
-1. ~~**Docker Compose тест**~~ ✅ — `docker compose up --build` работает (сессия 74)
-1. ~~**Исправить маппинг секторов**~~ ✅ — секторы через состав секторальных индексов MOEX (сессия 75, коммит `95826ca`)
-2. **Расширение moex-mcp** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-3. **Кэширование в moex-mcp** — in-memory кэш для запросов к ISS
+3. ~~**Docker Compose тест**~~ ✅ — `docker compose up --build` работает (сессия 74)
+4. ~~**Исправить маппинг секторов**~~ ✅ — секторы через состав секторальных индексов MOEX (сессия 75)
+5. ~~**Индексы MOEX на фронтенде**~~ ✅ — IMOEX, RTSI через moex-mcp (сессия 76)
+6. **CachedProvider для GetIndex** — кэширование индексов в foundation-finance
+7. **Docker Compose тест** — пересобрать оба сервиса с кэшем
+8. **moex-mcp: дивиденды** — endpoint `/api/dividends/{symbol}`
+9. **moex-mcp: стакан заявок** — endpoint `/api/orderbook/{symbol}`
 
 ---
 
@@ -116,10 +120,12 @@
 
 1. ~~**Интеграция с foundation-finance**~~ ✅ — MCPProvider + Docker Compose (сессия 73)
 2. ~~**Исправление секторов**~~ ✅ — через состав секторальных индексов MOEX (сессия 75)
-3. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
-4. **Кэширование** — in-memory кэш для запросов к MOEX ISS
-5. **MCP-инструмент для секторов** — добавить `get_sectors` в MCP JSON-RPC (пока только HTTP)
-6. **LLM-интеграция** — подключение к Claude Desktop / Cursor
+3. ~~**Расширение инструментов**~~ ✅ — индексы IMOEX/RTSI (сессия 72) + moex_sectors MCP (сессия 76)
+4. ~~**Кэширование**~~ ✅ — in-memory cache с TTL для всех запросов (сессия 76)
+5. ~~**MCP-инструмент для секторов**~~ ✅ — `moex_sectors` в JSON-RPC (сессия 76)
+6. **Дивиденды** — endpoint `/api/dividends/{symbol}` (ISS API: /iss/dividends.json)
+7. **Стакан заявок** — endpoint `/api/orderbook/{symbol}`
+8. **LLM-интеграция** — подключение к Claude Desktop / Cursor
 
 ---
 

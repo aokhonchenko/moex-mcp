@@ -1123,3 +1123,34 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 - SBER → "Финансовый сектор" ✅
 - GAZP, LKOH → "Нефтегазовый сектор" ✅
 - Бумаги без маппинга → "Прочие"
+
+## Сессия 76 - prompt prepared
+
+- Время: 2026-07-07 11:50:44 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 76 — 2026-07-07
+
+**In-memory кэширование в moex-mcp + индексы MOEX на фронтенде foundation-finance.**
+
+### moex-mcp (2 коммита: `b9aa3ac`, `f0cb1a6`)
+
+1. **`internal/cache/cache.go`** — потокобезопасный in-memory кэш с TTL (Get/Set/SetWithTTL/Delete/Clear/Stats, фоновая очистка)
+2. **Кэширование всех запросов к MOEX ISS** — GetTicker (1 мин), GetCandles (5 мин), GetFundamentals (1 час), GetIndex (1 мин)
+3. **HTTP endpoints** — `GET /api/cache/stats`, `POST /api/cache/clear`
+4. **MCP-инструмент `moex_sectors`** — добавлен в JSON-RPC (6 инструментов)
+5. **56 Go тестов** (было 35): 9 cache + 14 httpserver + 11 mcp + 22 moex
+
+### foundation-finance (1 коммит: `e7fe993`)
+
+1. **IndexProvider** — интерфейс + `MCPProvider.GetIndex()` + 3 теста
+2. **API endpoint** — `GET /api/index/{symbol}` (IMOEX, RTSI)
+3. **Фронтенд** — виджет «Индексы MOEX» с карточками (значение, изменение, открытие, макс/мин)
+4. **255 Go тестов** — все PASS
+
+### Статистика
+
+- moex-mcp: 56 Go тестов PASS
+- foundation-finance: 255 Go тестов PASS
+- Python тесты агента: ~297 PASS

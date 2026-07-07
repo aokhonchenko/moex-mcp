@@ -1,3 +1,5 @@
+ 
+
 package moex
 
 import (
@@ -59,6 +61,57 @@ func mockMOEXServer() *httptest.Server {
 				"data": [][]interface{}{
 					{"SBER", "Сбербанк", "1", "RU0009029540"},
 					{"SBERP", "Сбербанк-п", "2", "RU0009029557"},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	// /iss/engines/stock/markets/shares/boards/TQBR/securities.json (для GetSectors)
+	mux.HandleFunc("/iss/engines/stock/markets/shares/boards/TQBR/securities.json", func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"securities": map[string]interface{}{
+				"columns": []string{"SECID", "SHORTNAME", "SECTYPE", "SECTORID"},
+				"data": [][]interface{}{
+					{"SBER", "Сбербанк", "1", nil},
+					{"GAZP", "Газпром", "1", nil},
+					{"LKOH", "ЛУКОЙЛ", "1", nil},
+				},
+			},
+			"marketdata": map[string]interface{}{
+				"columns": []string{"SECID", "LAST", "CHANGE", "LASTCHANGEPRCNT", "VALTODAY"},
+				"data": [][]interface{}{
+					{"SBER", 295.0, -3.0, -1.0, 3000000000},
+					{"GAZP", 180.0, 2.0, 1.1, 2000000000},
+					{"LKOH", 7200.0, 50.0, 0.7, 1500000000},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	// /iss/statistics/engines/stock/markets/index/analytics/MOEXFN.json
+	mux.HandleFunc("/iss/statistics/engines/stock/markets/index/analytics/MOEXFN.json", func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"analytics": map[string]interface{}{
+				"columns": []string{"indexid", "tradedate", "ticker", "shortnames", "secids", "weight"},
+				"data": [][]interface{}{
+					{"MOEXFN", "2026-07-06", "SBER", "Сбербанк", "SBER", 13.08},
+					{"MOEXFN", "2026-07-06", "VTBR", "ВТБ", "VTBR", 13.39},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+
+	// /iss/statistics/engines/stock/markets/index/analytics/MOEXOG.json
+	mux.HandleFunc("/iss/statistics/engines/stock/markets/index/analytics/MOEXOG.json", func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]interface{}{
+			"analytics": map[string]interface{}{
+				"columns": []string{"indexid", "tradedate", "ticker", "shortnames", "secids", "weight"},
+				"data": [][]interface{}{
+					{"MOEXOG", "2026-07-06", "GAZP", "Газпром", "GAZP", 20.25},
+					{"MOEXOG", "2026-07-06", "LKOH", "ЛУКОЙЛ", "LKOH", 21.43},
 				},
 			},
 		}
@@ -211,6 +264,88 @@ func TestNewClientDefaults(t *testing.T) {
 	}
 	if c.BaseURL != "https://iss.moex.com" {
 		t.Errorf("expected https://iss.moex.com, got %s", c.BaseURL)
+	}
+}
+
+func TestGetSectors(t *testing.T) {
+	srv := mockMOEXServer()
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	groups, err := c.GetSectors()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(groups) == 0 {
+		t.Fatal("expected at least one sector group")
+	}
+
+	// Проверяем, что SBER попал в "Финансовый сектор"
+	var financialGroup *SectorGroup
+	for i := range groups {
+		if groups[i].SectorName == "Финансовый сектор" {
+			financialGroup = &groups[i]
+			break
+		}
+	}
+	if financialGroup == nil {
+		t.Fatal("expected 'Финансовый сектор' group")
+	}
+
+	foundSBER := false
+	for _, item := range financialGroup.Items {
+		if item.Symbol == "SBER" {
+			foundSBER = true
+			if item.Price != 295.0 {
+				t.Errorf("expected SBER price 295.0, got %f", item.Price)
+			}
+			break
+		}
+	}
+	if !foundSBER {
+		t.Error("expected SBER in 'Финансовый сектор'")
+	}
+
+	// Проверяем, что GAZP и LKOH попали в "Нефтегазовый сектор"
+	var oilGroup *SectorGroup
+	for i := range groups {
+		if groups[i].SectorName == "Нефтегазовый сектор" {
+			oilGroup = &groups[i]
+			break
+		}
+	}
+	if oilGroup == nil {
+		t.Fatal("expected 'Нефтегазовый сектор' group")
+	}
+	if oilGroup.Count != 2 {
+		t.Errorf("expected 2 items in oil sector, got %d", oilGroup.Count)
+	}
+}
+
+func TestSectorMappingCache(t *testing.T) {
+	srv := mockMOEXServer()
+	defer srv.Close()
+
+	c := NewClient("")
+	c.BaseURL = srv.URL
+
+	// Первый вызов — загружает маппинг
+	_, err := c.GetSectors()
+	if err != nil {
+		t.Fatalf("first call error: %v", err)
+	}
+
+	if c.sectorMapping == nil {
+		t.Fatal("expected sectorMapping to be cached")
+	}
+	if c.sectorMapping["SBER"] != "Финансовый сектор" {
+		t.Errorf("expected SBER in Финансовый сектор, got %s", c.sectorMapping["SBER"])
+	}
+	if c.sectorMapping["GAZP"] != "Нефтегазовый сектор" {
+		t.Errorf("expected GAZP in Нефтегазовый сектор, got %s", c.sectorMapping["GAZP"])
 	}
 }
 

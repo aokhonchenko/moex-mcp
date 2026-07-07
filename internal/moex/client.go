@@ -1,3 +1,4 @@
+
 package moex
 
 import (
@@ -13,6 +14,11 @@ type Client struct {
 	client  *http.Client
 	board   string
 	BaseURL string // экспортируем для тестов
+
+	// Кэш маппинга SECID → сектор (из состава секторальных индексов)
+	sectorMapping     map[string]string
+	sectorMappingTime time.Time
+	sectorMappingTTL  time.Duration
 }
 
 // NewClient создаёт клиент MOEX ISS.
@@ -21,9 +27,10 @@ func NewClient(board string) *Client {
 		board = "TQBR"
 	}
 	return &Client{
-		client:  &http.Client{Timeout: 15 * time.Second},
-		board:   board,
-		BaseURL: "https://iss.moex.com",
+		client:           &http.Client{Timeout: 15 * time.Second},
+		board:            board,
+		BaseURL:          "https://iss.moex.com",
+		sectorMappingTTL: 1 * time.Hour,
 	}
 }
 
@@ -104,20 +111,61 @@ type issResponse struct {
 	} `json:"candles"`
 }
 
-// sectorNames — маппинг SECTORID MOEX на читаемые названия секторов.
-var sectorNames = map[string]string{
-	"Financial":    "Финансовый сектор",
-	"Oil and Gas":  "Нефтегазовый сектор",
-	"Consumer":     "Потребительский сектор",
-	"Electric":     "Электроэнергетика",
-	"Metals":       "Металлургия",
-	"Telecom":      "Телекоммуникации",
-	"Chemicals":    "Химическая промышленность",
-	"Construction": "Строительство",
-	"Transport":    "Транспорт",
-	"Technology":   "Технологии",
-	"Real Estate":  "Недвижимость",
-	"Other":        "Прочие",
+// sectorIndexMap — маппинг секторальных индексов MOEX на читаемые названия.
+// Источник: https://iss.moex.com/iss/statistics/engines/stock/markets/index/analytics.json
+var sectorIndexMap = map[string]string{
+	"MOEXFN": "Финансовый сектор",
+	"MOEXOG": "Нефтегазовый сектор",
+	"MOEXMM": "Металлургия и добыча",
+	"MOEXIT": "Технологии",
+	"MOEXRE": "Недвижимость",
+	"MOEXCN": "Потребительский сектор",
+	"MOEXCH": "Химия и нефтехимия",
+	"MOEXTN": "Транспорт",
+	"MOEXEU": "Электроэнергетика",
+	"MOEXTL": "Телекоммуникации",
+}
+
+// issIndexResponse — ответ ISS для /statistics/engines/stock/markets/index/analytics/{INDEXID}.json
+type issIndexResponse struct {
+	Analytics struct {
+		Columns []string        `json:"columns"`
+		Data    [][]interface{} `json:"data"`
+	} `json:"analytics"`
+}
+
+// loadSectorMapping загружает маппинг SECID → сектор из состава секторальных индексов MOEX.
+// Кэшируется на sectorMappingTTL (по умолчанию 1 час).
+func (c *Client) loadSectorMapping() (map[string]string, error) {
+	if c.sectorMapping != nil && time.Since(c.sectorMappingTime) < c.sectorMappingTTL {
+		return c.sectorMapping, nil
+	}
+
+	mapping := make(map[string]string)
+
+	for indexID, sectorName := range sectorIndexMap {
+		url := fmt.Sprintf(
+			"%s/iss/statistics/engines/stock/markets/index/analytics/%s.json?iss.meta=off&iss.only=analytics",
+			c.BaseURL, indexID,
+		)
+
+		var resp issIndexResponse
+		if err := c.doGet(url, &resp); err != nil {
+			continue // пропускаем индекс, если не удалось загрузить
+		}
+
+		for _, row := range resp.Analytics.Data {
+			m := columnsToMap(resp.Analytics.Columns, row)
+			ticker := getString(m, "TICKER")
+			if ticker != "" {
+				mapping[ticker] = sectorName
+			}
+		}
+	}
+
+	c.sectorMapping = mapping
+	c.sectorMappingTime = time.Now()
+	return mapping, nil
 }
 
 // GetTicker получает текущую котировку.
@@ -279,7 +327,15 @@ func (c *Client) SearchSecurities(query string) ([]SearchResult, error) {
 }
 
 // GetSectors возвращает секторальную аналитику — группировку бумаг по секторам MOEX.
+// Секторы определяются через состав секторальных индексов (MOEXFN, MOEXOG и т.д.),
+// т.к. MOEX ISS API не возвращает SECTORID для бумаг на доске TQBR.
 func (c *Client) GetSectors() ([]SectorGroup, error) {
+	// Загружаем маппинг SECID → сектор из секторальных индексов
+	sectorMapping, err := c.loadSectorMapping()
+	if err != nil {
+		return nil, fmt.Errorf("ошибка загрузки секторов: %w", err)
+	}
+
 	url := fmt.Sprintf(
 		"%s/iss/engines/stock/markets/shares/boards/%s/securities.json?iss.meta=off&iss.only=securities,marketdata",
 		c.BaseURL, c.board,
@@ -314,20 +370,17 @@ func (c *Client) GetSectors() ([]SectorGroup, error) {
 			continue // только акции и паи
 		}
 
-		sectorID := getString(m, "SECTORID")
+		// Определяем сектор через маппинг секторальных индексов
+		sectorID := sectorMapping[secid]
 		if sectorID == "" {
-			sectorID = "Other"
+			sectorID = "Прочие"
 		}
 
 		group, ok := sectorMap[sectorID]
 		if !ok {
-			name := sectorID
-			if n, exists := sectorNames[sectorID]; exists {
-				name = n
-			}
 			group = &SectorGroup{
 				SectorID:   sectorID,
-				SectorName: name,
+				SectorName: sectorID,
 				Items:      make([]SectorInfo, 0),
 			}
 			sectorMap[sectorID] = group

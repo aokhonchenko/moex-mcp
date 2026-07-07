@@ -60,14 +60,31 @@ func mockMOEXServer() *httptest.Server {
 		case r.URL.Path == "/iss/engines/stock/markets/shares/boards/TQBR/securities.json":
 			fmt.Fprint(w, `{
 				"securities":{"columns":["SECID","SHORTNAME","SECTYPE","SECTORID"],"data":[
-					["SBER","Сбербанк","1","Financial"],
-					["GAZP","Газпром","1","Oil and Gas"],
-					["LKOH","Лукойл","1","Oil and Gas"]
+					["SBER","Сбербанк","1",null],
+					["GAZP","Газпром","1",null],
+					["LKOH","Лукойл","1",null]
 				]},
 				"marketdata":{"columns":["SECID","LAST","CHANGE","LASTCHANGEPRCNT","VALTODAY"],"data":[
 					["SBER",300.5,2.52,0.8456,5800000000],
 					["GAZP",180.0,-1.5,-0.8264,3200000000],
 					["LKOH",6500.0,50.0,0.7752,2100000000]
+				]}
+			}`)
+
+		// Sector index analytics: MOEXFN
+		case r.URL.Path == "/iss/statistics/engines/stock/markets/index/analytics/MOEXFN.json":
+			fmt.Fprint(w, `{
+				"analytics":{"columns":["indexid","tradedate","ticker","shortnames","secids","weight"],"data":[
+					["MOEXFN","2026-07-06","SBER","Сбербанк","SBER",13.08]
+				]}
+			}`)
+
+		// Sector index analytics: MOEXOG
+		case r.URL.Path == "/iss/statistics/engines/stock/markets/index/analytics/MOEXOG.json":
+			fmt.Fprint(w, `{
+				"analytics":{"columns":["indexid","tradedate","ticker","shortnames","secids","weight"],"data":[
+					["MOEXOG","2026-07-06","GAZP","Газпром","GAZP",20.25],
+					["MOEXOG","2026-07-06","LKOH","Лукойл","LKOH",21.43]
 				]}
 			}`)
 
@@ -355,28 +372,25 @@ func TestSectors(t *testing.T) {
 		t.Fatalf("expected 2 sectors, got %d", len(sectors))
 	}
 
-	// Проверяем что есть Financial и Oil and Gas
+	// Проверяем что есть Финансовый и Нефтегазовый
 	sectorMap := make(map[string]moex.SectorGroup)
 	for _, s := range sectors {
-		sectorMap[s.SectorID] = s
+		sectorMap[s.SectorName] = s
 	}
 
-	fin, ok := sectorMap["Financial"]
+	fin, ok := sectorMap["Финансовый сектор"]
 	if !ok {
-		t.Fatal("expected Financial sector")
+		t.Fatal("expected Финансовый сектор")
 	}
 	if fin.Count != 1 {
-		t.Errorf("expected 1 item in Financial, got %d", fin.Count)
-	}
-	if fin.SectorName != "Финансовый сектор" {
-		t.Errorf("expected Финансовый сектор, got %s", fin.SectorName)
+		t.Errorf("expected 1 item in Финансовый сектор, got %d", fin.Count)
 	}
 
-	oil, ok := sectorMap["Oil and Gas"]
+	oil, ok := sectorMap["Нефтегазовый сектор"]
 	if !ok {
-		t.Fatal("expected Oil and Gas sector")
+		t.Fatal("expected Нефтегазовый сектор")
 	}
 	if oil.Count != 2 {
-		t.Errorf("expected 2 items in Oil and Gas, got %d", oil.Count)
+		t.Errorf("expected 2 items in Нефтегазовый сектор, got %d", oil.Count)
 	}
 }

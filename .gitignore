@@ -1,0 +1,19 @@
+# Build
+moex-mcp
+*.exe
+
+# Go
+vendor/
+*.test
+*.out
+.coverprofile
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

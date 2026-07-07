@@ -42,6 +42,16 @@ class ReadResult:
     truncated: bool = False  # True если содержимое обрезано
     error: Optional[str] = None  # Описание ошибки, если есть
 
+def _file_error(path: Path, method: str) -> Optional[ReadResult]:
+    """Возвращает ошибку для путей, которые нельзя читать как файл."""
+    if not path.exists():
+        message = f"Файл не найден: {path}"
+    elif path.is_dir():
+        message = f"Ожидался файл, получена директория: {path}"
+    else:
+        return None
+    return ReadResult(path=str(path), content=message, lines_read=0, method=method, error=message)
+
 
 def read_lines(filepath: str, start: int, end: int) -> ReadResult:
     """
@@ -56,12 +66,8 @@ def read_lines(filepath: str, start: int, end: int) -> ReadResult:
         ReadResult с содержимым диапазона
     """
     path = Path(filepath)
-    if not path.exists():
-        return ReadResult(
-            path=str(path), content=f"Файл не найден: {path}",
-            lines_read=0, method='lines',
-            error=f'Файл не найден: {path}'
-        )
+    if error := _file_error(path, 'lines'):
+        return error
     
     with open(path, 'r', encoding='utf-8') as f:
         all_lines = f.readlines()
@@ -89,12 +95,8 @@ def read_lines(filepath: str, start: int, end: int) -> ReadResult:
 def read_head(filepath: str, n: int = 30) -> ReadResult:
     """Читает первые N строк файла."""
     path = Path(filepath)
-    if not path.exists():
-        return ReadResult(
-            path=str(path), content=f"Файл не найден: {path}",
-            lines_read=0, method='head',
-            error=f'Файл не найден: {path}'
-        )
+    if error := _file_error(path, 'head'):
+        return error
     
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()[:n]
@@ -108,12 +110,8 @@ def read_head(filepath: str, n: int = 30) -> ReadResult:
 def read_tail(filepath: str, n: int = 30) -> ReadResult:
     """Читает последние N строк файла."""
     path = Path(filepath)
-    if not path.exists():
-        return ReadResult(
-            path=str(path), content=f"Файл не найден: {path}",
-            lines_read=0, method='tail',
-            error=f'Файл не найден: {path}'
-        )
+    if error := _file_error(path, 'tail'):
+        return error
     
     with open(path, 'r', encoding='utf-8') as f:
         all_lines = f.readlines()
@@ -152,12 +150,8 @@ def read_func(filepath: str, func_name: str) -> ReadResult:
     Включает декораторы, docstring и тело функции.
     """
     path = Path(filepath)
-    if not path.exists():
-        return ReadResult(
-            path=str(path), content=f"Файл не найден: {path}",
-            lines_read=0, method='func',
-            error=f'Файл не найден: {path}'
-        )
+    if error := _file_error(path, 'func'):
+        return error
     
     with open(path, 'r', encoding='utf-8') as f:
         source = f.read()
@@ -203,12 +197,8 @@ def read_class(filepath: str, class_name: str) -> ReadResult:
     Включает декораторы, docstring, базовые классы и все методы.
     """
     path = Path(filepath)
-    if not path.exists():
-        return ReadResult(
-            path=str(path), content=f"Файл не найден: {path}",
-            lines_read=0, method='class',
-            error=f'Файл не найден: {path}'
-        )
+    if error := _file_error(path, 'class'):
+        return error
     
     with open(path, 'r', encoding='utf-8') as f:
         source = f.read()
@@ -264,12 +254,8 @@ def read_pattern(filepath: str, pattern: str, context: int = 2) -> ReadResult:
         context: количество строк контекста до/после совпадения
     """
     path = Path(filepath)
-    if not path.exists():
-        return ReadResult(
-            path=str(path), content=f"Файл не найден: {path}",
-            lines_read=0, method='pattern',
-            error=f'Файл не найден: {path}'
-        )
+    if error := _file_error(path, 'pattern'):
+        return error
     
     with open(path, 'r', encoding='utf-8') as f:
         all_lines = f.readlines()
@@ -312,12 +298,8 @@ def read_section(filepath: str, section_name: str) -> ReadResult:
     Ищет заголовок уровня H2 (##) и читает до следующего H2 или конца файла.
     """
     path = Path(filepath)
-    if not path.exists():
-        return ReadResult(
-            path=str(path), content=f"Файл не найден: {path}",
-            lines_read=0, method='section',
-            error=f'Файл не найден: {path}'
-        )
+    if error := _file_error(path, 'section'):
+        return error
     
     with open(path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
@@ -358,6 +340,8 @@ def read_file_info(filepath: str) -> dict:
     path = Path(filepath)
     if not path.exists():
         return {'error': f'Файл не найден: {path}', 'exists': False}
+    if path.is_dir():
+        return {'path': str(path), 'exists': True, 'type': 'directory', 'error': f'Ожидался файл, получена директория: {path}'}
     
     stat = path.stat()
     with open(path, 'r', encoding='utf-8') as f:
@@ -484,3 +468,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

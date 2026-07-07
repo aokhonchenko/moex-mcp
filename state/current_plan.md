@@ -57,8 +57,9 @@
 | 74 | Docker Compose тест + moex-mcp Dockerfile fix (Go 1.22 + wget) | `b194b45` |
 | 75 | moex-mcp: секторы через секторальные индексы MOEX (10 индексов, 31 тест) | `95826ca` |
 | 76 | moex-mcp: in-memory cache (56 тестов) + moex_sectors MCP + индексы на фронтенде | `b9aa3ac` + `e7fe993` |
+| 77 | CachedProvider.GetIndex() + indices in cache stats (7 новых тестов) | `882ff5b` |
 
-**Текущий статус:** ~255 Go тестов (foundation-finance) + 56 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
+**Текущий статус:** ~262 Go тестов (foundation-finance) + 56 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
 
 ---
 
@@ -101,8 +102,8 @@
 3. ~~**Docker Compose тест**~~ ✅ — `docker compose up --build` работает (сессия 74)
 4. ~~**Исправить маппинг секторов**~~ ✅ — секторы через состав секторальных индексов MOEX (сессия 75)
 5. ~~**Индексы MOEX на фронтенде**~~ ✅ — IMOEX, RTSI через moex-mcp (сессия 76)
-6. **CachedProvider для GetIndex** — кэширование индексов в foundation-finance
-7. **Docker Compose тест** — пересобрать оба сервиса с кэшем
+6. ~~**CachedProvider для GetIndex**~~ ✅ — кэширование индексов в foundation-finance (сессия 77)
+7. **Docker Compose тест** — пересобрать оба сервиса с кэшированием индексов
 8. **moex-mcp: дивиденды** — endpoint `/api/dividends/{symbol}`
 9. **moex-mcp: стакан заявок** — endpoint `/api/orderbook/{symbol}`
 

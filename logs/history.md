@@ -1154,3 +1154,27 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 - moex-mcp: 56 Go тестов PASS
 - foundation-finance: 255 Go тестов PASS
 - Python тесты агента: ~297 PASS
+
+## Сессия 77 - prompt prepared
+
+- Время: 2026-07-07 12:03:15 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 77 — 2026-07-07
+
+**CachedProvider.GetIndex() — кэширование индексов в foundation-finance.**
+
+### Изменения (1 коммит: `882ff5b`)
+
+1. **`cached_provider.go`** — `indexCache` (TTL 1 мин, до 10 записей), `GetIndex()` с кэшированием, `InvalidateIndex()`, `Stats()` → 5 значений
+2. **`main.go`** — `cachedProvider` передаётся напрямую как `IndexProvider` (раньше raw `provider`)
+3. **`models.go`** — `CacheStatsResponse.Indices`
+4. **`handlers.go`** — `CacheStatsProvider` → 5 значений, `GetCacheStats` отображает indices
+5. **7 новых тестов** для кэширования индексов (caches, different symbols, expiration, error, invalidate, invalidateAll, stats)
+6. **Исправлен `mcp_provider_test.go`** — `Stats()` → 5 значений
+
+### Статистика
+
+- foundation-finance Go тесты: ~262 — все PASS
+- Python тесты агента: ~297 PASS

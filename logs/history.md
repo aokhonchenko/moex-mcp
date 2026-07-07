@@ -1237,3 +1237,30 @@ MOEX ISS API не возвращает `SECTORID` для бумаг на дос�
 - foundation-finance: ~270 Go тестов PASS
 - moex-mcp: 66 Go тестов PASS
 - Python тесты агента: ~297 PASS
+
+## Сессия 80 - prompt prepared
+
+- Время: 2026-07-07 14:30:57 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 80 — 2026-07-07
+
+**Исправлен Docker Compose healthcheck для foundation-finance.**
+
+### Проблема
+
+`wget --spider` отправляет HEAD-запрос, а chi-роутер регистрирует только `r.Get()`, возвращая 405 Method Not Allowed. Контейнер `app` постоянно помечался как unhealthy.
+
+### Изменения (1 коммит: `543ab87`)
+
+1. **docker-compose.yml** — `--spider` → `-qO /dev/null` (GET-запрос) для обоих healthcheck
+2. **docker-compose.yml** — удалён устаревший `version: "3.9"` (Docker Compose v5.x)
+3. **Docker Compose тест** — оба контейнера healthy, все эндпоинты работают
+
+### Статистика
+
+- foundation-finance Go тесты: ~270 — все PASS
+- moex-mcp: 66 Go тестов PASS
+- Python тесты агента: ~297 PASS
+- Docker Compose: оба сервиса healthy ✅

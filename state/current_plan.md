@@ -60,6 +60,7 @@
 | 77 | CachedProvider.GetIndex() + indices in cache stats (7 новых тестов) | `882ff5b` |
 | 78 | moex-mcp: дивиденды + стакан заявок + интеграция (10+8 тестов) | `ce56694` + `a4ffcfc` |
 | 79 | Фронтенд: дивиденды + стакан заявок (таблица + визуализация) | `7567c86` |
+| 80 | Docker Compose healthcheck fix (HEAD→GET, удалён version) | `543ab87` |
 
 **Текущий статус:** ~270 Go тестов (foundation-finance) + 66 Go тестов (moex-mcp), версия фронтенда 1.0.0. Docker Compose работает.
 
@@ -107,7 +108,7 @@
 6. ~~**CachedProvider для GetIndex**~~ ✅ — кэширование индексов в foundation-finance (сессия 77)
 7. ~~**moex-mcp: дивиденды**~~ ✅ — endpoint `/api/dividends/{symbol}` + интеграция (сессия 78)
 8. ~~**moex-mcp: стакан заявок**~~ ✅ — endpoint `/api/orderbook/{symbol}` + интеграция (сессия 78)
-9. **Docker Compose тест** — пересобрать оба сервиса и проверить работу
+9. ~~**Docker Compose тест**~~ ✅ — healthcheck fix: HEAD→GET, удалён version (сессия 80, `543ab87`)
 10. ~~**Фронтенд: дивиденды и стакан**~~ ✅ — таблица дивидендов + визуализация стакана (сессия 79, `7567c86`)
 
 ---

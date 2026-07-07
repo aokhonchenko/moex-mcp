@@ -88,6 +88,26 @@ func mockMOEXServer() *httptest.Server {
 				]}
 			}`)
 
+		// Dividends: /iss/securities/SBER/dividends.json
+		case r.URL.Path == "/iss/securities/SBER/dividends.json":
+			fmt.Fprint(w, `{
+				"dividends":{"columns":["SECID","ISIN","registrydate","value","currency","boardid"],"data":[
+					["SBER","RU0009029540","2026-07-10",25.0,"SUR","TQBR"],
+					["SBER","RU0009029540","2025-07-10",18.7,"SUR","TQBR"]
+				]}
+			}`)
+
+		// Orderbook: /iss/engines/stock/markets/shares/boards/TQBR/securities/SBER/orderbook.json
+		case r.URL.Path == "/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER/orderbook.json":
+			fmt.Fprint(w, `{
+				"orderbook":{"columns":["PRICE","QUANTITY","BUYSELL"],"data":[
+					[300.0,100,"B"],
+					[300.0,50,"S"],
+					[299.5,200,"B"],
+					[300.5,150,"S"]
+				]}
+			}`)
+
 		// Index: /iss/engines/stock/markets/index/securities/IMOEX.json
 		case r.URL.Path == "/iss/engines/stock/markets/index/securities/IMOEX.json":
 			fmt.Fprint(w, `{
@@ -551,6 +571,98 @@ func TestCacheClear(t *testing.T) {
 
 	if stats.Size != 0 {
 		t.Errorf("expected size 0 after clear, got %d", stats.Size)
+	}
+}
+
+func TestDividends(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/dividends/SBER")
+	if err != nil {
+		t.Fatalf("dividends request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var divs []moex.DividendData
+	json.NewDecoder(resp.Body).Decode(&divs)
+
+	if len(divs) != 2 {
+		t.Fatalf("expected 2 dividends, got %d", len(divs))
+	}
+	if divs[0].Value != 25.0 {
+		t.Errorf("expected value 25.0, got %f", divs[0].Value)
+	}
+}
+
+func TestDividendsEmpty(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/dividends/")
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
+	}
+}
+
+func TestOrderBook(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/orderbook/SBER")
+	if err != nil {
+		t.Fatalf("orderbook request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+
+	var ob moex.OrderBookData
+	json.NewDecoder(resp.Body).Decode(&ob)
+
+	if ob.Symbol != "SBER" {
+		t.Errorf("expected SBER, got %s", ob.Symbol)
+	}
+	if len(ob.Entries) != 3 {
+		t.Errorf("expected 3 entries, got %d", len(ob.Entries))
+	}
+}
+
+func TestOrderBookEmpty(t *testing.T) {
+	mock := mockMOEXServer()
+	defer mock.Close()
+
+	_, ts := newTestServer(mock.URL)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/api/orderbook/")
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", resp.StatusCode)
 	}
 }
 

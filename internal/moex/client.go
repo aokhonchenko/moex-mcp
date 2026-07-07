@@ -102,6 +102,32 @@ type SectorInfo struct {
 	Volume    int64   `json:"volume"`
 }
 
+// DividendData — данные о дивидендах.
+type DividendData struct {
+	Symbol       string  `json:"symbol"`
+	ISIN         string  `json:"isin"`
+	RegistryDate string  `json:"registry_date"`
+	Value        float64 `json:"value"`
+	Currency     string  `json:"currency"`
+	BoardID      string  `json:"board_id"`
+}
+
+// OrderBookEntry — строка стакана заявок.
+type OrderBookEntry struct {
+	Price    float64 `json:"price"`
+	BuyQty   int64   `json:"buy_qty"`
+	BuyCount int     `json:"buy_count"`
+	SellQty  int64   `json:"sell_qty"`
+	SellCount int    `json:"sell_count"`
+}
+
+// OrderBookData — стакан заявок.
+type OrderBookData struct {
+	Symbol  string           `json:"symbol"`
+	BoardID string           `json:"board_id"`
+	Entries []OrderBookEntry `json:"entries"`
+}
+
 // IndexData — данные по индексу MOEX.
 type IndexData struct {
 	Symbol        string  `json:"symbol"`
@@ -129,6 +155,14 @@ type issResponse struct {
 		Columns []string        `json:"columns"`
 		Data    [][]interface{} `json:"data"`
 	} `json:"candles"`
+	Dividends struct {
+		Columns []string        `json:"columns"`
+		Data    [][]interface{} `json:"data"`
+	} `json:"dividends"`
+	Orderbook struct {
+		Columns []string        `json:"columns"`
+		Data    [][]interface{} `json:"data"`
+	} `json:"orderbook"`
 }
 
 // sectorIndexMap — маппинг секторальных индексов MOEX на читаемые названия.
@@ -338,7 +372,6 @@ func (c *Client) GetFundamentals(symbol string) (*FundamentalData, error) {
 	// Кэшируем на 1 час (фундаментальные данные меняются редко)
 	c.dataCache.SetWithTTL(cacheKey, result, 1*time.Hour)
 	return result, nil
-	return result, nil
 }
 
 // SearchSecurities ищет бумаги по запросу.
@@ -508,6 +541,130 @@ func (c *Client) GetIndex(symbol string) (*IndexData, error) {
 	// Кэшируем на 1 минуту (индексы обновляются в реальном времени)
 	c.dataCache.SetWithTTL(cacheKey, idx, 1*time.Minute)
 	return idx, nil
+}
+
+// GetDividends получает историю дивидендов по бумаге.
+// Использует эндпоинт /iss/dividends.json?secid={symbol}
+func (c *Client) GetDividends(symbol string) ([]DividendData, error) {
+	cacheKey := fmt.Sprintf("dividends:%s", symbol)
+	if cached, ok := c.dataCache.Get(cacheKey); ok {
+		return cached.([]DividendData), nil
+	}
+
+	url := fmt.Sprintf(
+		"%s/iss/securities/%s/dividends.json?iss.meta=off",
+		c.BaseURL, symbol,
+	)
+
+	var resp struct {
+		Dividends struct {
+			Columns []string        `json:"columns"`
+			Data    [][]interface{} `json:"data"`
+		} `json:"dividends"`
+	}
+	if err := c.doGet(url, &resp); err != nil {
+		return nil, err
+	}
+
+	if len(resp.Dividends.Data) == 0 {
+		return nil, fmt.Errorf("нет данных о дивидендах для %s", symbol)
+	}
+
+	dividends := make([]DividendData, 0, len(resp.Dividends.Data))
+	for _, row := range resp.Dividends.Data {
+		m := columnsToMap(resp.Dividends.Columns, row)
+		dividends = append(dividends, DividendData{
+			Symbol:       getString(m, "SECID"),
+			ISIN:         getString(m, "ISIN"),
+			RegistryDate: getString(m, "REGISTRYDATE"),
+			Value:        getFloat(m, "VALUE"),
+			Currency:     getString(m, "CURRENCY"),
+			BoardID:      getString(m, "BOARDID"),
+		})
+	}
+
+	// Кэшируем на 1 час (дивиденды меняются редко)
+	c.dataCache.SetWithTTL(cacheKey, dividends, 1*time.Hour)
+	return dividends, nil
+}
+
+// GetOrderBook получает стакан заявок по бумаге.
+// Использует эндпоинт /iss/engines/stock/markets/shares/boards/{board}/securities/{symbol}/orderbook.json
+func (c *Client) GetOrderBook(symbol string) (*OrderBookData, error) {
+	cacheKey := fmt.Sprintf("orderbook:%s", symbol)
+	if cached, ok := c.dataCache.Get(cacheKey); ok {
+		return cached.(*OrderBookData), nil
+	}
+
+	url := fmt.Sprintf(
+		"%s/iss/engines/stock/markets/shares/boards/%s/securities/%s/orderbook.json?iss.meta=off",
+		c.BaseURL, c.board, symbol,
+	)
+
+	var resp struct {
+		Orderbook struct {
+			Columns []string        `json:"columns"`
+			Data    [][]interface{} `json:"data"`
+		} `json:"orderbook"`
+	}
+	if err := c.doGet(url, &resp); err != nil {
+		return nil, err
+	}
+
+	if len(resp.Orderbook.Data) == 0 {
+		return nil, fmt.Errorf("нет стакана для %s", symbol)
+	}
+
+	// Группируем строки по цене: собираем bid и ask
+	type priceLevel struct {
+		BuyQty    int64
+		BuyCount  int
+		SellQty   int64
+		SellCount int
+	}
+	levels := make(map[float64]*priceLevel)
+
+	for _, row := range resp.Orderbook.Data {
+		m := columnsToMap(resp.Orderbook.Columns, row)
+		price := getFloat(m, "PRICE")
+		qty := getInt64(m, "QUANTITY")
+		dir := getString(m, "BUYSELL")
+
+		lp, ok := levels[price]
+		if !ok {
+			lp = &priceLevel{}
+			levels[price] = lp
+		}
+
+		if dir == "B" {
+			lp.BuyQty += qty
+			lp.BuyCount++
+		} else {
+			lp.SellQty += qty
+			lp.SellCount++
+		}
+	}
+
+	entries := make([]OrderBookEntry, 0, len(levels))
+	for price, lp := range levels {
+		entries = append(entries, OrderBookEntry{
+			Price:     price,
+			BuyQty:    lp.BuyQty,
+			BuyCount:  lp.BuyCount,
+			SellQty:   lp.SellQty,
+			SellCount: lp.SellCount,
+		})
+	}
+
+	ob := &OrderBookData{
+		Symbol:  symbol,
+		BoardID: c.board,
+		Entries: entries,
+	}
+
+	// Кэшируем на 10 секунд (стакан обновляется часто)
+	c.dataCache.SetWithTTL(cacheKey, ob, 10*time.Second)
+	return ob, nil
 }
 
 // CacheStats возвращает статистику кэша данных.

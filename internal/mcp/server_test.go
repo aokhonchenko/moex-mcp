@@ -93,6 +93,32 @@ func newTestServer(t *testing.T) (*Server, *httptest.Server) {
 		})
 	})
 
+	// Dividends mock
+	mux.HandleFunc("/iss/securities/SBER/dividends.json", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"dividends": map[string]interface{}{
+				"columns": []string{"SECID", "ISIN", "registrydate", "value", "currency", "boardid"},
+				"data": [][]interface{}{
+					{"SBER", "RU0009029540", "2026-07-10", 25.0, "SUR", "TQBR"},
+				},
+			},
+		})
+	})
+
+	// Orderbook mock
+	mux.HandleFunc("/iss/engines/stock/markets/shares/boards/TQBR/securities/SBER/orderbook.json", func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"orderbook": map[string]interface{}{
+				"columns": []string{"PRICE", "QUANTITY", "BUYSELL"},
+				"data": [][]interface{}{
+					{300.0, 100, "B"},
+					{300.0, 50, "S"},
+					{299.5, 200, "B"},
+				},
+			},
+		})
+	})
+
 	srv := httptest.NewServer(mux)
 
 	client := moex.NewClient("")
@@ -155,8 +181,8 @@ func TestToolsList(t *testing.T) {
 	result := resp.Result.(map[string]interface{})
 	tools := result["tools"].([]map[string]interface{})
 
-	if len(tools) != 6 {
-		t.Fatalf("expected 6 tools, got %d", len(tools))
+	if len(tools) != 8 {
+		t.Fatalf("expected 8 tools, got %d", len(tools))
 	}
 
 	names := make(map[string]bool)
@@ -164,7 +190,7 @@ func TestToolsList(t *testing.T) {
 		names[tool["name"].(string)] = true
 	}
 
-	for _, expected := range []string{"moex_ticker", "moex_candles", "moex_fundamentals", "moex_search", "moex_index", "moex_sectors"} {
+	for _, expected := range []string{"moex_ticker", "moex_candles", "moex_fundamentals", "moex_search", "moex_index", "moex_sectors", "moex_dividends", "moex_orderbook"} {
 		if !names[expected] {
 			t.Errorf("missing tool: %s", expected)
 		}
@@ -355,6 +381,64 @@ func TestToolCallSectors(t *testing.T) {
 	req := makeRequest("tools/call", map[string]interface{}{
 		"name":      "moex_sectors",
 		"arguments": map[string]interface{}{},
+	})
+	resp := s.HandleRequest(req)
+
+	if resp == nil {
+		t.Fatal("expected response")
+	}
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %s", resp.Error.Message)
+	}
+
+	result := resp.Result.(map[string]interface{})
+	if result["isError"] != nil {
+		t.Fatal("expected success, got error")
+	}
+
+	content := result["content"].([]map[string]interface{})
+	text := content[0]["text"].(string)
+	if text == "" {
+		t.Fatal("expected non-empty text")
+	}
+}
+
+func TestToolCallDividends(t *testing.T) {
+	s, srv := newTestServer(t)
+	defer srv.Close()
+
+	req := makeRequest("tools/call", map[string]interface{}{
+		"name":      "moex_dividends",
+		"arguments": map[string]interface{}{"symbol": "SBER"},
+	})
+	resp := s.HandleRequest(req)
+
+	if resp == nil {
+		t.Fatal("expected response")
+	}
+	if resp.Error != nil {
+		t.Fatalf("unexpected error: %s", resp.Error.Message)
+	}
+
+	result := resp.Result.(map[string]interface{})
+	if result["isError"] != nil {
+		t.Fatal("expected success, got error")
+	}
+
+	content := result["content"].([]map[string]interface{})
+	text := content[0]["text"].(string)
+	if text == "" {
+		t.Fatal("expected non-empty text")
+	}
+}
+
+func TestToolCallOrderBook(t *testing.T) {
+	s, srv := newTestServer(t)
+	defer srv.Close()
+
+	req := makeRequest("tools/call", map[string]interface{}{
+		"name":      "moex_orderbook",
+		"arguments": map[string]interface{}{"symbol": "SBER"},
 	})
 	resp := s.HandleRequest(req)
 

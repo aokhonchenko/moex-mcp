@@ -158,6 +158,34 @@ func (s *Server) handleToolsList(req *JSONRPCRequest) *JSONRPCResponse {
 				"properties": map[string]interface{}{},
 			},
 		},
+		{
+			"name":        "moex_dividends",
+			"description": "Get dividend history for a MOEX ticker.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"symbol": map[string]interface{}{
+						"type":        "string",
+						"description": "MOEX ticker symbol (e.g. SBER, GAZP, LKOH)",
+					},
+				},
+				"required": []string{"symbol"},
+			},
+		},
+		{
+			"name":        "moex_orderbook",
+			"description": "Get order book (Level 2) for a MOEX ticker. Returns price levels with buy/sell quantities.",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"symbol": map[string]interface{}{
+						"type":        "string",
+						"description": "MOEX ticker symbol (e.g. SBER, GAZP)",
+					},
+				},
+				"required": []string{"symbol"},
+			},
+		},
 	}
 
 	return s.successResponse(req.ID, map[string]interface{}{"tools": tools})
@@ -185,6 +213,10 @@ func (s *Server) handleToolsCall(req *JSONRPCRequest) *JSONRPCResponse {
 		return s.callIndex(req.ID, callParams.Arguments)
 	case "moex_sectors":
 		return s.callSectors(req.ID)
+	case "moex_dividends":
+		return s.callDividends(req.ID, callParams.Arguments)
+	case "moex_orderbook":
+		return s.callOrderBook(req.ID, callParams.Arguments)
 	default:
 		return s.errorResponse(req.ID, -32602, fmt.Sprintf("unknown tool: %s", callParams.Name))
 	}
@@ -276,6 +308,38 @@ func (s *Server) callIndex(id json.RawMessage, args json.RawMessage) *JSONRPCRes
 
 func (s *Server) callSectors(id json.RawMessage) *JSONRPCResponse {
 	data, err := s.client.GetSectors()
+	if err != nil {
+		return s.toolError(id, err.Error())
+	}
+
+	return s.toolResult(id, data)
+}
+
+func (s *Server) callDividends(id json.RawMessage, args json.RawMessage) *JSONRPCResponse {
+	var p struct {
+		Symbol string `json:"symbol"`
+	}
+	if err := json.Unmarshal(args, &p); err != nil {
+		return s.errorResponse(id, -32602, "invalid argument: "+err.Error())
+	}
+
+	data, err := s.client.GetDividends(p.Symbol)
+	if err != nil {
+		return s.toolError(id, err.Error())
+	}
+
+	return s.toolResult(id, data)
+}
+
+func (s *Server) callOrderBook(id json.RawMessage, args json.RawMessage) *JSONRPCResponse {
+	var p struct {
+		Symbol string `json:"symbol"`
+	}
+	if err := json.Unmarshal(args, &p); err != nil {
+		return s.errorResponse(id, -32602, "invalid argument: "+err.Error())
+	}
+
+	data, err := s.client.GetOrderBook(p.Symbol)
 	if err != nil {
 		return s.toolError(id, err.Error())
 	}

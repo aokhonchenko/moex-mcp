@@ -1,4 +1,6 @@
+
 package httpserver
+
 
 import (
 	"encoding/json"
@@ -32,6 +34,8 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/api/search", s.handleSearch)
 	mux.HandleFunc("/api/sectors", s.handleSectors)
 	mux.HandleFunc("/api/index/", s.handleIndex)
+	mux.HandleFunc("/api/dividends/", s.handleDividends)
+	mux.HandleFunc("/api/orderbook/", s.handleOrderBook)
 	mux.HandleFunc("/api/cache/stats", s.handleCacheStats)
 	mux.HandleFunc("/api/cache/clear", s.handleCacheClear)
 
@@ -140,6 +144,40 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 	data, err := s.client.GetIndex(symbol)
 	if err != nil {
 		s.logger.Printf("index error: %v", err)
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, data)
+}
+
+func (s *Server) handleDividends(w http.ResponseWriter, r *http.Request) {
+	symbol := extractPathParam(r.URL.Path, "/api/dividends/")
+	if symbol == "" {
+		writeError(w, http.StatusBadRequest, "symbol is required")
+		return
+	}
+
+	data, err := s.client.GetDividends(symbol)
+	if err != nil {
+		s.logger.Printf("dividends error: %v", err)
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+
+	writeJSON(w, http.StatusOK, data)
+}
+
+func (s *Server) handleOrderBook(w http.ResponseWriter, r *http.Request) {
+	symbol := extractPathParam(r.URL.Path, "/api/orderbook/")
+	if symbol == "" {
+		writeError(w, http.StatusBadRequest, "symbol is required")
+		return
+	}
+
+	data, err := s.client.GetOrderBook(symbol)
+	if err != nil {
+		s.logger.Printf("orderbook error: %v", err)
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
 	}

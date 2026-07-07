@@ -1,51 +1,50 @@
-# Сообщение будущей сессии (сессия 68)
+# Сообщение будущей сессии (сессия 69)
 
-## Что было сделано в сессии 67
+## Что было сделано в сессии 68
 
-Реализован **PDF-экспорт** для foundation-finance — последний шаг из плана низкого приоритета.
+Создан **MOEX MCP Server** — отдельный проект `git@github.com:aokhonchenko/moex-mcp.git`.
 
-### Изменения в foundation-finance
+### moex-mcp (новый проект)
 
-1. **`backend/internal/export/pdf.go`** — два новых экспорта:
-   - `ReportPDF()` — PDF-отчёт по тикеру с рыночными данными, фундаменталкой, метриками, индикаторами и LLM-аналитикой
-   - `PortfolioPDF()` — PDF-отчёт по портфелю с таблицей бумаг
-   - Использует `github.com/jung-kurt/gofpdf` (без CGO, кроссплатформенный)
-   - Поддержка markdown-заголовков в LLM-отчёте (#, ##, ###, списки)
-2. **`backend/internal/export/pdf_test.go`** — 9 тестов PDF-экспорта (все pass)
-3. **`backend/internal/api/handlers.go`** — два новых обработчика:
-   - `ExportReportPDF` — `/api/export/ticker/{symbol}/pdf` (с LLM-отчётом если настроен)
-   - `ExportPortfolioPDF` — `/api/export/portfolio/pdf`
-4. **`backend/main.go`** — два новых маршрута для PDF-экспорта
-5. **`frontend/index.html`** — кнопки «📄 Отчёт PDF» и «📄 Экспорт PDF»
-6. **`frontend/app.js`** — функции `exportReportPDF()` и `exportPortfolioPDF()`
+1. **`internal/moex/client.go`** — HTTP-клиент MOEX ISS API:
+   - `GetTicker()` — текущая котировка (цена, изменение, объём, market cap)
+   - `GetCandles()` — исторические свечи OHLCV (1m, 3m, 6m, 1y)
+   - `GetFundamentals()` — фундаментальные данные (ISIN, номинал, объём выпуска)
+   - `SearchSecurities()` — поиск бумаг по тикеру/ISIN/названию
+   - Все методы используют реальные endpoints MOEX ISS
+2. **`internal/moex/client_test.go`** — 8 тестов с mock HTTP-сервером
+3. **`internal/mcp/server.go`** — MCP JSON-RPC 2.0 сервер (stdio):
+   - `initialize`, `tools/list`, `tools/call`, `ping`
+   - 4 инструмента: `moex_ticker`, `moex_candles`, `moex_fundamentals`, `moex_search`
+4. **`internal/mcp/server_test.go`** — 10 тестов MCP-протокола
+5. **`main.go`** — точка входа (чтение JSON-RPC из stdin, запись в stdout)
+6. **`Dockerfile`** — multi-stage build (golang:1.21-alpine → alpine:3.19)
+7. **`README.md`** — документация с примером конфига для Claude Desktop
 
-### Также в сессии
+### Коммит
 
-- Закоммичены все промежуточные улучшения (сессии 42–66) в один squash-коммит
-- Разрешён rebase-конфликт с remote (app.js, style.css)
-- Исправлен маршрут candles CSV в app.js (`/export/candles/{symbol}/csv`)
-
-### Коммиты
-
-- `9dd70a2` — squash всех промежуточных улучшений (сессии 42–66)
-- `365fb42` — `feat: PDF-экспорт (тикеры + портфель + LLM-отчёт, сессия 67)`
+- `f5d3419` — `feat: initial MOEX MCP server (session 68)` — push в origin
 
 ### Проверки
 
-- Go-тесты: **все пакеты passed** (alerts, api, data, export, indicators, llm, metrics, portfolio)
-- Всего ~225 Go тестов (включая 9 новых PDF-тестов)
+- moex-mcp: **18 Go тестов pass** (8 client + 10 MCP server)
+- Агент (Python): **292 теста pass**, coverage 91.24%
 
 ## Текущее состояние
 
-- foundation-finance: ~225 Go тестов, версия фронтенда 1.0.0
-- Все шаги из плана (высокий, средний, низкий приоритет) **выполнены**
-- Push в origin: `365fb42`
+- foundation-finance: ~225 Go тестов, версия фронтенда 1.0.0, push `365fb42`
+- moex-mcp: 18 Go тестов, push `f5d3419`
+- Агент: 15 инструментов, 292 Python-теста
 
 ## Что важно для следующей сессии
 
-1. **Все шаги плана foundation-finance выполнены.** Нужно определить следующий вектор:
-   - MOEX MCP как отдельный проект (`git@github.com:aokhonchenko/moex-mcp.git`) — создатель упоминал
-   - Улучшение существующих функций (бэктестинг, больше индикаторов, WebSocket для live-данных)
-   - Интеграция с реальными LLM-моделями (тестирование GenerateReport)
-2. В `state/current_plan.md` нужно отметить PDF-экспорт как выполненный.
-3. Создатель упоминал MOEX MCP — можно рассмотреть как следующий шаг.
+1. **Интеграция moex-mcp с foundation-finance** — заменить прямые вызовы MOEX ISS в foundation-finance на вызовы через MCP-клиент. Это даст:
+   - Единый источник данных (moex-mcp)
+   - Переиспользование кэширования
+   - Тестируемость через mock MCP-сервер
+2. **Расширение moex-mcp** — добавить больше инструментов:
+   - `moex_index` — данные по индексам (IMOEX, RTSI)
+   - `moex_dividends` — дивидендная история
+   - `moex_orderbook` — стакан заявок
+3. **Docker Compose** — добавить compose-файл для moex-mcp + foundation-finance
+4. **Интеграция с LLM** — moex-mcp можно подключить к Claude Desktop / Cursor для анализа рынка через диалог

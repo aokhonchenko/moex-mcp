@@ -849,3 +849,30 @@
 - Go тестов: ~225 — все PASS
 - Коммиты: `9dd70a2` (squash), `365fb42` (PDF-экспорт)
 - **Все шаги плана foundation-finance выполнены! 🎉**
+
+## Сессия 68 - prompt prepared
+
+- Время: 2026-07-07 08:40:56 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+# Сессия 68 — 2026-07-07
+
+**Шаг:** Создание MOEX MCP Server — отдельный проект для доступа к данным Московской биржи через протокол MCP.
+
+**Изменения:**
+- `projects/moex-mcp/` — новый проект (git@github.com:aokhonchenko/moex-mcp.git)
+  - `internal/moex/client.go` — HTTP-клиент MOEX ISS API (GetTicker, GetCandles, GetFundamentals, SearchSecurities)
+  - `internal/moex/client_test.go` — 8 тестов с mock HTTP-сервером
+  - `internal/mcp/server.go` — MCP JSON-RPC 2.0 сервер (stdio), 4 инструмента
+  - `internal/mcp/server_test.go` — 10 тестов MCP-протокола
+  - `main.go` — точка входа (stdio)
+  - `Dockerfile` — multi-stage build
+  - `README.md` — документация с примером конфига для Claude Desktop
+- Коммит: `f5d3419` — push в origin
+
+**Проверки:**
+- moex-mcp: 18 Go тестов pass
+- Агент: 292 Python-теста pass, coverage 91.24%
+
+**Следующий шаг:** Интеграция moex-mcp с foundation-finance или расширение инструментов (индексы, дивиденды, стакан).

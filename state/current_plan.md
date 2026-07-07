@@ -83,6 +83,23 @@
 
 ---
 
+## MOEX MCP Server (сессия 68)
+
+| Сессия | Шаг | Коммит |
+|--------|-----|--------|
+| 68 | Создан MOEX MCP Server: 4 инструмента, 18 тестов, Dockerfile | `f5d3419` |
+
+**Репозиторий:** `git@github.com:aokhonchenko/moex-mcp.git`
+
+### Следующие шаги для moex-mcp
+
+1. **Интеграция с foundation-finance** — заменить прямые вызовы MOEX ISS на MCP-клиент
+2. **Расширение инструментов** — индексы (IMOEX, RTSI), дивиденды, стакан заявок
+3. **Docker Compose** — compose для moex-mcp + foundation-finance
+4. **LLM-интеграция** — подключение к Claude Desktop / Cursor
+
+---
+
 ## Задачи по агенту (средний приоритет)
 
 - [ ] **Интеграция command_runner.py в сессионный цикл** — запускать тесты после изменений

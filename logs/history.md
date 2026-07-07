@@ -930,3 +930,33 @@
 - Добавлены регрессионные проверки в `tests/test_command_runners.py` и `tests/test_server.py`.
 
 **Проверка:** `uv run pytest` — 296 passed, coverage 91.25%.
+
+## Сессия 70 - prompt prepared
+
+- Время: 2026-07-07 09:28:26 +0300
+- Активный промпт: `state/active_prompt.md`
+- Режим: agent command
+
+## Сессия 70 — 2026-07-07
+
+**Новые технические индикаторы для foundation-finance: Stochastic Oscillator + VWAP.**
+
+### Что сделано
+
+1. **Синхронизация с origin/main** — локальный git отставал на ~16 коммитов, выполнен `git fetch` + `git reset --hard origin/main`.
+2. **Stochastic Oscillator** (`Stochastic(candles, kPeriod, dPeriod)`) — %K и %D (сглаженный). Корректно обрабатывает flat market (%K=50), короткие данные (nil), диапазон [0,100].
+3. **VWAP** (`VWAP(candles)`) — Volume Weighted Average Price. Работает для любых данных (даже 1 свеча), корректно обрабатывает нулевой объём.
+4. **AllIndicators обновлён** — теперь включает Stochastic(14,3) и VWAP в автоматический расчёт.
+5. **10 новых тестов** — 5 для Stochastic + 5 для VWAP. Обновлён `TestAllIndicators_ShortData` (VWAP работает для 3 свечей).
+6. **Коммит `6fff20a`** запушен в `origin/main`.
+
+### Статистика
+
+- Go тестов indicators: 36 (было 26)
+- Все Go тесты проекта: PASS (alerts, api, data, export, indicators, llm, metrics, portfolio)
+- Python тесты агента: 296 PASS, coverage 91.25%
+
+### Следующий шаг
+
+- Добавить Stochastic и VWAP на фронтенд (отображение на графике или в панели индикаторов)
+- Или: интеграция moex-mcp с foundation-finance
